@@ -49,7 +49,12 @@ const Navbar = () => {
                 {item.label}
               </a>
             ))}
-            <Button variant="default" size="lg" className="ml-4">
+            <Button 
+              variant="default" 
+              size="lg" 
+              className="ml-4"
+              onClick={() => window.location.href = "/auth"}
+            >
               Internet Banking
             </Button>
           </div>
@@ -75,7 +80,12 @@ const Navbar = () => {
                   {item.label}
                 </a>
               ))}
-              <Button variant="default" size="lg" className="w-full">
+              <Button 
+                variant="default" 
+                size="lg" 
+                className="w-full"
+                onClick={() => window.location.href = "/auth"}
+              >
                 Internet Banking
               </Button>
             </div>
