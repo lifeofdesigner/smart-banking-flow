@@ -44,6 +44,7 @@ const Dashboard = () => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     checkAuth();
@@ -72,6 +73,14 @@ const Dashboard = () => {
       if (profileData) {
         setProfile(profileData);
       }
+
+      // Check admin role
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("role")
+        .eq("user_id", userId);
+
+      setIsAdmin(roles?.some(r => r.role === "admin") || false);
 
       // Load accounts
       const { data: accountsData } = await supabase
@@ -139,11 +148,20 @@ const Dashboard = () => {
               </div>
             </div>
             
-            <div className="flex items-center space-x-4">
-              <div className="text-right hidden md:block">
+            <div className="flex items-center space-x-2">
+              <div className="text-right hidden md:block mr-4">
                 <p className="font-medium">{profile?.full_name}</p>
                 <p className="text-sm text-muted-foreground">{profile?.email}</p>
               </div>
+              {isAdmin && (
+                <Button variant="outline" onClick={() => navigate("/admin")}>
+                  <Settings className="w-4 h-4 mr-2" />
+                  Admin
+                </Button>
+              )}
+              <Button variant="outline" size="icon" onClick={() => navigate("/profile")}>
+                <User className="w-5 h-5" />
+              </Button>
               <Button variant="outline" size="icon" onClick={handleLogout}>
                 <LogOut className="w-5 h-5" />
               </Button>
