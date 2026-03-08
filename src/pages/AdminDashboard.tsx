@@ -59,13 +59,22 @@ export default function AdminDashboard() {
     try {
       const [usersRes, accountsRes, wiresRes, txRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-        supabase.from("accounts").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
+        supabase.from("accounts").select("*, profiles(full_name, email)").not("user_id", "is", null).order("created_at", { ascending: false }),
         supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false })
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
-      if (accountsRes.data) setAccounts(accountsRes.data);
+      if (accountsRes.data) {
+        // Compute balances from ledger
+        const withBalances = await Promise.all(
+          accountsRes.data.map(async (acc: any) => {
+            const { data: balance } = await supabase.rpc("get_account_balance", { p_account_id: acc.id });
+            return { ...acc, computed_balance: balance ?? acc.balance ?? 0 };
+          })
+        );
+        setAccounts(withBalances);
+      }
       if (wiresRes.data) setWireTransfers(wiresRes.data);
       if (txRes.data) setTransactions(txRes.data);
     } catch (error) {
