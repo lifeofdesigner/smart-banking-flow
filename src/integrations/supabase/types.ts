@@ -186,6 +186,48 @@ export type Database = {
           },
         ]
       }
+      kyc_submissions: {
+        Row: {
+          address_document_url: string | null
+          created_at: string
+          document_type: string
+          document_url: string | null
+          id: string
+          rejection_reason: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          selfie_url: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          address_document_url?: string | null
+          created_at?: string
+          document_type?: string
+          document_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          address_document_url?: string | null
+          created_at?: string
+          document_type?: string
+          document_url?: string | null
+          id?: string
+          rejection_reason?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          selfie_url?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       ledger_entries: {
         Row: {
           amount: number
