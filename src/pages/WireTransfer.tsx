@@ -86,7 +86,7 @@ const WireTransfer = () => {
       const { data: wireTransfer, error } = await supabase
         .from("wire_transfers")
         .insert({
-          user_id: session.user.id,
+          user_id: user.id,
           account_id: accountId,
           beneficiary_name: validated.beneficiaryName,
           beneficiary_account: validated.beneficiaryAccount,
