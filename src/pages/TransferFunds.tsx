@@ -362,6 +362,19 @@ const TransferFunds = () => {
       return false;
     }
 
+    // Check transfer limits client-side
+    const parsedAmount = parseFloat(amount);
+    if (transferLimits) {
+      if (parsedAmount > transferLimits.per_transaction_limit) {
+        setErrors({ amount: `Exceeds per-transaction limit of $${transferLimits.per_transaction_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+        return false;
+      }
+      if (parsedAmount > transferLimits.remaining_daily) {
+        setErrors({ amount: `Exceeds remaining daily limit of $${transferLimits.remaining_daily.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+        return false;
+      }
+    }
+
     setErrors({});
     return true;
   };
