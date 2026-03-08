@@ -201,7 +201,7 @@ const Dashboard = () => {
               <div className="mt-8">
                 <p className="text-sm opacity-90 mb-1">Available Balance</p>
                 <p className="text-4xl font-bold">
-                  {account.currency} {account.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  {account.currency} {account.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </Card>
