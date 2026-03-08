@@ -79,8 +79,8 @@ const WireTransfer = () => {
         amount: parseFloat(transferData.amount),
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !accountId) throw new Error("Not authenticated");
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !accountId) throw new Error("Not authenticated");
 
       // Create wire transfer
       const { data: wireTransfer, error } = await supabase

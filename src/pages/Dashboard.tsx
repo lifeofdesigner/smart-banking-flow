@@ -53,14 +53,14 @@ const Dashboard = () => {
   }, []);
 
   const checkAuth = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!session) {
+    if (error || !user) {
       navigate("/auth");
       return;
     }
 
-    await loadDashboardData(session.user.id);
+    await loadDashboardData(user.id);
   };
 
   const loadDashboardData = async (userId: string) => {
