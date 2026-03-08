@@ -650,7 +650,35 @@ const TransferFunds = () => {
                 )}
               </div>
 
-              {/* Description */}
+              {/* Transfer Limits Display */}
+              {transferLimits && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    Transfer Limits
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Per Transaction</p>
+                      <p className="font-medium">${transferLimits.per_transaction_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Daily Limit</p>
+                      <p className="font-medium">${transferLimits.daily_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Today's usage</span>
+                      <span className="font-medium">${transferLimits.daily_usage.toLocaleString("en-US", { minimumFractionDigits: 2 })} / ${transferLimits.daily_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <Progress value={Math.min((transferLimits.daily_usage / transferLimits.daily_limit) * 100, 100)} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Remaining today: <span className="font-medium text-foreground">${transferLimits.remaining_daily.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Description (optional)</Label>
                 <Textarea
