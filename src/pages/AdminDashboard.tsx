@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [wireTransfers, setWireTransfers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [allBeneficiaries, setAllBeneficiaries] = useState<any[]>([]);
+  const [allNotifications, setAllNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdmin();
