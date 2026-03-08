@@ -399,6 +399,8 @@ const TransferFunds = () => {
         if (msg.includes("Insufficient balance")) msg = "Insufficient funds for this transfer.";
         else if (msg.includes("not active")) msg = "One of the accounts is frozen or closed.";
         else if (msg.includes("do not own")) msg = "You do not own the source account.";
+        else if (msg.includes("per-transaction limit")) msg = "Transfer exceeds your per-transaction limit.";
+        else if (msg.includes("daily limit") || msg.includes("exceed daily")) msg = "Transfer would exceed your daily limit.";
         toast({ title: "Transfer failed", description: msg, variant: "destructive" });
         setStep("form");
         return;
