@@ -226,13 +226,13 @@ const Dashboard = () => {
                 <Globe className="w-5 h-5 mr-3" />
                 Wire Transfer
               </Button>
+              <Button variant="outline" className="w-full justify-start h-14" size="lg" onClick={() => navigate("/beneficiaries")}>
+                <User className="w-5 h-5 mr-3" />
+                Beneficiaries
+              </Button>
               <Button variant="outline" className="w-full justify-start h-14" size="lg">
                 <CreditCard className="w-5 h-5 mr-3" />
                 Pay Bills
-              </Button>
-              <Button variant="outline" className="w-full justify-start h-14" size="lg">
-                <User className="w-5 h-5 mr-3" />
-                Manage Profile
               </Button>
             </div>
           </Card>
