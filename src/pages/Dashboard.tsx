@@ -20,6 +20,7 @@ interface Account {
   account_number: string;
   account_type: string;
   balance: number;
+  computed_balance: number;
   currency: string;
 }
 
@@ -82,14 +83,23 @@ const Dashboard = () => {
 
       setIsAdmin(roles?.some(r => r.role === "admin") || false);
 
-      // Load accounts
+      // Load accounts with computed balances
       const { data: accountsData } = await supabase
         .from("accounts")
         .select("*")
         .eq("user_id", userId);
 
       if (accountsData) {
-        setAccounts(accountsData);
+        // Fetch computed balance for each account via RPC
+        const accountsWithBalances = await Promise.all(
+          accountsData.map(async (account) => {
+            const { data: balance } = await supabase.rpc("get_account_balance", {
+              p_account_id: account.id,
+            });
+            return { ...account, computed_balance: balance ?? account.balance ?? 0 };
+          })
+        );
+        setAccounts(accountsWithBalances);
       }
 
       // Load recent transactions
@@ -191,7 +201,7 @@ const Dashboard = () => {
               <div className="mt-8">
                 <p className="text-sm opacity-90 mb-1">Available Balance</p>
                 <p className="text-4xl font-bold">
-                  {account.currency} {account.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  {account.currency} {account.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
             </Card>
