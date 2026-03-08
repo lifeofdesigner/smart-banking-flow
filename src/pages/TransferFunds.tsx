@@ -99,6 +99,7 @@ const TransferFunds = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<RecentTransfer[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<SavedBeneficiary[]>([]);
+  const [transferLimits, setTransferLimits] = useState<TransferLimitInfo | null>(null);
 
   // Form state
   const [entryMode, setEntryMode] = useState<EntryMode>("manual");
