@@ -468,6 +468,10 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="limits">
+            <TransferLimitsManager />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
