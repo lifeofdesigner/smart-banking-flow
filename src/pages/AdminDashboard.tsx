@@ -61,12 +61,13 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, accountsRes, wiresRes, txRes, benRes] = await Promise.all([
+      const [usersRes, accountsRes, wiresRes, txRes, benRes, notifRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("accounts").select("*, profiles(full_name, email)").not("user_id", "is", null).order("created_at", { ascending: false }),
         supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false }),
         supabase.from("beneficiaries").select("*").order("created_at", { ascending: false }),
+        supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100),
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
