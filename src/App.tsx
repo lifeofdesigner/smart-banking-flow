@@ -8,6 +8,7 @@ import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import WireTransfer from "./pages/WireTransfer";
 import TransferFunds from "./pages/TransferFunds";
+import Beneficiaries from "./pages/Beneficiaries";
 import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import NotFound from "./pages/NotFound";
