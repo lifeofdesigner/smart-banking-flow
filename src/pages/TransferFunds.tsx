@@ -29,7 +29,9 @@ import {
   Loader2,
   ArrowRight,
   Users,
+  Shield,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
