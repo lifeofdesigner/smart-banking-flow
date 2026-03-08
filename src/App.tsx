@@ -13,6 +13,7 @@ import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import KYCVerification from "./pages/KYCVerification";
+import Loans from "./pages/Loans";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +35,7 @@ const App = () => (
           <Route path="/profile" element={<UserProfile />} />
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/kyc" element={<KYCVerification />} />
+          <Route path="/loans" element={<Loans />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   Settings,
-  Shield
+  Shield,
+  Banknote
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NotificationBell from "@/components/NotificationBell";
