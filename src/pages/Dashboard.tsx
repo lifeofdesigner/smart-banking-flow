@@ -14,6 +14,7 @@ import {
   Settings
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import NotificationBell from "@/components/NotificationBell";
 
 interface Account {
   id: string;
@@ -169,6 +170,7 @@ const Dashboard = () => {
                   Admin
                 </Button>
               )}
+              <NotificationBell />
               <Button variant="outline" size="icon" onClick={() => navigate("/profile")}>
                 <User className="w-5 h-5" />
               </Button>

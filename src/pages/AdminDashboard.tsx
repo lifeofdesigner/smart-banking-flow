@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield } from "lucide-react";
+import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import { toast } from "sonner";
@@ -22,6 +22,7 @@ export default function AdminDashboard() {
   const [wireTransfers, setWireTransfers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
   const [allBeneficiaries, setAllBeneficiaries] = useState<any[]>([]);
+  const [allNotifications, setAllNotifications] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdmin();
@@ -60,12 +61,13 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, accountsRes, wiresRes, txRes, benRes] = await Promise.all([
+      const [usersRes, accountsRes, wiresRes, txRes, benRes, notifRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("accounts").select("*, profiles(full_name, email)").not("user_id", "is", null).order("created_at", { ascending: false }),
         supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false }),
         supabase.from("beneficiaries").select("*").order("created_at", { ascending: false }),
+        supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100),
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
@@ -90,6 +92,13 @@ export default function AdminDashboard() {
           })
         );
         setAllBeneficiaries(enriched);
+      }
+      if (notifRes.data) {
+        const enrichedNotifs = notifRes.data.map((n: any) => {
+          const user = usersRes.data?.find((u: any) => u.id === n.user_id);
+          return { ...n, user_name: user?.full_name || "Unknown" };
+        });
+        setAllNotifications(enrichedNotifs);
       }
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -229,6 +238,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
+            <TabsTrigger value="notifications">Notifications</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -471,6 +481,45 @@ export default function AdminDashboard() {
 
           <TabsContent value="limits">
             <TransferLimitsManager />
+          </TabsContent>
+
+          <TabsContent value="notifications">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Notifications</CardTitle>
+                <CardDescription>System-wide notification log</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Title</TableHead>
+                      <TableHead>Message</TableHead>
+                      <TableHead>Read</TableHead>
+                      <TableHead>Date</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allNotifications.map((n: any) => (
+                      <TableRow key={n.id}>
+                        <TableCell>{n.user_name}</TableCell>
+                        <TableCell>
+                          <Badge variant={n.type === "credit_alert" ? "default" : n.type === "debit_alert" ? "secondary" : "destructive"}>
+                            {n.type}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>{n.title}</TableCell>
+                        <TableCell className="max-w-xs truncate">{n.message}</TableCell>
+                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
+                        <TableCell>{new Date(n.created_at).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
