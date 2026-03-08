@@ -279,7 +279,7 @@ export default function Loans() {
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Total Interest</span>
-                          <span className="text-orange-600">${(totalPayable - parsedAmount).toFixed(2)}</span>
+                          <span className="text-destructive">${(totalPayable - parsedAmount).toFixed(2)}</span>
                         </div>
                       </CardContent>
                     </Card>

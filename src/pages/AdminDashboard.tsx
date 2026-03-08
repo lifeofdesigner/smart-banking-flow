@@ -484,6 +484,10 @@ export default function AdminDashboard() {
             <TransferLimitsManager />
           </TabsContent>
 
+          <TabsContent value="loans">
+            <LoanManagement />
+          </TabsContent>
+
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
