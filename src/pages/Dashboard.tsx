@@ -20,6 +20,7 @@ interface Account {
   account_number: string;
   account_type: string;
   balance: number;
+  computed_balance: number;
   currency: string;
 }
 
