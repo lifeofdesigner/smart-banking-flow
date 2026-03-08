@@ -228,6 +228,10 @@ const Dashboard = () => {
                 <User className="w-5 h-5 mr-3" />
                 Beneficiaries
               </Button>
+              <Button variant="outline" className="w-full justify-start h-14" size="lg" onClick={() => navigate("/kyc")}>
+                <Shield className="w-5 h-5 mr-3" />
+                KYC Verification
+              </Button>
               <Button variant="outline" className="w-full justify-start h-14" size="lg">
                 <CreditCard className="w-5 h-5 mr-3" />
                 Pay Bills
