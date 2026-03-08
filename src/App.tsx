@@ -11,6 +11,7 @@ import TransferFunds from "./pages/TransferFunds";
 import Beneficiaries from "./pages/Beneficiaries";
 import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
