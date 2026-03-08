@@ -165,14 +165,15 @@ const TransferFunds = () => {
 
   const checkAuth = async () => {
     const {
-      data: { session },
-    } = await supabase.auth.getSession();
-    if (!session) {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+    if (error || !user) {
       navigate("/auth");
       return;
     }
-    setUserId(session.user.id);
-    await loadData(session.user.id);
+    setUserId(user.id);
+    await loadData(user.id);
   };
 
   const loadData = async (uid: string) => {

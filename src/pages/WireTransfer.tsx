@@ -50,9 +50,9 @@ const WireTransfer = () => {
   }, []);
 
   const checkAuthAndLoadAccount = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!session) {
+    if (error || !user) {
       navigate("/auth");
       return;
     }
@@ -61,7 +61,7 @@ const WireTransfer = () => {
     const { data: accountData } = await supabase
       .from("accounts")
       .select("id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .single();
 
     if (accountData) {
@@ -79,14 +79,14 @@ const WireTransfer = () => {
         amount: parseFloat(transferData.amount),
       });
 
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session || !accountId) throw new Error("Not authenticated");
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user || !accountId) throw new Error("Not authenticated");
 
       // Create wire transfer
       const { data: wireTransfer, error } = await supabase
         .from("wire_transfers")
         .insert({
-          user_id: session.user.id,
+          user_id: user.id,
           account_id: accountId,
           beneficiary_name: validated.beneficiaryName,
           beneficiary_account: validated.beneficiaryAccount,
