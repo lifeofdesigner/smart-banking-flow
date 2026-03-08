@@ -237,6 +237,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
