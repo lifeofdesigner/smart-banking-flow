@@ -93,6 +93,13 @@ export default function AdminDashboard() {
         );
         setAllBeneficiaries(enriched);
       }
+      if (notifRes.data) {
+        const enrichedNotifs = notifRes.data.map((n: any) => {
+          const user = usersRes.data?.find((u: any) => u.id === n.user_id);
+          return { ...n, user_name: user?.full_name || "Unknown" };
+        });
+        setAllNotifications(enrichedNotifs);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load admin data");
