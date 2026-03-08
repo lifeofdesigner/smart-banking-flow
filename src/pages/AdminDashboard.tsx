@@ -520,6 +520,10 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="kyc">
+            <KYCReviews />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
