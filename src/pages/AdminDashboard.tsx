@@ -226,6 +226,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="wires">Wire Transfers</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
+            <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
