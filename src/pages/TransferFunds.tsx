@@ -127,6 +127,40 @@ const TransferFunds = () => {
     checkAuth();
   }, []);
 
+  // Fetch transfer limits when source account changes
+  useEffect(() => {
+    if (!fromAccountId) {
+      setTransferLimits(null);
+      return;
+    }
+    const fetchLimits = async () => {
+      try {
+        const [limitRes, usageRes] = await Promise.all([
+          supabase
+            .from("transfer_limits")
+            .select("daily_limit, per_transaction_limit")
+            .eq("account_id", fromAccountId)
+            .maybeSingle(),
+          supabase.rpc("get_daily_transfer_usage", { p_account_id: fromAccountId }),
+        ]);
+        if (limitRes.data) {
+          const usage = (usageRes.data as number) ?? 0;
+          setTransferLimits({
+            daily_limit: limitRes.data.daily_limit,
+            per_transaction_limit: limitRes.data.per_transaction_limit,
+            daily_usage: usage,
+            remaining_daily: Math.max(0, limitRes.data.daily_limit - usage),
+          });
+        } else {
+          setTransferLimits(null);
+        }
+      } catch {
+        setTransferLimits(null);
+      }
+    };
+    fetchLimits();
+  }, [fromAccountId]);
+
   const checkAuth = async () => {
     const {
       data: { session },
