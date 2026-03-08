@@ -11,6 +11,7 @@ import TransferFunds from "./pages/TransferFunds";
 import Beneficiaries from "./pages/Beneficiaries";
 import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
+import ResetPassword from "./pages/ResetPassword";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/wire-transfer" element={<WireTransfer />} />
           <Route path="/transfer" element={<TransferFunds />} />
