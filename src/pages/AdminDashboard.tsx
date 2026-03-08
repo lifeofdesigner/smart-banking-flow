@@ -80,6 +80,16 @@ export default function AdminDashboard() {
       }
       if (wiresRes.data) setWireTransfers(wiresRes.data);
       if (txRes.data) setTransactions(txRes.data);
+      if (benRes.data) {
+        // Enrich with user names
+        const enriched = await Promise.all(
+          benRes.data.map(async (b: any) => {
+            const user = usersRes.data?.find((u: any) => u.id === b.user_id);
+            return { ...b, user_name: user?.full_name || "Unknown" };
+          })
+        );
+        setAllBeneficiaries(enriched);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load admin data");
