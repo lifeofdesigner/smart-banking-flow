@@ -364,6 +364,7 @@ export type Database = {
       }
       wire_transfer_codes: {
         Row: {
+          attempts: number
           code_type: string
           code_value: string
           created_at: string | null
@@ -373,6 +374,7 @@ export type Database = {
           wire_transfer_id: string
         }
         Insert: {
+          attempts?: number
           code_type: string
           code_value: string
           created_at?: string | null
@@ -382,6 +384,7 @@ export type Database = {
           wire_transfer_id: string
         }
         Update: {
+          attempts?: number
           code_type?: string
           code_value?: string
           created_at?: string | null
@@ -509,6 +512,14 @@ export type Database = {
           p_user_id: string
         }
         Returns: string
+      }
+      verify_wire_transfer_code: {
+        Args: {
+          p_code: string
+          p_code_type: string
+          p_wire_transfer_id: string
+        }
+        Returns: boolean
       }
     }
     Enums: {
