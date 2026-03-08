@@ -25,6 +25,9 @@ interface Loan {
   loan_products?: { name: string };
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const q = supabase as any;
+
 export default function LoanManagement() {
   const [loans, setLoans] = useState<Loan[]>([]);
   const [loading, setLoading] = useState(true);
@@ -36,11 +39,11 @@ export default function LoanManagement() {
   useEffect(() => { fetchLoans(); }, []);
 
   const fetchLoans = async () => {
-    const { data } = await supabase
+    const { data } = await q
       .from("loans")
       .select("*, profiles(full_name, email, kyc_status), loan_products(name)")
       .order("created_at", { ascending: false });
-    if (data) setLoans(data as any);
+    if (data) setLoans(data as Loan[]);
     setLoading(false);
   };
 
@@ -48,7 +51,7 @@ export default function LoanManagement() {
     setProcessing(loanId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.rpc("approve_loan", {
+      const { data, error } = await supabase.rpc("approve_loan" as any, {
         p_loan_id: loanId, p_admin_id: user!.id,
       });
       if (error) throw error;
@@ -72,7 +75,7 @@ export default function LoanManagement() {
     setProcessing(rejectLoanId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.rpc("reject_loan", {
+      const { data, error } = await supabase.rpc("reject_loan" as any, {
         p_loan_id: rejectLoanId, p_admin_id: user!.id, p_reason: rejectReason,
       });
       if (error) throw error;
@@ -104,68 +107,82 @@ export default function LoanManagement() {
         <CardDescription>Review, approve, or reject loan applications</CardDescription>
       </CardHeader>
       <CardContent>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Applicant</TableHead>
-              <TableHead>Product</TableHead>
-              <TableHead>Principal</TableHead>
-              <TableHead>Rate</TableHead>
-              <TableHead>Term</TableHead>
-              <TableHead>Monthly</TableHead>
-              <TableHead>KYC</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Date</TableHead>
-              <TableHead>Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {loans.map(loan => (
-              <TableRow key={loan.id}>
-                <TableCell>
-                  <div>{loan.profiles?.full_name}</div>
-                  <div className="text-xs text-muted-foreground">{loan.profiles?.email}</div>
-                </TableCell>
-                <TableCell>{loan.loan_products?.name}</TableCell>
-                <TableCell>${loan.principal.toLocaleString()}</TableCell>
-                <TableCell>{loan.interest_rate}%</TableCell>
-                <TableCell>{loan.term_months}mo</TableCell>
-                <TableCell>${loan.monthly_payment.toFixed(2)}</TableCell>
-                <TableCell>
-                  <Badge variant={loan.profiles?.kyc_status === "approved" ? "default" : "secondary"}>
-                    {loan.profiles?.kyc_status}
-                  </Badge>
-                </TableCell>
-                <TableCell><Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge></TableCell>
-                <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  {loan.status === "pending" && (
-                    <div className="flex gap-1">
-                      <Button size="sm" disabled={processing === loan.id} onClick={() => handleApprove(loan.id)}>
-                        <CheckCircle className="h-4 w-4 mr-1" />Approve
-                      </Button>
-                      <Button size="sm" variant="destructive" disabled={processing === loan.id} onClick={() => openReject(loan.id)}>
-                        <XCircle className="h-4 w-4 mr-1" />Reject
-                      </Button>
-                    </div>
-                  )}
-                </TableCell>
+        {loans.length === 0 ? (
+          <p className="text-center text-muted-foreground py-8">No loan applications yet.</p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Applicant</TableHead>
+                <TableHead>Product</TableHead>
+                <TableHead>Principal</TableHead>
+                <TableHead>Rate</TableHead>
+                <TableHead>Term</TableHead>
+                <TableHead>Monthly</TableHead>
+                <TableHead>KYC</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Actions</TableHead>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+            </TableHeader>
+            <TableBody>
+              {loans.map(loan => (
+                <TableRow key={loan.id}>
+                  <TableCell>
+                    <div className="font-medium">{loan.profiles?.full_name}</div>
+                    <div className="text-xs text-muted-foreground">{loan.profiles?.email}</div>
+                  </TableCell>
+                  <TableCell>{loan.loan_products?.name}</TableCell>
+                  <TableCell>${loan.principal.toLocaleString()}</TableCell>
+                  <TableCell>{loan.interest_rate}%</TableCell>
+                  <TableCell>{loan.term_months}mo</TableCell>
+                  <TableCell>${loan.monthly_payment.toFixed(2)}</TableCell>
+                  <TableCell>
+                    <Badge variant={loan.profiles?.kyc_status === "approved" ? "default" : "secondary"}>
+                      {loan.profiles?.kyc_status}
+                    </Badge>
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge>
+                  </TableCell>
+                  <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
+                  <TableCell>
+                    {loan.status === "pending" && (
+                      <div className="flex gap-1">
+                        <Button size="sm" disabled={processing === loan.id} onClick={() => handleApprove(loan.id)}>
+                          <CheckCircle className="h-4 w-4 mr-1" />Approve
+                        </Button>
+                        <Button size="sm" variant="destructive" disabled={processing === loan.id} onClick={() => openReject(loan.id)}>
+                          <XCircle className="h-4 w-4 mr-1" />Reject
+                        </Button>
+                      </div>
+                    )}
+                    {loan.status === "rejected" && loan.rejection_reason && (
+                      <span className="text-xs text-destructive">{loan.rejection_reason}</span>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </CardContent>
 
       <Dialog open={rejectDialogOpen} onOpenChange={setRejectDialogOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Reject Loan</DialogTitle>
-            <DialogDescription>Provide a reason for rejection</DialogDescription>
+            <DialogTitle>Reject Loan Application</DialogTitle>
+            <DialogDescription>Provide a reason that will be shown to the applicant.</DialogDescription>
           </DialogHeader>
-          <Textarea placeholder="Reason for rejection..." value={rejectReason} onChange={e => setRejectReason(e.target.value)} />
+          <Textarea
+            placeholder="e.g. Insufficient income documentation..."
+            value={rejectReason}
+            onChange={e => setRejectReason(e.target.value)}
+            rows={3}
+          />
           <div className="flex justify-end gap-2">
             <Button variant="outline" onClick={() => setRejectDialogOpen(false)}>Cancel</Button>
-            <Button variant="destructive" onClick={handleReject} disabled={!!processing}>Reject</Button>
+            <Button variant="destructive" onClick={handleReject} disabled={!!processing}>Confirm Reject</Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -8,8 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock, DollarSign } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 
 interface LoanProduct {
@@ -48,6 +48,9 @@ interface Repayment {
   status: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const q = supabase as any;
+
 export default function Loans() {
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>("");
@@ -67,12 +70,12 @@ export default function Loans() {
   const loadData = useCallback(async (uid: string) => {
     try {
       const [productsRes, loansRes, accountsRes] = await Promise.all([
-        supabase.from("loan_products").select("*").eq("is_active", true),
-        supabase.from("loans").select("*, loan_products(name)").eq("user_id", uid).order("created_at", { ascending: false }),
+        q.from("loan_products").select("*").eq("is_active", true),
+        q.from("loans").select("*, loan_products(name)").eq("user_id", uid).order("created_at", { ascending: false }),
         supabase.from("accounts").select("*").eq("user_id", uid).eq("status", "active"),
       ]);
-      if (productsRes.data) setProducts(productsRes.data);
-      if (loansRes.data) setLoans(loansRes.data as any);
+      if (productsRes.data) setProducts(productsRes.data as LoanProduct[]);
+      if (loansRes.data) setLoans(loansRes.data as Loan[]);
       if (accountsRes.data) setAccounts(accountsRes.data);
     } catch (e) {
       console.error(e);
@@ -104,11 +107,11 @@ export default function Loans() {
       toast.error("Please fill all fields"); return;
     }
     if (parsedAmount < product.min_amount || parsedAmount > product.max_amount) {
-      toast.error(`Amount must be between $${product.min_amount} and $${product.max_amount}`); return;
+      toast.error(`Amount must be between $${product.min_amount} and $${product.max_amount.toLocaleString()}`); return;
     }
     setApplying(true);
     try {
-      const { error } = await supabase.from("loans").insert({
+      const { error } = await q.from("loans").insert({
         user_id: userId,
         product_id: product.id,
         principal: parsedAmount,
@@ -119,7 +122,7 @@ export default function Loans() {
         disbursement_account_id: selectedAccount,
       });
       if (error) throw error;
-      toast.success("Loan application submitted!");
+      toast.success("Loan application submitted! Awaiting admin review.");
       setAmount(""); setSelectedProduct(""); setSelectedAccount("");
       await loadData(userId);
     } catch (e: any) {
@@ -131,15 +134,15 @@ export default function Loans() {
 
   const viewRepayments = async (loanId: string) => {
     setSelectedLoanId(loanId);
-    const { data } = await supabase.from("loan_repayments").select("*").eq("loan_id", loanId).order("installment_number");
-    setSelectedLoanRepayments(data || []);
+    const { data } = await q.from("loan_repayments").select("*").eq("loan_id", loanId).order("installment_number");
+    setSelectedLoanRepayments((data || []) as Repayment[]);
     setRepaymentDialogOpen(true);
   };
 
   const makePayment = async (repaymentId: string) => {
     setPayingId(repaymentId);
     try {
-      const { data, error } = await supabase.rpc("make_loan_repayment", {
+      const { data, error } = await supabase.rpc("make_loan_repayment" as any, {
         p_repayment_id: repaymentId, p_user_id: userId,
       });
       if (error) throw error;
@@ -155,21 +158,26 @@ export default function Loans() {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "active": return "default";
-      case "completed": return "default";
+      case "active": case "completed": return "default";
       case "pending": return "secondary";
       case "rejected": case "defaulted": return "destructive";
       default: return "secondary";
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-pulse text-muted-foreground">Loading...</div></div>;
+  if (loading) return (
+    <div className="min-h-screen flex items-center justify-center">
+      <div className="animate-pulse text-muted-foreground">Loading loans...</div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center gap-4 mb-6">
-          <Button variant="ghost" onClick={() => navigate("/dashboard")}><ArrowLeft className="mr-2 h-4 w-4" />Back</Button>
+          <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+            <ArrowLeft className="mr-2 h-4 w-4" />Back
+          </Button>
           <h1 className="text-3xl font-bold">Loans</h1>
         </div>
 
@@ -184,11 +192,17 @@ export default function Loans() {
               {/* Product selection */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Banknote className="h-5 w-5" />Select a Loan Product</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <Banknote className="h-5 w-5" />Select a Loan Product
+                  </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-3">
                   {products.map(p => (
-                    <Card key={p.id} className={`cursor-pointer transition-all ${selectedProduct === p.id ? "ring-2 ring-primary" : "hover:border-primary/50"}`} onClick={() => setSelectedProduct(p.id)}>
+                    <Card
+                      key={p.id}
+                      className={`cursor-pointer transition-all ${selectedProduct === p.id ? "ring-2 ring-primary" : "hover:border-primary/50"}`}
+                      onClick={() => setSelectedProduct(p.id)}
+                    >
                       <CardContent className="p-4">
                         <div className="flex justify-between items-start">
                           <div>
@@ -198,7 +212,7 @@ export default function Loans() {
                           <Badge variant="secondary">{p.interest_rate}% p.a.</Badge>
                         </div>
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
-                          <span>${p.min_amount} - ${p.max_amount.toLocaleString()}</span>
+                          <span>${p.min_amount.toLocaleString()} – ${p.max_amount.toLocaleString()}</span>
                           <span>{p.term_months} months</span>
                         </div>
                       </CardContent>
@@ -207,16 +221,24 @@ export default function Loans() {
                 </CardContent>
               </Card>
 
-              {/* Application form */}
+              {/* Application form + calculator */}
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2"><Calculator className="h-5 w-5" />Loan Calculator</CardTitle>
-                  <CardDescription>Enter amount and see your repayment plan</CardDescription>
+                  <CardTitle className="flex items-center gap-2">
+                    <Calculator className="h-5 w-5" />Loan Calculator &amp; Application
+                  </CardTitle>
+                  <CardDescription>Enter amount to see your repayment breakdown</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
                     <label className="text-sm font-medium mb-1 block">Loan Amount ($)</label>
-                    <Input type="number" placeholder={product ? `${product.min_amount} - ${product.max_amount}` : "Select a product first"} value={amount} onChange={e => setAmount(e.target.value)} disabled={!selectedProduct} />
+                    <Input
+                      type="number"
+                      placeholder={product ? `${product.min_amount} – ${product.max_amount}` : "Select a product first"}
+                      value={amount}
+                      onChange={e => setAmount(e.target.value)}
+                      disabled={!selectedProduct}
+                    />
                   </div>
                   <div>
                     <label className="text-sm font-medium mb-1 block">Disbursement Account</label>
@@ -224,7 +246,9 @@ export default function Loans() {
                       <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                       <SelectContent>
                         {accounts.map(a => (
-                          <SelectItem key={a.id} value={a.id}>{a.account_type} - {a.account_number}</SelectItem>
+                          <SelectItem key={a.id} value={a.id}>
+                            {a.account_type} — {a.account_number}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
@@ -232,19 +256,41 @@ export default function Loans() {
 
                   {product && parsedAmount > 0 && (
                     <Card className="bg-secondary/50">
-                      <CardContent className="p-4 space-y-2">
-                        <div className="flex justify-between"><span className="text-muted-foreground">Principal</span><span className="font-semibold">${parsedAmount.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Interest Rate</span><span>{product.interest_rate}% p.a.</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Term</span><span>{product.term_months} months</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Monthly Payment</span><span className="font-bold text-primary">${monthlyPayment.toFixed(2)}</span></div>
-                        <div className="flex justify-between border-t pt-2"><span className="text-muted-foreground">Total Payable</span><span className="font-bold">${totalPayable.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span className="text-muted-foreground">Total Interest</span><span>${(totalPayable - parsedAmount).toFixed(2)}</span></div>
+                      <CardContent className="p-4 space-y-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Principal</span>
+                          <span className="font-semibold">${parsedAmount.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Interest Rate</span>
+                          <span>{product.interest_rate}% p.a.</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Term</span>
+                          <span>{product.term_months} months</span>
+                        </div>
+                        <div className="flex justify-between border-t pt-2">
+                          <span className="text-muted-foreground">Monthly Payment</span>
+                          <span className="font-bold text-primary text-base">${monthlyPayment.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Payable</span>
+                          <span className="font-bold">${totalPayable.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-muted-foreground">Total Interest</span>
+                          <span className="text-orange-600">${(totalPayable - parsedAmount).toFixed(2)}</span>
+                        </div>
                       </CardContent>
                     </Card>
                   )}
 
-                  <Button className="w-full" disabled={!product || parsedAmount <= 0 || !selectedAccount || applying} onClick={handleApply}>
-                    {applying ? "Submitting..." : "Apply for Loan"}
+                  <Button
+                    className="w-full"
+                    disabled={!product || parsedAmount <= 0 || !selectedAccount || applying}
+                    onClick={handleApply}
+                  >
+                    {applying ? "Submitting..." : "Submit Loan Application"}
                   </Button>
                 </CardContent>
               </Card>
@@ -255,10 +301,11 @@ export default function Loans() {
             <Card>
               <CardHeader>
                 <CardTitle>My Loans</CardTitle>
+                <CardDescription>Track your active and past loans</CardDescription>
               </CardHeader>
               <CardContent>
                 {loans.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No loans yet. Apply for one!</p>
+                  <p className="text-center text-muted-foreground py-8">No loans yet. Apply for one above!</p>
                 ) : (
                   <Table>
                     <TableHeader>
@@ -269,6 +316,7 @@ export default function Loans() {
                         <TableHead>Total</TableHead>
                         <TableHead>Term</TableHead>
                         <TableHead>Status</TableHead>
+                        <TableHead>Applied</TableHead>
                         <TableHead>Actions</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -280,10 +328,15 @@ export default function Loans() {
                           <TableCell>${loan.monthly_payment.toFixed(2)}</TableCell>
                           <TableCell>${loan.total_payable.toFixed(2)}</TableCell>
                           <TableCell>{loan.term_months}mo</TableCell>
-                          <TableCell><Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge></TableCell>
+                          <TableCell>
+                            <Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge>
+                          </TableCell>
+                          <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
                             {(loan.status === "active" || loan.status === "completed") && (
-                              <Button size="sm" variant="outline" onClick={() => viewRepayments(loan.id)}>Repayments</Button>
+                              <Button size="sm" variant="outline" onClick={() => viewRepayments(loan.id)}>
+                                Repayments
+                              </Button>
                             )}
                             {loan.status === "rejected" && loan.rejection_reason && (
                               <span className="text-sm text-destructive">{loan.rejection_reason}</span>
@@ -304,7 +357,7 @@ export default function Loans() {
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Repayment Schedule</DialogTitle>
-              <DialogDescription>Your amortized repayment plan</DialogDescription>
+              <DialogDescription>Your amortized monthly repayment plan</DialogDescription>
             </DialogHeader>
             <Table>
               <TableHeader>
@@ -320,7 +373,7 @@ export default function Loans() {
               </TableHeader>
               <TableBody>
                 {selectedLoanRepayments.map(r => (
-                  <TableRow key={r.id}>
+                  <TableRow key={r.id} className={r.status === "paid" ? "opacity-60" : ""}>
                     <TableCell>{r.installment_number}</TableCell>
                     <TableCell>{new Date(r.due_date).toLocaleDateString()}</TableCell>
                     <TableCell>${r.principal_portion.toFixed(2)}</TableCell>
@@ -328,13 +381,16 @@ export default function Loans() {
                     <TableCell className="font-semibold">${r.amount_due.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={r.status === "paid" ? "default" : "secondary"}>
-                        {r.status === "paid" ? <><CheckCircle className="h-3 w-3 mr-1" />Paid</> : <><Clock className="h-3 w-3 mr-1" />Pending</>}
+                        {r.status === "paid"
+                          ? <><CheckCircle className="h-3 w-3 mr-1 inline" />Paid</>
+                          : <><Clock className="h-3 w-3 mr-1 inline" />Pending</>
+                        }
                       </Badge>
                     </TableCell>
                     <TableCell>
                       {r.status === "pending" && (
                         <Button size="sm" disabled={payingId === r.id} onClick={() => makePayment(r.id)}>
-                          {payingId === r.id ? "Paying..." : "Pay"}
+                          {payingId === r.id ? "Paying..." : "Pay Now"}
                         </Button>
                       )}
                     </TableCell>
