@@ -148,46 +148,34 @@ const WireTransfer = () => {
 
     try {
       const currentStageCode = securityStages[currentStep - 1];
-      
-      // Get the code for this stage
-      const { data: codeData, error: codeError } = await supabase
-        .from("wire_transfer_codes")
-        .select("*")
-        .eq("wire_transfer_id", wireTransferId)
-        .eq("code_type", currentStageCode.code)
-        .single();
 
-      if (codeError) throw codeError;
+      // Use server-side RPC to verify the code (hashed comparison + attempt tracking)
+      const { data: verified, error: verifyError } = await supabase.rpc(
+        "verify_wire_transfer_code",
+        {
+          p_wire_transfer_id: wireTransferId,
+          p_code_type: currentStageCode.code,
+          p_code: securityCodeInput.trim(),
+        }
+      );
 
-      // Verify the code
-      if (codeData.code_value !== securityCodeInput.trim()) {
+      if (verifyError) throw verifyError;
+
+      if (!verified) {
         toast({
           title: "Invalid code",
-          description: "The security code you entered is incorrect. Please contact support to receive the correct code.",
+          description: "The security code you entered is incorrect.",
           variant: "destructive",
         });
         setLoading(false);
         return;
       }
 
-      // Update code as verified
-      await supabase
-        .from("wire_transfer_codes")
-        .update({ 
-          is_verified: true,
-          verified_at: new Date().toISOString()
-        })
-        .eq("id", codeData.id);
-
       // Check if this is the last stage
       if (currentStep === securityStages.length) {
-        // All codes verified - complete transfer
         await supabase
           .from("wire_transfers")
-          .update({ 
-            status: "completed",
-            current_stage: currentStep
-          })
+          .update({ status: "completed", current_stage: currentStep })
           .eq("id", wireTransferId);
 
         toast({
@@ -197,7 +185,6 @@ const WireTransfer = () => {
 
         setTimeout(() => navigate("/dashboard"), 2000);
       } else {
-        // Move to next stage
         const nextStage = currentStep + 1;
         const statusMap: { [key: number]: string } = {
           2: "awaiting_imf",
@@ -208,15 +195,12 @@ const WireTransfer = () => {
 
         await supabase
           .from("wire_transfers")
-          .update({ 
-            status: statusMap[nextStage],
-            current_stage: nextStage
-          })
+          .update({ status: statusMap[nextStage], current_stage: nextStage })
           .eq("id", wireTransferId);
 
         setCurrentStep(nextStage);
         setSecurityCodeInput("");
-        
+
         toast({
           title: "Code verified",
           description: `Please enter the ${securityStages[nextStage - 1].code} code.`,
