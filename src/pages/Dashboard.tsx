@@ -84,22 +84,17 @@ const Dashboard = () => {
 
       setIsAdmin(roles?.some(r => r.role === "admin") || false);
 
-      // Load accounts with computed balances
+      // Load accounts — use materialized balance columns directly
       const { data: accountsData } = await supabase
         .from("accounts")
         .select("*")
         .eq("user_id", userId);
 
       if (accountsData) {
-        // Fetch computed balance for each account via RPC
-        const accountsWithBalances = await Promise.all(
-          accountsData.map(async (account) => {
-            const { data: balance } = await supabase.rpc("get_account_balance", {
-              p_account_id: account.id,
-            });
-            return { ...account, computed_balance: balance ?? account.balance ?? 0 };
-          })
-        );
+        const accountsWithBalances = accountsData.map((account) => ({
+          ...account,
+          computed_balance: account.available_balance ?? account.balance ?? 0,
+        }));
         setAccounts(accountsWithBalances);
       }
 
