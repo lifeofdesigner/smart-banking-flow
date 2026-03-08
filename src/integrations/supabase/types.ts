@@ -43,10 +43,12 @@ export type Database = {
           account_number: string
           account_type: string
           account_type_id: string | null
+          available_balance: number
           balance: number | null
           created_at: string | null
           currency: string | null
           id: string
+          ledger_balance: number
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -55,10 +57,12 @@ export type Database = {
           account_number: string
           account_type: string
           account_type_id?: string | null
+          available_balance?: number
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
+          ledger_balance?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -67,10 +71,12 @@ export type Database = {
           account_number?: string
           account_type?: string
           account_type_id?: string | null
+          available_balance?: number
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
+          ledger_balance?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
