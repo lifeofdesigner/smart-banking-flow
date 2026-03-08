@@ -14,41 +14,131 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_types: {
+        Row: {
+          category: Database["public"]["Enums"]["account_type_category"]
+          created_at: string
+          id: string
+          is_user_facing: boolean
+          name: string
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["account_type_category"]
+          created_at?: string
+          id?: string
+          is_user_facing?: boolean
+          name: string
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["account_type_category"]
+          created_at?: string
+          id?: string
+          is_user_facing?: boolean
+          name?: string
+        }
+        Relationships: []
+      }
       accounts: {
         Row: {
           account_number: string
           account_type: string
+          account_type_id: string | null
           balance: number | null
           created_at: string | null
           currency: string | null
           id: string
           status: string | null
           updated_at: string | null
-          user_id: string
+          user_id: string | null
         }
         Insert: {
           account_number: string
           account_type: string
+          account_type_id?: string | null
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
           status?: string | null
           updated_at?: string | null
-          user_id: string
+          user_id?: string | null
         }
         Update: {
           account_number?: string
           account_type?: string
+          account_type_id?: string | null
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
           status?: string | null
           updated_at?: string | null
-          user_id?: string
+          user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "accounts_account_type_id_fkey"
+            columns: ["account_type_id"]
+            isOneToOne: false
+            referencedRelation: "account_types"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ledger_entries: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ledger_entries_credit_account_id_fkey"
+            columns: ["credit_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_debit_account_id_fkey"
+            columns: ["debit_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ledger_entries_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -261,6 +351,7 @@ export type Database = {
     }
     Functions: {
       generate_account_number: { Args: never; Returns: string }
+      get_account_balance: { Args: { p_account_id: string }; Returns: number }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -270,6 +361,12 @@ export type Database = {
       }
     }
     Enums: {
+      account_type_category:
+        | "asset"
+        | "liability"
+        | "equity"
+        | "revenue"
+        | "expense"
       app_role: "admin" | "user"
     }
     CompositeTypes: {
@@ -398,6 +495,13 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      account_type_category: [
+        "asset",
+        "liability",
+        "equity",
+        "revenue",
+        "expense",
+      ],
       app_role: ["admin", "user"],
     },
   },
