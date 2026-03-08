@@ -289,7 +289,7 @@ export default function AdminDashboard() {
                         <TableCell className="font-mono">{account.account_number}</TableCell>
                         <TableCell>{account.profiles?.full_name}</TableCell>
                         <TableCell className="capitalize">{account.account_type}</TableCell>
-                        <TableCell>${account.balance?.toFixed(2)}</TableCell>
+                        <TableCell>${account.computed_balance?.toFixed(2)}</TableCell>
                         <TableCell>
                           <Badge variant={account.status === "active" ? "default" : "secondary"}>
                             {account.status}
