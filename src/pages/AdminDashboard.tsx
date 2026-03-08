@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen } from "lucide-react";
+import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import { toast } from "sonner";
 
@@ -20,6 +20,7 @@ export default function AdminDashboard() {
   const [accounts, setAccounts] = useState<any[]>([]);
   const [wireTransfers, setWireTransfers] = useState<any[]>([]);
   const [transactions, setTransactions] = useState<any[]>([]);
+  const [allBeneficiaries, setAllBeneficiaries] = useState<any[]>([]);
 
   useEffect(() => {
     checkAdmin();
@@ -58,11 +59,12 @@ export default function AdminDashboard() {
 
   const fetchData = async () => {
     try {
-      const [usersRes, accountsRes, wiresRes, txRes] = await Promise.all([
+      const [usersRes, accountsRes, wiresRes, txRes, benRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("accounts").select("*, profiles(full_name, email)").not("user_id", "is", null).order("created_at", { ascending: false }),
         supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
-        supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false })
+        supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false }),
+        supabase.from("beneficiaries").select("*").order("created_at", { ascending: false }),
       ]);
 
       if (usersRes.data) setUsers(usersRes.data);
@@ -78,6 +80,16 @@ export default function AdminDashboard() {
       }
       if (wiresRes.data) setWireTransfers(wiresRes.data);
       if (txRes.data) setTransactions(txRes.data);
+      if (benRes.data) {
+        // Enrich with user names
+        const enriched = await Promise.all(
+          benRes.data.map(async (b: any) => {
+            const user = usersRes.data?.find((u: any) => u.id === b.user_id);
+            return { ...b, user_name: user?.full_name || "Unknown" };
+          })
+        );
+        setAllBeneficiaries(enriched);
+      }
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load admin data");
@@ -214,6 +226,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="wires">Wire Transfers</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
+            <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -419,6 +432,39 @@ export default function AdminDashboard() {
           </TabsContent>
           <TabsContent value="ledger">
             <LedgerExplorer />
+          </TabsContent>
+
+          <TabsContent value="beneficiaries">
+            <Card>
+              <CardHeader>
+                <CardTitle>All Beneficiaries</CardTitle>
+                <CardDescription>Overview of saved beneficiaries across all users</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>User</TableHead>
+                      <TableHead>Nickname</TableHead>
+                      <TableHead>Account Number</TableHead>
+                      <TableHead>Bank</TableHead>
+                      <TableHead>Created</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {allBeneficiaries.map((b: any) => (
+                      <TableRow key={b.id}>
+                        <TableCell>{b.user_name}</TableCell>
+                        <TableCell>{b.nickname}</TableCell>
+                        <TableCell className="font-mono">{b.account_number}</TableCell>
+                        <TableCell>{b.bank_name}</TableCell>
+                        <TableCell>{new Date(b.created_at).toLocaleDateString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
