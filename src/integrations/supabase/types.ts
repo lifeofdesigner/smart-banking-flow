@@ -43,10 +43,12 @@ export type Database = {
           account_number: string
           account_type: string
           account_type_id: string | null
+          available_balance: number
           balance: number | null
           created_at: string | null
           currency: string | null
           id: string
+          ledger_balance: number
           status: string | null
           updated_at: string | null
           user_id: string | null
@@ -55,10 +57,12 @@ export type Database = {
           account_number: string
           account_type: string
           account_type_id?: string | null
+          available_balance?: number
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
+          ledger_balance?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -67,10 +71,12 @@ export type Database = {
           account_number?: string
           account_type?: string
           account_type_id?: string | null
+          available_balance?: number
           balance?: number | null
           created_at?: string | null
           currency?: string | null
           id?: string
+          ledger_balance?: number
           status?: string | null
           updated_at?: string | null
           user_id?: string | null
@@ -234,6 +240,435 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ledger_entries_archive: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_01: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_02: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_03: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_04: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_05: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_06: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_07: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_08: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_09: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_10: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_11: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
+      }
+      ledger_entries_archive_2026_12: {
+        Row: {
+          amount: number
+          created_at: string
+          credit_account_id: string
+          currency: string
+          debit_account_id: string
+          description: string | null
+          id: string
+          transaction_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          credit_account_id: string
+          currency?: string
+          debit_account_id: string
+          description?: string | null
+          id?: string
+          transaction_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          credit_account_id?: string
+          currency?: string
+          debit_account_id?: string
+          description?: string | null
+          id?: string
+          transaction_id?: string
+        }
+        Relationships: []
       }
       notifications: {
         Row: {
@@ -513,6 +948,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      archive_old_ledger_entries: {
+        Args: { p_before_date?: string }
+        Returns: number
+      }
       check_rate_limit: {
         Args: {
           p_action: string

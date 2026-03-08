@@ -193,14 +193,10 @@ const TransferFunds = () => {
 
       const accts = acctRes.data;
       if (accts) {
-        const withBalances = await Promise.all(
-          accts.map(async (a) => {
-            const { data: bal } = await supabase.rpc("get_account_balance", {
-              p_account_id: a.id,
-            });
-            return { ...a, computed_balance: bal ?? 0 };
-          })
-        );
+        const withBalances = accts.map((a) => ({
+          ...a,
+          computed_balance: (a as any).available_balance ?? 0,
+        }));
         setAccounts(withBalances);
       }
 

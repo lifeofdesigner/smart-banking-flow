@@ -72,13 +72,10 @@ export default function AdminDashboard() {
 
       if (usersRes.data) setUsers(usersRes.data);
       if (accountsRes.data) {
-        // Compute balances from ledger
-        const withBalances = await Promise.all(
-          accountsRes.data.map(async (acc: any) => {
-            const { data: balance } = await supabase.rpc("get_account_balance", { p_account_id: acc.id });
-            return { ...acc, computed_balance: balance ?? acc.balance ?? 0 };
-          })
-        );
+        const withBalances = accountsRes.data.map((acc: any) => ({
+          ...acc,
+          computed_balance: acc.available_balance ?? acc.balance ?? 0,
+        }));
         setAccounts(withBalances);
       }
       if (wiresRes.data) setWireTransfers(wiresRes.data);
