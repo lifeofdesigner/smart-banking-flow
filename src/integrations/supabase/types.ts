@@ -276,6 +276,41 @@ export type Database = {
           },
         ]
       }
+      transfer_limits: {
+        Row: {
+          account_id: string
+          created_at: string
+          currency: string
+          daily_limit: number
+          id: string
+          per_transaction_limit: number
+        }
+        Insert: {
+          account_id: string
+          created_at?: string
+          currency?: string
+          daily_limit?: number
+          id?: string
+          per_transaction_limit?: number
+        }
+        Update: {
+          account_id?: string
+          created_at?: string
+          currency?: string
+          daily_limit?: number
+          id?: string
+          per_transaction_limit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "transfer_limits_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: true
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -425,6 +460,10 @@ export type Database = {
       }
       generate_account_number: { Args: never; Returns: string }
       get_account_balance: { Args: { p_account_id: string }; Returns: number }
+      get_daily_transfer_usage: {
+        Args: { p_account_id: string }
+        Returns: number
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
