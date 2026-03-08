@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,7 @@ import {
   AlertCircle,
   Loader2,
   ArrowRight,
-  Search,
+  Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
@@ -46,8 +46,6 @@ const transferSchema = z.object({
     .max(1_000_000, "Maximum transfer amount is $1,000,000"),
   description: z.string().max(200, "Description too long").optional(),
 });
-
-type TransferForm = z.infer<typeof transferSchema>;
 
 interface Account {
   id: string;
@@ -72,10 +70,18 @@ interface RecentTransfer {
   status: string | null;
   reference_number: string | null;
   created_at: string;
-  recipient_name?: string;
+}
+
+interface SavedBeneficiary {
+  id: string;
+  nickname: string;
+  account_number: string;
+  account_id: string | null;
+  holder_name?: string;
 }
 
 type Step = "form" | "confirm" | "success";
+type EntryMode = "manual" | "beneficiary";
 
 const TransferFunds = () => {
   const navigate = useNavigate();
@@ -85,8 +91,10 @@ const TransferFunds = () => {
   const [loading, setLoading] = useState(true);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<RecentTransfer[]>([]);
+  const [beneficiaries, setBeneficiaries] = useState<SavedBeneficiary[]>([]);
 
   // Form state
+  const [entryMode, setEntryMode] = useState<EntryMode>("manual");
   const [fromAccountId, setFromAccountId] = useState("");
   const [toAccountNumber, setToAccountNumber] = useState("");
   const [amount, setAmount] = useState("");
@@ -125,13 +133,20 @@ const TransferFunds = () => {
 
   const loadData = async (uid: string) => {
     try {
-      // Load user accounts with computed balances
-      const { data: accts } = await supabase
-        .from("accounts")
-        .select("id, account_number, account_type, currency")
-        .eq("user_id", uid)
-        .eq("status", "active");
+      const [acctRes, benRes] = await Promise.all([
+        supabase
+          .from("accounts")
+          .select("id, account_number, account_type, currency")
+          .eq("user_id", uid)
+          .eq("status", "active"),
+        supabase
+          .from("beneficiaries")
+          .select("id, nickname, account_number, account_id")
+          .eq("user_id", uid)
+          .order("created_at", { ascending: false }),
+      ]);
 
+      const accts = acctRes.data;
       if (accts) {
         const withBalances = await Promise.all(
           accts.map(async (a) => {
@@ -142,6 +157,28 @@ const TransferFunds = () => {
           })
         );
         setAccounts(withBalances);
+      }
+
+      if (benRes.data) {
+        // Enrich beneficiaries with holder names
+        const enriched = await Promise.all(
+          benRes.data.map(async (b) => {
+            if (!b.account_id) return { ...b, holder_name: "Unknown" };
+            const { data: acc } = await supabase
+              .from("accounts")
+              .select("user_id")
+              .eq("id", b.account_id)
+              .single();
+            if (!acc?.user_id) return { ...b, holder_name: "System Account" };
+            const { data: profile } = await supabase
+              .from("profiles")
+              .select("full_name")
+              .eq("id", acc.user_id)
+              .single();
+            return { ...b, holder_name: profile?.full_name || "Unknown" };
+          })
+        );
+        setBeneficiaries(enriched);
       }
 
       // Load recent transfers
@@ -155,9 +192,7 @@ const TransferFunds = () => {
           .order("created_at", { ascending: false })
           .limit(10);
 
-        if (txns) {
-          setRecentTransfers(txns);
-        }
+        if (txns) setRecentTransfers(txns);
       }
     } catch (err: any) {
       toast({
@@ -170,26 +205,22 @@ const TransferFunds = () => {
     }
   };
 
-  // Debounced account lookup
+  // Debounced account lookup for manual mode
   useEffect(() => {
+    if (entryMode !== "manual") return;
     if (toAccountNumber.length < 5) {
       setRecipient(null);
       setLookupError("");
       return;
     }
-
-    const timer = setTimeout(() => {
-      lookupAccount(toAccountNumber);
-    }, 500);
-
+    const timer = setTimeout(() => lookupAccount(toAccountNumber), 500);
     return () => clearTimeout(timer);
-  }, [toAccountNumber]);
+  }, [toAccountNumber, entryMode]);
 
   const lookupAccount = async (accNum: string) => {
     setLookupLoading(true);
     setLookupError("");
     setRecipient(null);
-
     try {
       const { data, error } = await supabase
         .from("accounts")
@@ -198,37 +229,55 @@ const TransferFunds = () => {
         .maybeSingle();
 
       if (error) throw error;
-
       if (!data) {
         setLookupError("Invalid account number");
         return;
       }
 
-      // Get holder name from profiles
-      const { data: acctFull } = await supabase
+      const { data: accFull } = await supabase
         .from("accounts")
         .select("user_id")
         .eq("id", data.id)
         .single();
 
       let holderName = "System Account";
-      if (acctFull?.user_id) {
+      if (accFull?.user_id) {
         const { data: profile } = await supabase
           .from("profiles")
           .select("full_name")
-          .eq("id", acctFull.user_id)
+          .eq("id", accFull.user_id)
           .single();
         holderName = profile?.full_name || "Unknown";
       }
 
-      setRecipient({
-        ...data,
-        holder_name: holderName,
-      });
-    } catch (err: any) {
+      setRecipient({ ...data, holder_name: holderName });
+    } catch {
       setLookupError("Error looking up account");
     } finally {
       setLookupLoading(false);
+    }
+  };
+
+  const handleSelectBeneficiary = async (benId: string) => {
+    const ben = beneficiaries.find((b) => b.id === benId);
+    if (!ben) return;
+
+    setToAccountNumber(ben.account_number);
+
+    if (ben.account_id) {
+      const { data } = await supabase
+        .from("accounts")
+        .select("id, account_number, account_type, status")
+        .eq("id", ben.account_id)
+        .single();
+
+      if (data) {
+        setRecipient({
+          ...data,
+          holder_name: ben.holder_name || "Unknown",
+        });
+        setLookupError("");
+      }
     }
   };
 
@@ -250,24 +299,19 @@ const TransferFunds = () => {
       return false;
     }
 
-    // Check recipient is valid
     if (!recipient) {
       setErrors({ toAccountNumber: "Please enter a valid account number" });
       return false;
     }
-
     if (recipient.status !== "active") {
       setErrors({ toAccountNumber: "Recipient account is not active" });
       return false;
     }
-
-    // Check not transferring to self
     if (recipient.id === fromAccountId) {
       setErrors({ toAccountNumber: "Cannot transfer to the same account" });
       return false;
     }
 
-    // Check balance
     const selectedAccount = accounts.find((a) => a.id === fromAccountId);
     if (selectedAccount && parseFloat(amount) > selectedAccount.computed_balance) {
       setErrors({ amount: "Insufficient funds" });
@@ -279,14 +323,11 @@ const TransferFunds = () => {
   };
 
   const handleReview = () => {
-    if (validateForm()) {
-      setStep("confirm");
-    }
+    if (validateForm()) setStep("confirm");
   };
 
   const handleConfirmTransfer = async () => {
     if (!userId || !recipient) return;
-
     setSubmitting(true);
     try {
       const { data, error } = await supabase.rpc("transfer_between_accounts", {
@@ -297,18 +338,15 @@ const TransferFunds = () => {
       });
 
       if (error) {
-        // Map database errors to friendly messages
         let msg = error.message;
         if (msg.includes("Insufficient balance")) msg = "Insufficient funds for this transfer.";
         else if (msg.includes("not active")) msg = "One of the accounts is frozen or closed.";
         else if (msg.includes("do not own")) msg = "You do not own the source account.";
-
         toast({ title: "Transfer failed", description: msg, variant: "destructive" });
         setStep("form");
         return;
       }
 
-      // Fetch the reference number
       let ref = data as string;
       const { data: txn } = await supabase
         .from("transactions")
@@ -323,11 +361,7 @@ const TransferFunds = () => {
       });
       setStep("success");
     } catch (err: any) {
-      toast({
-        title: "Transfer error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast({ title: "Transfer error", description: err.message, variant: "destructive" });
       setStep("form");
     } finally {
       setSubmitting(false);
@@ -343,6 +377,7 @@ const TransferFunds = () => {
     setRecipient(null);
     setSuccessData(null);
     setErrors({});
+    setEntryMode("manual");
     if (userId) loadData(userId);
   };
 
@@ -361,7 +396,6 @@ const TransferFunds = () => {
 
   return (
     <div className="min-h-screen bg-secondary/20">
-      {/* Header */}
       <header className="bg-background border-b border-border">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-3">
@@ -430,53 +464,125 @@ const TransferFunds = () => {
                 )}
               </div>
 
-              {/* To Account Number */}
+              {/* Entry mode toggle */}
               <div className="space-y-2">
-                <Label>Recipient Account Number</Label>
-                <div className="relative">
-                  <Input
-                    placeholder="Enter account number"
-                    value={toAccountNumber}
-                    onChange={(e) => setToAccountNumber(e.target.value.replace(/\D/g, ""))}
-                    maxLength={20}
-                  />
-                  {lookupLoading && (
-                    <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-muted-foreground" />
-                  )}
-                  {!lookupLoading && recipient && (
-                    <CheckCircle2 className="absolute right-3 top-2.5 h-5 w-5 text-green-600" />
+                <Label>Recipient</Label>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant={entryMode === "manual" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setEntryMode("manual");
+                      setToAccountNumber("");
+                      setRecipient(null);
+                      setLookupError("");
+                    }}
+                  >
+                    Manual Entry
+                  </Button>
+                  <Button
+                    type="button"
+                    variant={entryMode === "beneficiary" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => {
+                      setEntryMode("beneficiary");
+                      setToAccountNumber("");
+                      setRecipient(null);
+                      setLookupError("");
+                    }}
+                  >
+                    <Users className="w-4 h-4 mr-2" />
+                    Saved Beneficiary
+                  </Button>
+                </div>
+              </div>
+
+              {/* Manual entry */}
+              {entryMode === "manual" && (
+                <div className="space-y-2">
+                  <Label>Recipient Account Number</Label>
+                  <div className="relative">
+                    <Input
+                      placeholder="Enter account number"
+                      value={toAccountNumber}
+                      onChange={(e) => setToAccountNumber(e.target.value.replace(/\D/g, ""))}
+                      maxLength={20}
+                    />
+                    {lookupLoading && (
+                      <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-muted-foreground" />
+                    )}
+                    {!lookupLoading && recipient && (
+                      <CheckCircle2 className="absolute right-3 top-2.5 h-5 w-5 text-green-600" />
+                    )}
+                  </div>
+                  {lookupError && (
+                    <div className="flex items-center gap-2 text-sm text-destructive">
+                      <AlertCircle className="h-4 w-4" />
+                      {lookupError}
+                    </div>
                   )}
                 </div>
-                {errors.toAccountNumber && (
-                  <p className="text-sm text-destructive">{errors.toAccountNumber}</p>
-                )}
-                {lookupError && (
-                  <div className="flex items-center gap-2 text-sm text-destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    {lookupError}
-                  </div>
-                )}
-                {recipient && (
-                  <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
-                    <p className="font-medium">{recipient.holder_name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      Account: {recipient.account_number}
-                    </p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      Status:{" "}
-                      <span
-                        className={
-                          recipient.status === "active"
-                            ? "text-green-600"
-                            : "text-destructive"
-                        }
+              )}
+
+              {/* Beneficiary selection */}
+              {entryMode === "beneficiary" && (
+                <div className="space-y-2">
+                  <Label>Select Beneficiary</Label>
+                  {beneficiaries.length === 0 ? (
+                    <div className="rounded-lg border border-border p-4 text-center text-muted-foreground">
+                      <p className="mb-2">No saved beneficiaries</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate("/beneficiaries")}
                       >
-                        {recipient.status}
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </div>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Add Beneficiary
+                      </Button>
+                    </div>
+                  ) : (
+                    <Select onValueChange={handleSelectBeneficiary}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Choose a beneficiary" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {beneficiaries.map((b) => (
+                          <SelectItem key={b.id} value={b.id}>
+                            {b.nickname} — {b.account_number}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                </div>
+              )}
+
+              {/* Recipient info display */}
+              {recipient && (
+                <div className="rounded-lg border border-border bg-muted/50 p-3 space-y-1">
+                  <p className="font-medium">{recipient.holder_name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    Account: {recipient.account_number}
+                  </p>
+                  <p className="text-sm text-muted-foreground capitalize">
+                    Status:{" "}
+                    <span
+                      className={
+                        recipient.status === "active"
+                          ? "text-green-600"
+                          : "text-destructive"
+                      }
+                    >
+                      {recipient.status}
+                    </span>
+                  </p>
+                </div>
+              )}
+
+              {errors.toAccountNumber && (
+                <p className="text-sm text-destructive">{errors.toAccountNumber}</p>
+              )}
 
               {/* Amount */}
               <div className="space-y-2">
@@ -694,5 +800,10 @@ const TransferFunds = () => {
     </div>
   );
 };
+
+// Need this for the beneficiary "no results" Plus icon reference
+const Plus = ({ className }: { className?: string }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+);
 
 export default TransferFunds;
