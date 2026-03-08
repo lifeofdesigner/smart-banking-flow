@@ -213,7 +213,7 @@ const Dashboard = () => {
           <Card className="p-6 lg:col-span-1">
             <h3 className="text-xl font-bold mb-6">Quick Actions</h3>
             <div className="space-y-3">
-              <Button variant="outline" className="w-full justify-start h-14" size="lg">
+              <Button variant="outline" className="w-full justify-start h-14" size="lg" onClick={() => navigate("/transfer")}>
                 <Send className="w-5 h-5 mr-3" />
                 Transfer Funds
               </Button>
