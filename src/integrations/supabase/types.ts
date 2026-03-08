@@ -109,6 +109,44 @@ export type Database = {
         }
         Relationships: []
       }
+      beneficiaries: {
+        Row: {
+          account_id: string | null
+          account_number: string
+          bank_name: string
+          created_at: string
+          id: string
+          nickname: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          account_number: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          nickname: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: string
+          nickname?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "beneficiaries_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ledger_entries: {
         Row: {
           amount: number
