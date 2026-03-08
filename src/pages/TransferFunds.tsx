@@ -29,7 +29,9 @@ import {
   Loader2,
   ArrowRight,
   Users,
+  Shield,
 } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
@@ -53,6 +55,13 @@ interface Account {
   account_type: string;
   currency: string;
   computed_balance: number;
+}
+
+interface TransferLimitInfo {
+  daily_limit: number;
+  per_transaction_limit: number;
+  daily_usage: number;
+  remaining_daily: number;
 }
 
 interface RecipientInfo {
@@ -92,6 +101,7 @@ const TransferFunds = () => {
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [recentTransfers, setRecentTransfers] = useState<RecentTransfer[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<SavedBeneficiary[]>([]);
+  const [transferLimits, setTransferLimits] = useState<TransferLimitInfo | null>(null);
 
   // Form state
   const [entryMode, setEntryMode] = useState<EntryMode>("manual");
@@ -118,6 +128,40 @@ const TransferFunds = () => {
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Fetch transfer limits when source account changes
+  useEffect(() => {
+    if (!fromAccountId) {
+      setTransferLimits(null);
+      return;
+    }
+    const fetchLimits = async () => {
+      try {
+        const [limitRes, usageRes] = await Promise.all([
+          supabase
+            .from("transfer_limits")
+            .select("daily_limit, per_transaction_limit")
+            .eq("account_id", fromAccountId)
+            .maybeSingle(),
+          supabase.rpc("get_daily_transfer_usage", { p_account_id: fromAccountId }),
+        ]);
+        if (limitRes.data) {
+          const usage = (usageRes.data as number) ?? 0;
+          setTransferLimits({
+            daily_limit: limitRes.data.daily_limit,
+            per_transaction_limit: limitRes.data.per_transaction_limit,
+            daily_usage: usage,
+            remaining_daily: Math.max(0, limitRes.data.daily_limit - usage),
+          });
+        } else {
+          setTransferLimits(null);
+        }
+      } catch {
+        setTransferLimits(null);
+      }
+    };
+    fetchLimits();
+  }, [fromAccountId]);
 
   const checkAuth = async () => {
     const {
@@ -318,6 +362,19 @@ const TransferFunds = () => {
       return false;
     }
 
+    // Check transfer limits client-side
+    const parsedAmount = parseFloat(amount);
+    if (transferLimits) {
+      if (parsedAmount > transferLimits.per_transaction_limit) {
+        setErrors({ amount: `Exceeds per-transaction limit of $${transferLimits.per_transaction_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+        return false;
+      }
+      if (parsedAmount > transferLimits.remaining_daily) {
+        setErrors({ amount: `Exceeds remaining daily limit of $${transferLimits.remaining_daily.toLocaleString("en-US", { minimumFractionDigits: 2 })}` });
+        return false;
+      }
+    }
+
     setErrors({});
     return true;
   };
@@ -342,6 +399,8 @@ const TransferFunds = () => {
         if (msg.includes("Insufficient balance")) msg = "Insufficient funds for this transfer.";
         else if (msg.includes("not active")) msg = "One of the accounts is frozen or closed.";
         else if (msg.includes("do not own")) msg = "You do not own the source account.";
+        else if (msg.includes("per-transaction limit")) msg = "Transfer exceeds your per-transaction limit.";
+        else if (msg.includes("daily limit") || msg.includes("exceed daily")) msg = "Transfer would exceed your daily limit.";
         toast({ title: "Transfer failed", description: msg, variant: "destructive" });
         setStep("form");
         return;
@@ -608,7 +667,35 @@ const TransferFunds = () => {
                 )}
               </div>
 
-              {/* Description */}
+              {/* Transfer Limits Display */}
+              {transferLimits && (
+                <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-3">
+                  <div className="flex items-center gap-2 text-sm font-medium">
+                    <Shield className="h-4 w-4 text-muted-foreground" />
+                    Transfer Limits
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Per Transaction</p>
+                      <p className="font-medium">${transferLimits.per_transaction_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Daily Limit</p>
+                      <p className="font-medium">${transferLimits.daily_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs">
+                      <span className="text-muted-foreground">Today's usage</span>
+                      <span className="font-medium">${transferLimits.daily_usage.toLocaleString("en-US", { minimumFractionDigits: 2 })} / ${transferLimits.daily_limit.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    </div>
+                    <Progress value={Math.min((transferLimits.daily_usage / transferLimits.daily_limit) * 100, 100)} className="h-2" />
+                    <p className="text-xs text-muted-foreground">
+                      Remaining today: <span className="font-medium text-foreground">${transferLimits.remaining_daily.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
+                    </p>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Description (optional)</Label>
                 <Textarea
