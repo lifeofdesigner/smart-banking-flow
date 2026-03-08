@@ -712,6 +712,165 @@ export type Database = {
         }
         Relationships: []
       }
+      loan_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          interest_rate: number
+          is_active: boolean
+          max_amount: number
+          min_amount: number
+          name: string
+          term_months: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          interest_rate: number
+          is_active?: boolean
+          max_amount: number
+          min_amount?: number
+          name: string
+          term_months: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          interest_rate?: number
+          is_active?: boolean
+          max_amount?: number
+          min_amount?: number
+          name?: string
+          term_months?: number
+        }
+        Relationships: []
+      }
+      loan_repayments: {
+        Row: {
+          amount_due: number
+          amount_paid: number
+          created_at: string
+          due_date: string
+          id: string
+          installment_number: number
+          interest_portion: number
+          loan_id: string
+          paid_at: string | null
+          principal_portion: number
+          status: string
+        }
+        Insert: {
+          amount_due: number
+          amount_paid?: number
+          created_at?: string
+          due_date: string
+          id?: string
+          installment_number: number
+          interest_portion: number
+          loan_id: string
+          paid_at?: string | null
+          principal_portion: number
+          status?: string
+        }
+        Update: {
+          amount_due?: number
+          amount_paid?: number
+          created_at?: string
+          due_date?: string
+          id?: string
+          installment_number?: number
+          interest_portion?: number
+          loan_id?: string
+          paid_at?: string | null
+          principal_portion?: number
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_repayments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      loans: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          disbursement_account_id: string | null
+          id: string
+          interest_rate: number
+          monthly_payment: number
+          principal: number
+          product_id: string
+          rejection_reason: string | null
+          status: string
+          term_months: number
+          total_payable: number
+          user_id: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          disbursement_account_id?: string | null
+          id?: string
+          interest_rate: number
+          monthly_payment: number
+          principal: number
+          product_id: string
+          rejection_reason?: string | null
+          status?: string
+          term_months: number
+          total_payable: number
+          user_id: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          disbursement_account_id?: string | null
+          id?: string
+          interest_rate?: number
+          monthly_payment?: number
+          principal?: number
+          product_id?: string
+          rejection_reason?: string | null
+          status?: string
+          term_months?: number
+          total_payable?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loans_disbursement_account_id_fkey"
+            columns: ["disbursement_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loans_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "loan_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loans_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           created_at: string
@@ -990,6 +1149,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_loan: {
+        Args: { p_admin_id: string; p_loan_id: string }
+        Returns: string
+      }
       archive_old_ledger_entries: {
         Args: { p_before_date?: string }
         Returns: number
@@ -1026,6 +1189,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      make_loan_repayment: {
+        Args: { p_repayment_id: string; p_user_id: string }
+        Returns: string
+      }
+      reject_loan: {
+        Args: { p_admin_id: string; p_loan_id: string; p_reason: string }
+        Returns: string
       }
       transfer_between_accounts: {
         Args: {

@@ -12,6 +12,7 @@ import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, B
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
+import LoanManagement from "@/components/admin/LoanManagement";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -236,6 +237,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="ledger">Ledger</TabsTrigger>
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
+            <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
           </TabsList>
@@ -480,6 +482,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="limits">
             <TransferLimitsManager />
+          </TabsContent>
+
+          <TabsContent value="loans">
+            <LoanManagement />
           </TabsContent>
 
           <TabsContent value="notifications">

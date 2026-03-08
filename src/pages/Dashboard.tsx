@@ -12,7 +12,8 @@ import {
   LogOut,
   User,
   Settings,
-  Shield
+  Shield,
+  Banknote
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import NotificationBell from "@/components/NotificationBell";
@@ -231,6 +232,10 @@ const Dashboard = () => {
               <Button variant="outline" className="w-full justify-start h-14" size="lg" onClick={() => navigate("/kyc")}>
                 <Shield className="w-5 h-5 mr-3" />
                 KYC Verification
+              </Button>
+              <Button variant="outline" className="w-full justify-start h-14" size="lg" onClick={() => navigate("/loans")}>
+                <Banknote className="w-5 h-5 mr-3" />
+                Loans
               </Button>
               <Button variant="outline" className="w-full justify-start h-14" size="lg">
                 <CreditCard className="w-5 h-5 mr-3" />
