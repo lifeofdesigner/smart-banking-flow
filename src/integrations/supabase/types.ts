@@ -990,6 +990,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      approve_loan: {
+        Args: { p_admin_id: string; p_loan_id: string }
+        Returns: string
+      }
       archive_old_ledger_entries: {
         Args: { p_before_date?: string }
         Returns: number
@@ -1026,6 +1030,14 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      make_loan_repayment: {
+        Args: { p_repayment_id: string; p_user_id: string }
+        Returns: string
+      }
+      reject_loan: {
+        Args: { p_admin_id: string; p_loan_id: string; p_reason: string }
+        Returns: string
       }
       transfer_between_accounts: {
         Args: {
