@@ -170,6 +170,7 @@ const Dashboard = () => {
                   Admin
                 </Button>
               )}
+              <NotificationBell />
               <Button variant="outline" size="icon" onClick={() => navigate("/profile")}>
                 <User className="w-5 h-5" />
               </Button>
