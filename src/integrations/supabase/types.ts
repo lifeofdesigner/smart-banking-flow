@@ -85,26 +85,59 @@ export type Database = {
           },
         ]
       }
+      api_rate_limits: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          request_count: number
+          user_id: string
+          window_start: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_start?: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
           created_at: string
           id: string
+          ip_address: string | null
           metadata: Json | null
+          user_agent: string | null
           user_id: string | null
         }
         Insert: {
           action: string
           created_at?: string
           id?: string
+          ip_address?: string | null
           metadata?: Json | null
+          user_agent?: string | null
           user_id?: string | null
         }
         Update: {
           action?: string
           created_at?: string
           id?: string
+          ip_address?: string | null
           metadata?: Json | null
+          user_agent?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -480,6 +513,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_action: string
+          p_max_requests?: number
+          p_user_id: string
+          p_window_seconds?: number
+        }
+        Returns: boolean
+      }
       execute_transaction: {
         Args: {
           p_amount: number
