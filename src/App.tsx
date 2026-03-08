@@ -12,6 +12,7 @@ import Beneficiaries from "./pages/Beneficiaries";
 import UserProfile from "./pages/UserProfile";
 import AdminDashboard from "./pages/AdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
+import KYCVerification from "./pages/KYCVerification";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
