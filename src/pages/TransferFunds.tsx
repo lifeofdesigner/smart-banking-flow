@@ -55,6 +55,13 @@ interface Account {
   computed_balance: number;
 }
 
+interface TransferLimitInfo {
+  daily_limit: number;
+  per_transaction_limit: number;
+  daily_usage: number;
+  remaining_daily: number;
+}
+
 interface RecipientInfo {
   id: string;
   account_number: string;
