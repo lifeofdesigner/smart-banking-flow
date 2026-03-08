@@ -417,6 +417,9 @@ export default function AdminDashboard() {
               </CardContent>
             </Card>
           </TabsContent>
+          <TabsContent value="ledger">
+            <LedgerExplorer />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
