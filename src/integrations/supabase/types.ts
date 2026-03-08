@@ -85,6 +85,30 @@ export type Database = {
           },
         ]
       }
+      audit_logs: {
+        Row: {
+          action: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       ledger_entries: {
         Row: {
           amount: number
@@ -350,6 +374,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      execute_transaction: {
+        Args: {
+          p_amount: number
+          p_credit_account: string
+          p_debit_account: string
+          p_description: string
+          p_transaction_type: string
+          p_user_id: string
+        }
+        Returns: string
+      }
       generate_account_number: { Args: never; Returns: string }
       get_account_balance: { Args: { p_account_id: string }; Returns: number }
       has_role: {
@@ -358,6 +393,15 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      transfer_between_accounts: {
+        Args: {
+          p_amount: number
+          p_from_account: string
+          p_to_account: string
+          p_user_id: string
+        }
+        Returns: string
       }
     }
     Enums: {
