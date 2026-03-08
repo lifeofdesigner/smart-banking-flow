@@ -50,9 +50,9 @@ const WireTransfer = () => {
   }, []);
 
   const checkAuthAndLoadAccount = async () => {
-    const { data: { session } } = await supabase.auth.getSession();
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!session) {
+    if (error || !user) {
       navigate("/auth");
       return;
     }
@@ -61,7 +61,7 @@ const WireTransfer = () => {
     const { data: accountData } = await supabase
       .from("accounts")
       .select("id")
-      .eq("user_id", session.user.id)
+      .eq("user_id", user.id)
       .single();
 
     if (accountData) {
