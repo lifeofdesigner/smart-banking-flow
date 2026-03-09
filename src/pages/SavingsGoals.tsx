@@ -115,7 +115,7 @@ export default function SavingsGoals() {
 
     try {
       // Use the RPC that moves real funds
-      const { data, error } = await supabase.rpc("contribute_to_savings_goal", {
+      const { data, error } = await (supabase.rpc as any)("contribute_to_savings_goal", {
         p_goal_id: selectedGoal.id,
         p_account_id: selectedAccount,
         p_amount: parseFloat(contributionAmount)
