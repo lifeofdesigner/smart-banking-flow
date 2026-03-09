@@ -41,6 +41,9 @@ import {
   TrendingUp,
   Wallet,
   Gift,
+  Receipt,
+  CreditCard as CardIcon,
+  LineChart,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
