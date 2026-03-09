@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/sidebar";
 import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
+import NotificationToaster from "@/components/NotificationToaster";
+import MobileBottomNav from "@/components/MobileBottomNav";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import {
@@ -36,6 +38,9 @@ import {
   Settings,
   ListFilter,
   CheckSquare,
+  TrendingUp,
+  Wallet,
+  Gift,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -63,7 +68,10 @@ const financeNavItems = [
   { title: "Savings Goals", url: "/savings-goals", icon: PiggyBank },
   { title: "Loans", url: "/loans", icon: Landmark },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Spending Insights", url: "/spending-insights", icon: TrendingUp },
+  { title: "Budgets", url: "/budgets", icon: Wallet },
   { title: "Statements", url: "/statements", icon: FileText },
+  { title: "Referral Program", url: "/referral", icon: Gift },
 ];
 
 const accountNavItems = [
@@ -86,28 +94,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const checkAuth = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
-    
-    if (error || !user) {
-      navigate("/auth");
-      return;
-    }
+    if (error || !user) { navigate("/auth"); return; }
 
     const { data: profileData } = await supabase
       .from("profiles")
       .select("full_name, email")
       .eq("id", user.id)
       .single();
-
-    if (profileData) {
-      setProfile(profileData);
-    }
+    if (profileData) setProfile(profileData);
 
     const { data: roles } = await supabase
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-
-    setIsAdmin(roles?.some(r => r.role === "admin") || false);
+    setIsAdmin(roles?.some((r) => r.role === "admin") || false);
     setLoading(false);
   };
 
@@ -116,30 +116,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     navigate("/");
   };
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map(n => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
-  };
+  const getInitials = (name: string) =>
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
           <p className="text-muted-foreground">Loading...</p>
         </div>
       </div>
     );
   }
 
+  const renderNavGroup = (label: string, items: typeof mainNavItems) => (
+    <SidebarGroup>
+      <SidebarGroupLabel>{label}</SidebarGroupLabel>
+      <SidebarGroupContent>
+        <SidebarMenu>
+          {items.map((item) => (
+            <SidebarMenuItem key={item.url}>
+              <SidebarMenuButton asChild isActive={location.pathname === item.url}>
+                <NavLink to={item.url} className="flex items-center gap-3">
+                  <item.icon className="h-4 w-4" />
+                  <span>{item.title}</span>
+                </NavLink>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          ))}
+        </SidebarMenu>
+      </SidebarGroupContent>
+    </SidebarGroup>
+  );
+
   return (
     <SidebarProvider>
       <div className="min-h-screen flex w-full bg-secondary/20">
-        <Sidebar collapsible="icon">
+        <Sidebar collapsible="icon" className="hidden md:flex">
           <SidebarHeader className="border-b border-border p-4">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
@@ -153,77 +167,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </SidebarHeader>
 
           <SidebarContent className="px-2 py-4">
-            <SidebarGroup>
-              <SidebarGroupLabel>Overview</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {mainNavItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                        <NavLink to={item.url} className="flex items-center gap-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel>Transfers</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {transferNavItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                        <NavLink to={item.url} className="flex items-center gap-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel>Finance</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {financeNavItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                        <NavLink to={item.url} className="flex items-center gap-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup>
-              <SidebarGroupLabel>Account</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {accountNavItems.map((item) => (
-                    <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={location.pathname === item.url}>
-                        <NavLink to={item.url} className="flex items-center gap-3">
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </NavLink>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
+            {renderNavGroup("Overview", mainNavItems)}
+            {renderNavGroup("Transfers", transferNavItems)}
+            {renderNavGroup("Finance", financeNavItems)}
+            {renderNavGroup("Account", accountNavItems)}
 
             {isAdmin && (
               <SidebarGroup>
@@ -261,10 +208,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 sticky top-0 z-10">
-            <SidebarTrigger className="-ml-1" />
+            <SidebarTrigger className="-ml-1 hidden md:flex" />
+            <span className="font-semibold text-sm md:hidden">MicroFinance Bank</span>
             <div className="flex items-center gap-2">
               <NotificationBell />
-              <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
+              <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={() => navigate("/profile")}>
                 <User className="h-5 w-5" />
               </Button>
               <Button variant="ghost" size="icon" onClick={handleLogout}>
@@ -272,10 +220,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </Button>
             </div>
           </header>
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto pb-20 md:pb-0">
             {children}
           </main>
         </div>
+
+        <MobileBottomNav />
+        <NotificationToaster />
       </div>
     </SidebarProvider>
   );

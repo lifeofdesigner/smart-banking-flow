@@ -4,10 +4,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import DashboardLayout from "@/components/DashboardLayout";
+import FinancialHealthWidget from "@/components/FinancialHealthWidget";
+import SmartInsightsWidget from "@/components/SmartInsightsWidget";
+import AccountCard from "@/components/AccountCard";
 import {
   ArrowUpRight,
   ArrowDownRight,
-  CreditCard,
   Send,
   Globe,
   Shield,
@@ -98,7 +100,7 @@ const Dashboard = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[calc(100vh-3.5rem)]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
             <p className="text-muted-foreground">Loading your dashboard...</p>
           </div>
         </div>
@@ -108,38 +110,35 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="p-4 md:p-6 space-y-6">
         {/* Welcome */}
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold">Welcome back, {profile?.full_name}!</h2>
+        <div>
+          <h2 className="text-2xl md:text-3xl font-bold">Welcome back, {profile?.full_name}!</h2>
           <p className="text-muted-foreground">Here's your financial overview</p>
         </div>
 
+        {/* Financial Health */}
+        <FinancialHealthWidget />
+
+        {/* Smart Insights */}
+        <SmartInsightsWidget />
+
         {/* Account Cards */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
           {accounts.map((account) => (
-            <Card
-              key={account.id}
-              className="p-6 bg-gradient-to-br from-primary to-primary/80 text-primary-foreground cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => navigate("/accounts")}
-            >
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <p className="text-sm opacity-90 mb-1">{account.account_type.toUpperCase()} ACCOUNT</p>
-                  <p className="text-xs opacity-75 font-mono">{account.account_number}</p>
-                </div>
-                <CreditCard className="w-8 h-8 opacity-80" />
-              </div>
-              <div className="mt-8">
-                <p className="text-sm opacity-90 mb-1">Available Balance</p>
-                <p className="text-4xl font-bold">
-                  {account.currency} {account.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                </p>
-              </div>
-            </Card>
+            <div key={account.id} className="snap-center flex-shrink-0 w-[85vw] md:w-auto">
+              <AccountCard
+                accountType={account.account_type}
+                accountNumber={account.account_number}
+                balance={account.computed_balance}
+                currency={account.currency || "USD"}
+                status="active"
+                onClick={() => navigate("/accounts")}
+              />
+            </div>
           ))}
           {accounts.length === 0 && (
-            <Card className="p-6 flex items-center justify-center text-muted-foreground col-span-full">
+            <Card className="card-banking p-6 flex items-center justify-center text-muted-foreground col-span-full">
               <p>No accounts found. Contact support to get started.</p>
             </Card>
           )}
@@ -147,8 +146,8 @@ const Dashboard = () => {
 
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Quick Actions */}
-          <Card className="p-6 lg:col-span-1">
-            <h3 className="text-xl font-bold mb-4">Quick Actions</h3>
+          <Card className="card-banking p-6 lg:col-span-1">
+            <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
             <div className="space-y-2">
               {[
                 { label: "Transfer Funds", icon: Send, path: "/transfer" },
@@ -162,7 +161,7 @@ const Dashboard = () => {
                 <Button
                   key={path}
                   variant="outline"
-                  className="w-full justify-start h-12"
+                  className="w-full justify-start h-11 rounded-xl"
                   onClick={() => navigate(path)}
                 >
                   <Icon className="w-4 h-4 mr-3" />
@@ -173,9 +172,9 @@ const Dashboard = () => {
           </Card>
 
           {/* Recent Transactions */}
-          <Card className="p-6 lg:col-span-2">
+          <Card className="card-banking p-6 lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
-              <h3 className="text-xl font-bold">Recent Transactions</h3>
+              <h3 className="text-lg font-bold">Recent Transactions</h3>
               <Button variant="ghost" size="sm" onClick={() => navigate("/transactions")}>
                 View All
               </Button>
@@ -188,39 +187,39 @@ const Dashboard = () => {
                 {transactions.map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-4 rounded-lg bg-secondary/50 hover:bg-secondary transition-colors"
+                    className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
                   >
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center ${
                         transaction.transaction_type.includes("deposit")
                           ? "bg-green-500/10"
-                          : "bg-red-500/10"
+                          : "bg-destructive/10"
                       }`}>
                         {transaction.transaction_type.includes("deposit") ? (
-                          <ArrowDownRight className="w-5 h-5 text-green-600" />
+                          <ArrowDownRight className="w-4 h-4 text-green-600" />
                         ) : (
-                          <ArrowUpRight className="w-5 h-5 text-red-600" />
+                          <ArrowUpRight className="w-4 h-4 text-destructive" />
                         )}
                       </div>
                       <div>
-                        <p className="font-medium capitalize">
+                        <p className="text-sm font-medium capitalize">
                           {transaction.transaction_type.replace(/_/g, " ")}
                         </p>
-                        <p className="text-sm text-muted-foreground">
+                        <p className="text-xs text-muted-foreground">
                           {new Date(transaction.created_at).toLocaleDateString()}
                         </p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-bold ${
+                      <p className={`text-sm font-bold ${
                         transaction.transaction_type.includes("deposit")
                           ? "text-green-600"
-                          : "text-red-600"
+                          : "text-destructive"
                       }`}>
                         {transaction.transaction_type.includes("deposit") ? "+" : "-"}
                         ${transaction.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                       </p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${
                         transaction.status === "completed"
                           ? "bg-green-500/10 text-green-600"
                           : "bg-yellow-500/10 text-yellow-600"
