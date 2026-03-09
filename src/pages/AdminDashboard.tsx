@@ -8,13 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck } from "lucide-react";
+import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck, AlertTriangle, ScrollText, Gift } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
 import FeeManagement from "@/components/admin/FeeManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
+import FraudAlerts from "@/components/admin/FraudAlerts";
+import ReferralsManager from "@/components/admin/ReferralsManager";
+import AuditLogs from "@/components/admin/AuditLogs";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
