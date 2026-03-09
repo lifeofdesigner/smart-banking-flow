@@ -39,11 +39,21 @@ export default function SavingsManager() {
 
   const loadData = async () => {
     const [goalsRes, productsRes] = await Promise.all([
-      supabase.from("savings_goals").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
+      supabase.from("savings_goals").select("*").order("created_at", { ascending: false }),
       supabase.from("savings_products").select("*").order("name"),
     ]);
 
-    if (goalsRes.data) setGoals(goalsRes.data);
+    // Enrich goals with profile data
+    if (goalsRes.data) {
+      const userIds = [...new Set(goalsRes.data.map(g => g.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", userIds);
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      setGoals(goalsRes.data.map(g => ({
+        ...g,
+        profiles: profileMap.get(g.user_id) || { full_name: "Unknown", email: "" }
+      })));
+    }
     if (productsRes.data) setProducts(productsRes.data);
     setLoading(false);
   };

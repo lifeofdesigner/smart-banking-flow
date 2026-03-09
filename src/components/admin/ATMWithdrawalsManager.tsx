@@ -32,15 +32,25 @@ export default function ATMWithdrawalsManager() {
   const loadWithdrawals = async () => {
     const { data, error } = await supabase
       .from("atm_withdrawals")
-      .select("*, profiles(full_name, email)")
+      .select("*")
       .order("created_at", { ascending: false })
       .limit(200);
 
     if (error) {
       toast.error("Failed to load ATM withdrawals");
-    } else {
-      setWithdrawals(data || []);
+      setLoading(false);
+      return;
     }
+
+    // Enrich with profile data
+    const userIds = [...new Set(data?.map(w => w.user_id) || [])];
+    const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", userIds);
+    const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+
+    setWithdrawals((data || []).map(w => ({
+      ...w,
+      profiles: profileMap.get(w.user_id) || { full_name: "Unknown", email: "" }
+    })));
     setLoading(false);
   };
 

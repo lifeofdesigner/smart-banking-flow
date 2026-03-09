@@ -49,11 +49,22 @@ export default function CashbackManager() {
   const loadData = async () => {
     const [rulesRes, rewardsRes] = await Promise.all([
       supabase.from("cashback_rules").select("*").order("transaction_type"),
-      supabase.from("cashback_rewards").select("*, profiles(full_name, email)").order("created_at", { ascending: false }).limit(100),
+      supabase.from("cashback_rewards").select("*").order("created_at", { ascending: false }).limit(100),
     ]);
 
     if (rulesRes.data) setRules(rulesRes.data);
-    if (rewardsRes.data) setRewards(rewardsRes.data);
+    
+    // Enrich rewards with profile data
+    if (rewardsRes.data) {
+      const userIds = [...new Set(rewardsRes.data.map(r => r.user_id))];
+      const { data: profiles } = await supabase.from("profiles").select("id, full_name, email").in("id", userIds);
+      const profileMap = new Map(profiles?.map(p => [p.id, p]) || []);
+      
+      setRewards(rewardsRes.data.map(r => ({
+        ...r,
+        profiles: profileMap.get(r.user_id) || { full_name: "Unknown", email: "" }
+      })));
+    }
     setLoading(false);
   };
 
