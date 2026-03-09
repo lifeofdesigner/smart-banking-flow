@@ -269,6 +269,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="fees">Fees</TabsTrigger>
             <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="stresstest">Stress Test</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
