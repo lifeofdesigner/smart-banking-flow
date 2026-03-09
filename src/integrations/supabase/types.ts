@@ -186,6 +186,70 @@ export type Database = {
           },
         ]
       }
+      bill_payments: {
+        Row: {
+          account_id: string
+          amount: number
+          category: string
+          created_at: string
+          id: string
+          provider: string
+          reference_number: string | null
+          status: string
+          transaction_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          category?: string
+          created_at?: string
+          id?: string
+          provider: string
+          reference_number?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          category?: string
+          created_at?: string
+          id?: string
+          provider?: string
+          reference_number?: string | null
+          status?: string
+          transaction_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bill_payments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_payments_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bill_payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       budgets: {
         Row: {
           category: string
@@ -209,6 +273,63 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      cards: {
+        Row: {
+          account_id: string
+          card_number: string
+          card_type: string
+          created_at: string
+          daily_limit: number
+          expires_at: string
+          frozen_at: string | null
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id: string
+          card_number?: string
+          card_type?: string
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string
+          frozen_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string
+          card_number?: string
+          card_type?: string
+          created_at?: string
+          daily_limit?: number
+          expires_at?: string
+          frozen_at?: string | null
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cards_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       cashback_rewards: {
         Row: {
@@ -437,6 +558,66 @@ export type Database = {
           title?: string | null
         }
         Relationships: []
+      }
+      investments: {
+        Row: {
+          account_id: string | null
+          created_at: string
+          current_value: number
+          id: string
+          interest_rate: number
+          investment_type: string
+          maturity_date: string | null
+          principal: number
+          product_name: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          interest_rate?: number
+          investment_type?: string
+          maturity_date?: string | null
+          principal: number
+          product_name: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          created_at?: string
+          current_value?: number
+          id?: string
+          interest_rate?: number
+          investment_type?: string
+          maturity_date?: string | null
+          principal?: number
+          product_name?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "investments_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "investments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       kyc_submissions: {
         Row: {
@@ -1511,6 +1692,73 @@ export type Database = {
         }
         Relationships: []
       }
+      scheduled_transfers: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          frequency: string
+          from_account_id: string
+          id: string
+          last_run_date: string | null
+          next_run_date: string
+          status: string
+          to_account_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          from_account_id: string
+          id?: string
+          last_run_date?: string | null
+          next_run_date: string
+          status?: string
+          to_account_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          frequency?: string
+          from_account_id?: string
+          id?: string
+          last_run_date?: string | null
+          next_run_date?: string
+          status?: string
+          to_account_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_transfers_from_account_id_fkey"
+            columns: ["from_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_transfers_to_account_id_fkey"
+            columns: ["to_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_transfers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       site_pages: {
         Row: {
           created_at: string
@@ -1821,6 +2069,16 @@ export type Database = {
       }
       make_loan_repayment: {
         Args: { p_repayment_id: string; p_user_id: string }
+        Returns: string
+      }
+      pay_bill: {
+        Args: {
+          p_account_id: string
+          p_amount: number
+          p_category: string
+          p_provider: string
+          p_reference?: string
+        }
         Returns: string
       }
       reject_loan: {
