@@ -26,6 +26,9 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const ReferralProgram = lazy(() => import("./pages/ReferralProgram"));
 const SpendingInsights = lazy(() => import("./pages/SpendingInsights"));
 const Budgets = lazy(() => import("./pages/Budgets"));
+const BillPayments = lazy(() => import("./pages/BillPayments"));
+const CardsPage = lazy(() => import("./pages/Cards"));
+const InvestmentsPage = lazy(() => import("./pages/Investments"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -68,6 +71,9 @@ const App = () => (
             <Route path="/referral" element={<ReferralProgram />} />
             <Route path="/spending-insights" element={<SpendingInsights />} />
             <Route path="/budgets" element={<Budgets />} />
+            <Route path="/bills" element={<BillPayments />} />
+            <Route path="/cards" element={<CardsPage />} />
+            <Route path="/investments" element={<InvestmentsPage />} />
             <Route path="/products/:slug" element={<ProductPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
