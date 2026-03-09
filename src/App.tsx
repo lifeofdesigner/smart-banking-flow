@@ -26,6 +26,7 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const ReferralProgram = lazy(() => import("./pages/ReferralProgram"));
 const SpendingInsights = lazy(() => import("./pages/SpendingInsights"));
 const Budgets = lazy(() => import("./pages/Budgets"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
