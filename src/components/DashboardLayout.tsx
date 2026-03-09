@@ -64,6 +64,7 @@ const mainNavItems = [
 const transferNavItems = [
   { title: "Transfer Funds", url: "/transfer", icon: ArrowRightLeft },
   { title: "Wire Transfer", url: "/wire-transfer", icon: Globe },
+  { title: "ATM Withdrawal", url: "/atm-withdrawal", icon: Wallet },
   { title: "Beneficiaries", url: "/beneficiaries", icon: Users },
 ];
 

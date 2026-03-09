@@ -585,6 +585,14 @@ export default function AdminDashboard() {
             <ContentManagement />
           </TabsContent>
 
+          <TabsContent value="currency">
+            <CurrencyRatesManager />
+          </TabsContent>
+
+          <TabsContent value="support">
+            <SupportTicketsManager />
+          </TabsContent>
+
           <TabsContent value="stresstest">
             <StressTest />
           </TabsContent>
