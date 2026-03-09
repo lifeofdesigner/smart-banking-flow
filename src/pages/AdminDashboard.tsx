@@ -580,6 +580,10 @@ export default function AdminDashboard() {
           <TabsContent value="content">
             <ContentManagement />
           </TabsContent>
+
+          <TabsContent value="stresstest">
+            <StressTest />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
