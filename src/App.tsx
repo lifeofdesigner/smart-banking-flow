@@ -26,6 +26,7 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const ReferralProgram = lazy(() => import("./pages/ReferralProgram"));
 const SpendingInsights = lazy(() => import("./pages/SpendingInsights"));
 const Budgets = lazy(() => import("./pages/Budgets"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
@@ -67,6 +68,7 @@ const App = () => (
             <Route path="/referral" element={<ReferralProgram />} />
             <Route path="/spending-insights" element={<SpendingInsights />} />
             <Route path="/budgets" element={<Budgets />} />
+            <Route path="/products/:slug" element={<ProductPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

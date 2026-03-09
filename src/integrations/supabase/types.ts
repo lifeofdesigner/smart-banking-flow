@@ -276,6 +276,51 @@ export type Database = {
         }
         Relationships: []
       }
+      faqs: {
+        Row: {
+          answer: string
+          created_at: string
+          display_order: number
+          id: string
+          page_id: string | null
+          product_id: string | null
+          question: string
+        }
+        Insert: {
+          answer: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          page_id?: string | null
+          product_id?: string | null
+          question: string
+        }
+        Update: {
+          answer?: string
+          created_at?: string
+          display_order?: number
+          id?: string
+          page_id?: string | null
+          product_id?: string | null
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faqs_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "site_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "faqs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fee_rules: {
         Row: {
           amount: number
@@ -354,6 +399,42 @@ export type Database = {
           status?: string
           transaction_id?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      homepage_sections: {
+        Row: {
+          content: string | null
+          created_at: string
+          display_order: number
+          id: string
+          image: string | null
+          section_name: string
+          status: string
+          subtitle: string | null
+          title: string | null
+        }
+        Insert: {
+          content?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image?: string | null
+          section_name: string
+          status?: string
+          subtitle?: string | null
+          title?: string | null
+        }
+        Update: {
+          content?: string | null
+          created_at?: string
+          display_order?: number
+          id?: string
+          image?: string | null
+          section_name?: string
+          status?: string
+          subtitle?: string | null
+          title?: string | null
         }
         Relationships: []
       }
@@ -1042,6 +1123,33 @@ export type Database = {
           },
         ]
       }
+      media_library: {
+        Row: {
+          created_at: string
+          file_name: string
+          file_type: string
+          file_url: string
+          id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          file_name: string
+          file_type?: string
+          file_url: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          file_name?: string
+          file_type?: string
+          file_url?: string
+          id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string
@@ -1071,6 +1179,136 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      page_sections: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          page_id: string
+          section_content: string | null
+          section_image: string | null
+          section_title: string | null
+          section_type: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          page_id: string
+          section_content?: string | null
+          section_image?: string | null
+          section_title?: string | null
+          section_type?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          page_id?: string
+          section_content?: string | null
+          section_image?: string | null
+          section_title?: string | null
+          section_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_sections_page_id_fkey"
+            columns: ["page_id"]
+            isOneToOne: false
+            referencedRelation: "site_pages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      product_pages: {
+        Row: {
+          created_at: string
+          display_order: number
+          full_description: string | null
+          hero_image: string | null
+          icon: string | null
+          id: string
+          meta_description: string | null
+          og_image: string | null
+          product_name: string
+          short_description: string | null
+          slug: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          full_description?: string | null
+          hero_image?: string | null
+          icon?: string | null
+          id?: string
+          meta_description?: string | null
+          og_image?: string | null
+          product_name: string
+          short_description?: string | null
+          slug: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          full_description?: string | null
+          hero_image?: string | null
+          icon?: string | null
+          id?: string
+          meta_description?: string | null
+          og_image?: string | null
+          product_name?: string
+          short_description?: string | null
+          slug?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      product_sections: {
+        Row: {
+          created_at: string
+          display_order: number
+          id: string
+          product_id: string
+          section_content: string | null
+          section_image: string | null
+          section_title: string | null
+          section_type: string
+        }
+        Insert: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id: string
+          section_content?: string | null
+          section_image?: string | null
+          section_title?: string | null
+          section_type?: string
+        }
+        Update: {
+          created_at?: string
+          display_order?: number
+          id?: string
+          product_id?: string
+          section_content?: string | null
+          section_image?: string | null
+          section_title?: string | null
+          section_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_sections_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "product_pages"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -1270,6 +1508,48 @@ export type Database = {
           is_active?: boolean
           minimum_balance?: number
           name?: string
+        }
+        Relationships: []
+      }
+      site_pages: {
+        Row: {
+          created_at: string
+          hero_image: string | null
+          hero_subtitle: string | null
+          hero_title: string | null
+          id: string
+          meta_description: string | null
+          og_image: string | null
+          page_slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          hero_image?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          meta_description?: string | null
+          og_image?: string | null
+          page_slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          hero_image?: string | null
+          hero_subtitle?: string | null
+          hero_title?: string | null
+          id?: string
+          meta_description?: string | null
+          og_image?: string | null
+          page_slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1572,7 +1852,13 @@ export type Database = {
         | "equity"
         | "revenue"
         | "expense"
-      app_role: "admin" | "user"
+      app_role:
+        | "admin"
+        | "user"
+        | "super_admin"
+        | "content_manager"
+        | "finance_admin"
+        | "support_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1707,7 +1993,14 @@ export const Constants = {
         "revenue",
         "expense",
       ],
-      app_role: ["admin", "user"],
+      app_role: [
+        "admin",
+        "user",
+        "super_admin",
+        "content_manager",
+        "finance_admin",
+        "support_admin",
+      ],
     },
   },
 } as const

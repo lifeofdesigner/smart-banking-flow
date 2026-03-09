@@ -14,6 +14,7 @@ import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
 import FeeManagement from "@/components/admin/FeeManagement";
+import ContentManagement from "@/components/admin/ContentManagement";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -242,6 +243,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
             <TabsTrigger value="fees">Fees</TabsTrigger>
+            <TabsTrigger value="content">Content</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -535,6 +537,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="fees">
             <FeeManagement />
+          </TabsContent>
+
+          <TabsContent value="content">
+            <ContentManagement />
           </TabsContent>
         </Tabs>
       </div>
