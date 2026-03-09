@@ -571,6 +571,10 @@ export default function AdminDashboard() {
             <FeeManagement />
           </TabsContent>
 
+          <TabsContent value="audit">
+            <AuditLogs />
+          </TabsContent>
+
           <TabsContent value="content">
             <ContentManagement />
           </TabsContent>
