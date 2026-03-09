@@ -13,6 +13,7 @@ import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
+import FeeManagement from "@/components/admin/FeeManagement";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -240,6 +241,7 @@ export default function AdminDashboard() {
             <TabsTrigger value="loans">Loans</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
+            <TabsTrigger value="fees">Fees</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -517,7 +519,7 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>{n.title}</TableCell>
                         <TableCell className="max-w-xs truncate">{n.message}</TableCell>
-                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
+                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         <TableCell>{new Date(n.created_at).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
@@ -529,6 +531,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="kyc">
             <KYCReviews />
+          </TabsContent>
+
+          <TabsContent value="fees">
+            <FeeManagement />
           </TabsContent>
         </Tabs>
       </div>
