@@ -70,6 +70,9 @@ const transferNavItems = [
 const financeNavItems = [
   { title: "Savings Goals", url: "/savings-goals", icon: PiggyBank },
   { title: "Loans", url: "/loans", icon: Landmark },
+  { title: "Pay Bills", url: "/bills", icon: Receipt },
+  { title: "Cards", url: "/cards", icon: CardIcon },
+  { title: "Investments", url: "/investments", icon: LineChart },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Spending Insights", url: "/spending-insights", icon: TrendingUp },
   { title: "Budgets", url: "/budgets", icon: Wallet },

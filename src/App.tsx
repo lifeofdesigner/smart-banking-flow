@@ -71,6 +71,9 @@ const App = () => (
             <Route path="/referral" element={<ReferralProgram />} />
             <Route path="/spending-insights" element={<SpendingInsights />} />
             <Route path="/budgets" element={<Budgets />} />
+            <Route path="/bills" element={<BillPayments />} />
+            <Route path="/cards" element={<CardsPage />} />
+            <Route path="/investments" element={<InvestmentsPage />} />
             <Route path="/products/:slug" element={<ProductPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
