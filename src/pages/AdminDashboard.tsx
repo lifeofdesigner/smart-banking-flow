@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck, AlertTriangle, ScrollText, Gift } from "lucide-react";
+import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck, AlertTriangle, ScrollText, Gift, Scale, FileText, Landmark, Activity, RotateCcw } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
@@ -28,6 +28,11 @@ import ATMWithdrawalsManager from "@/components/admin/ATMWithdrawalsManager";
 import SavingsManager from "@/components/admin/SavingsManager";
 import CashbackManager from "@/components/admin/CashbackManager";
 import ScheduledTransfersManager from "@/components/admin/ScheduledTransfersManager";
+import LedgerReconciliation from "@/components/admin/LedgerReconciliation";
+import FinancialReports from "@/components/admin/FinancialReports";
+import LiquidityMonitor from "@/components/admin/LiquidityMonitor";
+import SystemHealth from "@/components/admin/SystemHealth";
+import TransactionReversal from "@/components/admin/TransactionReversal";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -287,6 +292,11 @@ export default function AdminDashboard() {
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="currency">Currency</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="liquidity">Liquidity</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="reversal">Reversals</TabsTrigger>
             <TabsTrigger value="stresstest">Stress Test</TabsTrigger>
           </TabsList>
 
@@ -609,6 +619,26 @@ export default function AdminDashboard() {
 
           <TabsContent value="stresstest">
             <StressTest />
+          </TabsContent>
+
+          <TabsContent value="reconciliation">
+            <LedgerReconciliation />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <FinancialReports />
+          </TabsContent>
+
+          <TabsContent value="liquidity">
+            <LiquidityMonitor />
+          </TabsContent>
+
+          <TabsContent value="health">
+            <SystemHealth />
+          </TabsContent>
+
+          <TabsContent value="reversal">
+            <TransactionReversal />
           </TabsContent>
 
           <TabsContent value="cards">

@@ -478,6 +478,54 @@ export type Database = {
         }
         Relationships: []
       }
+      daily_financial_reports: {
+        Row: {
+          created_at: string
+          id: string
+          ledger_difference: number
+          report_date: string
+          total_credits: number
+          total_debits: number
+          total_deposits: number
+          total_investment_inflows: number
+          total_loan_disbursements: number
+          total_repayments: number
+          total_savings_inflows: number
+          total_transfers: number
+          total_withdrawals: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ledger_difference?: number
+          report_date: string
+          total_credits?: number
+          total_debits?: number
+          total_deposits?: number
+          total_investment_inflows?: number
+          total_loan_disbursements?: number
+          total_repayments?: number
+          total_savings_inflows?: number
+          total_transfers?: number
+          total_withdrawals?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ledger_difference?: number
+          report_date?: string
+          total_credits?: number
+          total_debits?: number
+          total_deposits?: number
+          total_investment_inflows?: number
+          total_loan_disbursements?: number
+          total_repayments?: number
+          total_savings_inflows?: number
+          total_transfers?: number
+          total_withdrawals?: number
+        }
+        Relationships: []
+      }
       faqs: {
         Row: {
           answer: string
@@ -2218,6 +2266,15 @@ export type Database = {
         Args: { p_account_id: string; p_amount: number }
         Returns: Json
       }
+      reverse_transaction: {
+        Args: {
+          p_admin_id: string
+          p_reason?: string
+          p_transaction_id: string
+        }
+        Returns: string
+      }
+      run_ledger_reconciliation: { Args: { p_date?: string }; Returns: Json }
       transfer_between_accounts: {
         Args: {
           p_amount: number
