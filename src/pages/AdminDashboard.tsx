@@ -610,6 +610,34 @@ export default function AdminDashboard() {
           <TabsContent value="stresstest">
             <StressTest />
           </TabsContent>
+
+          <TabsContent value="cards">
+            <CardsManager />
+          </TabsContent>
+
+          <TabsContent value="investments">
+            <InvestmentsManager />
+          </TabsContent>
+
+          <TabsContent value="savings">
+            <SavingsManager />
+          </TabsContent>
+
+          <TabsContent value="bills">
+            <BillPaymentsManager />
+          </TabsContent>
+
+          <TabsContent value="atm">
+            <ATMWithdrawalsManager />
+          </TabsContent>
+
+          <TabsContent value="scheduled">
+            <ScheduledTransfersManager />
+          </TabsContent>
+
+          <TabsContent value="cashback">
+            <CashbackManager />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
