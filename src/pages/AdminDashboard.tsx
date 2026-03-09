@@ -621,6 +621,26 @@ export default function AdminDashboard() {
             <StressTest />
           </TabsContent>
 
+          <TabsContent value="reconciliation">
+            <LedgerReconciliation />
+          </TabsContent>
+
+          <TabsContent value="reports">
+            <FinancialReports />
+          </TabsContent>
+
+          <TabsContent value="liquidity">
+            <LiquidityMonitor />
+          </TabsContent>
+
+          <TabsContent value="health">
+            <SystemHealth />
+          </TabsContent>
+
+          <TabsContent value="reversal">
+            <TransactionReversal />
+          </TabsContent>
+
           <TabsContent value="cards">
             <CardsManager />
           </TabsContent>
