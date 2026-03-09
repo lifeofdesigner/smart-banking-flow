@@ -13,6 +13,7 @@ import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
+import FeeManagement from "@/components/admin/FeeManagement";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
