@@ -137,12 +137,21 @@ export default function AdminDashboard() {
 
   const updateAccountStatus = async (accountId: string, status: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("accounts")
         .update({ status })
         .eq("id", accountId);
 
       if (error) throw error;
+
+      // Audit log
+      await (supabase as any).from("audit_logs").insert({
+        action: status === "suspended" ? "admin.account_freeze" : "admin.account_status_change",
+        user_id: user?.id,
+        metadata: { account_id: accountId, new_status: status },
+      });
+
       toast.success("Account status updated");
       fetchData();
     } catch (error) {
