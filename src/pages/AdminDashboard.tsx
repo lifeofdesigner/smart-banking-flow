@@ -112,12 +112,21 @@ export default function AdminDashboard() {
 
   const updateKycStatus = async (userId: string, status: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("profiles")
         .update({ kyc_status: status })
         .eq("id", userId);
 
       if (error) throw error;
+
+      // Audit log
+      await (supabase as any).from("audit_logs").insert({
+        action: "admin.kyc_status_change",
+        user_id: user?.id,
+        metadata: { target_user_id: userId, new_status: status },
+      });
+
       toast.success("KYC status updated");
       fetchData();
     } catch (error) {
