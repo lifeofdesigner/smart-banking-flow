@@ -14,6 +14,13 @@ import AdminDashboard from "./pages/AdminDashboard";
 import ResetPassword from "./pages/ResetPassword";
 import KYCVerification from "./pages/KYCVerification";
 import Loans from "./pages/Loans";
+import AccountsPage from "./pages/AccountsPage";
+import TransactionHistory from "./pages/TransactionHistory";
+import SavingsGoals from "./pages/SavingsGoals";
+import Analytics from "./pages/Analytics";
+import Statements from "./pages/Statements";
+import SecuritySettings from "./pages/SecuritySettings";
+import HelpCenter from "./pages/HelpCenter";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +36,13 @@ const App = () => (
           <Route path="/auth" element={<Auth />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/accounts" element={<AccountsPage />} />
+          <Route path="/transactions" element={<TransactionHistory />} />
+          <Route path="/savings-goals" element={<SavingsGoals />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/statements" element={<Statements />} />
+          <Route path="/security" element={<SecuritySettings />} />
+          <Route path="/help" element={<HelpCenter />} />
           <Route path="/wire-transfer" element={<WireTransfer />} />
           <Route path="/transfer" element={<TransferFunds />} />
           <Route path="/beneficiaries" element={<Beneficiaries />} />
