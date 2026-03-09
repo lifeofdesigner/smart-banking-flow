@@ -14,6 +14,7 @@ import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
 import FeeManagement from "@/components/admin/FeeManagement";
+import ContentManagement from "@/components/admin/ContentManagement";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
