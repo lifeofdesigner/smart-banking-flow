@@ -28,6 +28,11 @@ import ATMWithdrawalsManager from "@/components/admin/ATMWithdrawalsManager";
 import SavingsManager from "@/components/admin/SavingsManager";
 import CashbackManager from "@/components/admin/CashbackManager";
 import ScheduledTransfersManager from "@/components/admin/ScheduledTransfersManager";
+import LedgerReconciliation from "@/components/admin/LedgerReconciliation";
+import FinancialReports from "@/components/admin/FinancialReports";
+import LiquidityMonitor from "@/components/admin/LiquidityMonitor";
+import SystemHealth from "@/components/admin/SystemHealth";
+import TransactionReversal from "@/components/admin/TransactionReversal";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
