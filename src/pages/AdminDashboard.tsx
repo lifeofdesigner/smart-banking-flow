@@ -19,6 +19,8 @@ import FraudAlerts from "@/components/admin/FraudAlerts";
 import ReferralsManager from "@/components/admin/ReferralsManager";
 import AuditLogs from "@/components/admin/AuditLogs";
 import StressTest from "@/components/admin/StressTest";
+import CurrencyRatesManager from "@/components/admin/CurrencyRatesManager";
+import SupportTicketsManager from "@/components/admin/SupportTicketsManager";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -269,6 +271,8 @@ export default function AdminDashboard() {
             <TabsTrigger value="fees">Fees</TabsTrigger>
             <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
+            <TabsTrigger value="currency">Currency</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
             <TabsTrigger value="stresstest">Stress Test</TabsTrigger>
           </TabsList>
 
@@ -579,6 +583,14 @@ export default function AdminDashboard() {
 
           <TabsContent value="content">
             <ContentManagement />
+          </TabsContent>
+
+          <TabsContent value="currency">
+            <CurrencyRatesManager />
+          </TabsContent>
+
+          <TabsContent value="support">
+            <SupportTicketsManager />
           </TabsContent>
 
           <TabsContent value="stresstest">

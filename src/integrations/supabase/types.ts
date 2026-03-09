@@ -118,6 +118,60 @@ export type Database = {
         }
         Relationships: []
       }
+      atm_withdrawals: {
+        Row: {
+          account_id: string
+          amount: number
+          created_at: string
+          expires_at: string
+          id: string
+          status: string
+          transaction_id: string | null
+          used_at: string | null
+          user_id: string
+          withdrawal_code: string
+        }
+        Insert: {
+          account_id: string
+          amount: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          status?: string
+          transaction_id?: string | null
+          used_at?: string | null
+          user_id: string
+          withdrawal_code: string
+        }
+        Update: {
+          account_id?: string
+          amount?: number
+          created_at?: string
+          expires_at?: string
+          id?: string
+          status?: string
+          transaction_id?: string | null
+          used_at?: string | null
+          user_id?: string
+          withdrawal_code?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "atm_withdrawals_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "atm_withdrawals_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -394,6 +448,33 @@ export type Database = {
           max_cashback?: number | null
           min_transaction_amount?: number
           transaction_type?: string
+        }
+        Relationships: []
+      }
+      currency_rates: {
+        Row: {
+          base_currency: string
+          created_at: string
+          id: string
+          rate: number
+          target_currency: string
+          updated_at: string
+        }
+        Insert: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          rate: number
+          target_currency: string
+          updated_at?: string
+        }
+        Update: {
+          base_currency?: string
+          created_at?: string
+          id?: string
+          rate?: number
+          target_currency?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -1801,6 +1882,54 @@ export type Database = {
         }
         Relationships: []
       }
+      support_tickets: {
+        Row: {
+          admin_reply: string | null
+          category: string
+          closed_at: string | null
+          created_at: string
+          id: string
+          message: string
+          priority: string
+          replied_at: string | null
+          replied_by: string | null
+          status: string
+          subject: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_reply?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          priority?: string
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          subject: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_reply?: string | null
+          category?: string
+          closed_at?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          priority?: string
+          replied_at?: string | null
+          replied_by?: string | null
+          status?: string
+          subject?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       transactions: {
         Row: {
           account_id: string
@@ -2084,6 +2213,10 @@ export type Database = {
       reject_loan: {
         Args: { p_admin_id: string; p_loan_id: string; p_reason: string }
         Returns: string
+      }
+      request_atm_withdrawal: {
+        Args: { p_account_id: string; p_amount: number }
+        Returns: Json
       }
       transfer_between_accounts: {
         Args: {
