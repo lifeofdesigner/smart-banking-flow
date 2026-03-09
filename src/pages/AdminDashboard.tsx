@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         .select("role")
         .eq("user_id", user.id);
 
-      const hasAdminRole = roles?.some(r => r.role === "admin");
+      const hasAdminRole = roles?.some(r => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
       
       if (!hasAdminRole) {
         toast.error("Access denied: Admin privileges required");
