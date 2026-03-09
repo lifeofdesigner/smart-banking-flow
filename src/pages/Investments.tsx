@@ -67,7 +67,7 @@ export default function InvestmentsPage() {
       const months = parseInt(form.months);
 
       // Use the invest_funds RPC that properly debits the account
-      const { data, error } = await supabase.rpc("invest_funds", {
+      const { data, error } = await (supabase.rpc as any)("invest_funds", {
         p_account_id: form.account,
         p_product_name: form.name,
         p_investment_type: form.type,

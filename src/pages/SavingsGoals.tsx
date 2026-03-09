@@ -143,7 +143,7 @@ export default function SavingsGoals() {
     setSaving(true);
 
     try {
-      const { data, error } = await supabase.rpc("withdraw_from_savings_goal", {
+      const { data, error } = await (supabase.rpc as any)("withdraw_from_savings_goal", {
         p_goal_id: selectedGoal.id,
         p_account_id: selectedAccount,
         p_amount: parseFloat(withdrawalAmount)
