@@ -186,6 +186,48 @@ export type Database = {
           },
         ]
       }
+      fee_rules: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          description: string | null
+          fee_type: string
+          id: string
+          is_active: boolean
+          max_fee: number | null
+          min_fee: number | null
+          transaction_type: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fee_type: string
+          id?: string
+          is_active?: boolean
+          max_fee?: number | null
+          min_fee?: number | null
+          transaction_type: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          description?: string | null
+          fee_type?: string
+          id?: string
+          is_active?: boolean
+          max_fee?: number | null
+          min_fee?: number | null
+          transaction_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       kyc_submissions: {
         Row: {
           address_document_url: string | null
