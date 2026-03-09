@@ -90,10 +90,10 @@ export default function SmartInsightsWidget() {
     setInsights(result);
   };
 
-  const iconMap = {
-    up: <TrendingUp className="h-4 w-4 text-yellow-600" />,
+  const iconMap: Record<Insight["type"], React.ReactNode> = {
+    up: <TrendingUp className="h-4 w-4 text-accent" />,
     down: <TrendingDown className="h-4 w-4 text-destructive" />,
-    good: <CheckCircle2 className="h-4 w-4 text-green-600" />,
+    good: <CheckCircle2 className="h-4 w-4 text-primary" />,
     neutral: <Lightbulb className="h-4 w-4 text-muted-foreground" />,
   };
 
