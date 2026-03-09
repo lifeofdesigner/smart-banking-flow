@@ -271,6 +271,13 @@ export default function AdminDashboard() {
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
+            <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="savings">Savings</TabsTrigger>
+            <TabsTrigger value="bills">Bills</TabsTrigger>
+            <TabsTrigger value="atm">ATM</TabsTrigger>
+            <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+            <TabsTrigger value="cashback">Cashback</TabsTrigger>
             <TabsTrigger value="fraud">Fraud Alerts</TabsTrigger>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
