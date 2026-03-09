@@ -26,6 +26,9 @@ const HelpCenter = lazy(() => import("./pages/HelpCenter"));
 const ReferralProgram = lazy(() => import("./pages/ReferralProgram"));
 const SpendingInsights = lazy(() => import("./pages/SpendingInsights"));
 const Budgets = lazy(() => import("./pages/Budgets"));
+const BillPayments = lazy(() => import("./pages/BillPayments"));
+const CardsPage = lazy(() => import("./pages/Cards"));
+const InvestmentsPage = lazy(() => import("./pages/Investments"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
