@@ -63,26 +63,20 @@ export default function InvestmentsPage() {
     }
     setCreating(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Not authenticated");
-
-      const rate = form.type === "fixed_deposit" ? 8.5 : form.type === "money_market" ? 6.0 : 4.5;
       const principal = parseFloat(form.amount);
-      const maturity = new Date();
-      maturity.setMonth(maturity.getMonth() + parseInt(form.months));
+      const months = parseInt(form.months);
 
-      const { error } = await supabase.from("investments").insert({
-        user_id: user.id,
-        account_id: form.account,
-        product_name: form.name,
-        investment_type: form.type,
-        principal,
-        current_value: principal,
-        interest_rate: rate,
-        maturity_date: maturity.toISOString().split("T")[0],
+      // Use the invest_funds RPC that properly debits the account
+      const { data, error } = await supabase.rpc("invest_funds", {
+        p_account_id: form.account,
+        p_product_name: form.name,
+        p_investment_type: form.type,
+        p_amount: principal,
+        p_months: months
       });
+
       if (error) throw error;
-      toast({ title: "Investment created!" });
+      toast({ title: "Investment created!", description: `$${principal.toLocaleString()} has been invested.` });
       setOpen(false);
       setForm({ name: "", type: "fixed_deposit", amount: "", account: "", months: "12" });
       loadData();

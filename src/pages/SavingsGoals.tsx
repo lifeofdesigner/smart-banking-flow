@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { PiggyBank, Plus, CalendarIcon, Target, TrendingUp, Trash2 } from "lucide-react";
+import { PiggyBank, Plus, CalendarIcon, Target, TrendingUp, Trash2, ArrowDownToLine } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
@@ -35,12 +36,20 @@ interface SavingsGoal {
   created_at: string;
 }
 
+interface Account {
+  id: string;
+  account_number: string;
+  available_balance: number;
+}
+
 export default function SavingsGoals() {
   const { toast } = useToast();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
+  const [withdrawOpen, setWithdrawOpen] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState<SavingsGoal | null>(null);
 
   // Form state
@@ -49,23 +58,25 @@ export default function SavingsGoals() {
   const [newGoalTarget, setNewGoalTarget] = useState("");
   const [newGoalDeadline, setNewGoalDeadline] = useState<Date | undefined>();
   const [contributionAmount, setContributionAmount] = useState("");
+  const [withdrawalAmount, setWithdrawalAmount] = useState("");
+  const [selectedAccount, setSelectedAccount] = useState("");
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    loadGoals();
+    loadData();
   }, []);
 
-  const loadGoals = async () => {
+  const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
-      .from("savings_goals")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
+    const [goalsRes, accountsRes] = await Promise.all([
+      supabase.from("savings_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
+      supabase.from("accounts").select("id, account_number, available_balance").eq("user_id", user.id).eq("status", "active"),
+    ]);
 
-    if (data) setGoals(data);
+    if (goalsRes.data) setGoals(goalsRes.data);
+    if (accountsRes.data) setAccounts(accountsRes.data);
     setLoading(false);
   };
 
@@ -90,42 +101,85 @@ export default function SavingsGoals() {
       toast({ title: "Success", description: "Savings goal created!" });
       setCreateOpen(false);
       resetForm();
-      loadGoals();
+      loadData();
     }
     setSaving(false);
   };
 
   const contributeToGoal = async () => {
-    if (!selectedGoal || !contributionAmount) return;
+    if (!selectedGoal || !contributionAmount || !selectedAccount) {
+      toast({ title: "Error", description: "Please select an account and enter an amount", variant: "destructive" });
+      return;
+    }
     setSaving(true);
 
-    const newAmount = selectedGoal.current_amount + parseFloat(contributionAmount);
-    const newStatus = newAmount >= selectedGoal.target_amount ? "completed" : "active";
+    try {
+      // Use the RPC that moves real funds
+      const { data, error } = await supabase.rpc("contribute_to_savings_goal", {
+        p_goal_id: selectedGoal.id,
+        p_account_id: selectedAccount,
+        p_amount: parseFloat(contributionAmount)
+      });
 
-    const { error } = await supabase
-      .from("savings_goals")
-      .update({ current_amount: newAmount, status: newStatus })
-      .eq("id", selectedGoal.id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      toast({ title: "Success", description: `Added $${contributionAmount} to your goal!` });
+      if (error) throw error;
+      
+      toast({ title: "Success", description: data || `Added $${contributionAmount} to your goal!` });
       setContributeOpen(false);
       setContributionAmount("");
+      setSelectedAccount("");
       setSelectedGoal(null);
-      loadGoals();
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
+    }
+    setSaving(false);
+  };
+
+  const withdrawFromGoal = async () => {
+    if (!selectedGoal || !withdrawalAmount || !selectedAccount) {
+      toast({ title: "Error", description: "Please select an account and enter an amount", variant: "destructive" });
+      return;
+    }
+    setSaving(true);
+
+    try {
+      const { data, error } = await supabase.rpc("withdraw_from_savings_goal", {
+        p_goal_id: selectedGoal.id,
+        p_account_id: selectedAccount,
+        p_amount: parseFloat(withdrawalAmount)
+      });
+
+      if (error) throw error;
+      
+      toast({ title: "Success", description: data || `Withdrew $${withdrawalAmount} from your goal!` });
+      setWithdrawOpen(false);
+      setWithdrawalAmount("");
+      setSelectedAccount("");
+      setSelectedGoal(null);
+      loadData();
+    } catch (e: any) {
+      toast({ title: "Error", description: e.message, variant: "destructive" });
     }
     setSaving(false);
   };
 
   const deleteGoal = async (goalId: string) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (goal && goal.current_amount > 0) {
+      toast({ 
+        title: "Cannot delete", 
+        description: "Please withdraw all funds from this goal first.", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     const { error } = await supabase.from("savings_goals").delete().eq("id", goalId);
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       toast({ title: "Success", description: "Goal deleted" });
-      loadGoals();
+      loadData();
     }
   };
 
@@ -157,7 +211,7 @@ export default function SavingsGoals() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h1 className="text-3xl font-bold">Savings Goals</h1>
-            <p className="text-muted-foreground">Track your savings progress</p>
+            <p className="text-muted-foreground">Track your savings progress with real fund movement</p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
@@ -330,13 +384,28 @@ export default function SavingsGoals() {
                             setContributeOpen(true);
                           }}
                         >
-                          Add Progress
+                          <Plus className="h-4 w-4 mr-1" />
+                          Add
+                        </Button>
+                      )}
+                      {goal.current_amount > 0 && (
+                        <Button
+                          variant="outline"
+                          className="flex-1"
+                          onClick={() => {
+                            setSelectedGoal(goal);
+                            setWithdrawOpen(true);
+                          }}
+                        >
+                          <ArrowDownToLine className="h-4 w-4 mr-1" />
+                          Withdraw
                         </Button>
                       )}
                       <Button
                         variant="outline"
                         size="icon"
                         onClick={() => deleteGoal(goal.id)}
+                        disabled={goal.current_amount > 0}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -352,10 +421,27 @@ export default function SavingsGoals() {
         <Dialog open={contributeOpen} onOpenChange={setContributeOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Add Progress</DialogTitle>
-              <DialogDescription>Record your savings progress for "{selectedGoal?.name}"</DialogDescription>
+              <DialogTitle>Add Funds to Goal</DialogTitle>
+              <DialogDescription>
+                Transfer funds from your account to "{selectedGoal?.name}"
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>From Account</Label>
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        •••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="space-y-2">
                 <Label>Amount to Add ($)</Label>
                 <Input
@@ -381,8 +467,58 @@ export default function SavingsGoals() {
             </div>
             <DialogFooter>
               <Button variant="outline" onClick={() => setContributeOpen(false)}>Cancel</Button>
-              <Button onClick={contributeToGoal} disabled={saving || !contributionAmount}>
-                {saving ? "Adding..." : "Add Progress"}
+              <Button onClick={contributeToGoal} disabled={saving || !contributionAmount || !selectedAccount}>
+                {saving ? "Processing..." : "Transfer Funds"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Withdraw Dialog */}
+        <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Withdraw from Goal</DialogTitle>
+              <DialogDescription>
+                Transfer funds from "{selectedGoal?.name}" back to your account
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label>To Account</Label>
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map(a => (
+                      <SelectItem key={a.id} value={a.id}>
+                        •••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Amount to Withdraw ($)</Label>
+                <Input
+                  type="number"
+                  placeholder="100"
+                  max={selectedGoal?.current_amount}
+                  value={withdrawalAmount}
+                  onChange={(e) => setWithdrawalAmount(e.target.value)}
+                />
+                {selectedGoal && (
+                  <p className="text-xs text-muted-foreground">
+                    Available: ${selectedGoal.current_amount.toLocaleString()}
+                  </p>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setWithdrawOpen(false)}>Cancel</Button>
+              <Button onClick={withdrawFromGoal} disabled={saving || !withdrawalAmount || !selectedAccount}>
+                {saving ? "Processing..." : "Withdraw Funds"}
               </Button>
             </DialogFooter>
           </DialogContent>
