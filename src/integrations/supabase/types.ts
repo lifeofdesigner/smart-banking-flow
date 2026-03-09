@@ -186,6 +186,30 @@ export type Database = {
           },
         ]
       }
+      budgets: {
+        Row: {
+          category: string
+          id: string
+          monthly_limit: number
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          category: string
+          id?: string
+          monthly_limit?: number
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          monthly_limit?: number
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       cashback_rewards: {
         Row: {
           cashback_amount: number
