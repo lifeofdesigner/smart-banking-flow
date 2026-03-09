@@ -30,6 +30,7 @@ const BillPayments = lazy(() => import("./pages/BillPayments"));
 const CardsPage = lazy(() => import("./pages/Cards"));
 const InvestmentsPage = lazy(() => import("./pages/Investments"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+const ATMWithdrawal = lazy(() => import("./pages/ATMWithdrawal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
