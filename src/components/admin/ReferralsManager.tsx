@@ -34,7 +34,7 @@ export default function ReferralsManager() {
       .order("created_at", { ascending: false });
 
     if (data) {
-      const userIds = [...new Set(data.flatMap((r: any) => [r.referrer_user_id, r.referred_user_id].filter(Boolean)))];
+      const userIds = [...new Set(data.flatMap((r: any) => [r.referrer_user_id, r.referred_user_id].filter(Boolean)))] as string[];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name")

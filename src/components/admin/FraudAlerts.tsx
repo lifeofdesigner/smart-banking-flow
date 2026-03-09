@@ -14,7 +14,7 @@ interface FraudAlert {
   transaction_id: string | null;
   alert_type: string;
   risk_score: number;
-  details: Record<string, any>;
+  details: any;
   status: string;
   created_at: string;
   reviewed_at: string | null;

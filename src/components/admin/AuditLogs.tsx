@@ -10,7 +10,7 @@ interface AuditLog {
   id: string;
   action: string;
   user_id: string | null;
-  metadata: Record<string, any> | null;
+  metadata: any;
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
