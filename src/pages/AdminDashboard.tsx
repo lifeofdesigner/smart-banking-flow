@@ -8,13 +8,16 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck } from "lucide-react";
+import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck, AlertTriangle, ScrollText, Gift } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
 import LoanManagement from "@/components/admin/LoanManagement";
 import FeeManagement from "@/components/admin/FeeManagement";
 import ContentManagement from "@/components/admin/ContentManagement";
+import FraudAlerts from "@/components/admin/FraudAlerts";
+import ReferralsManager from "@/components/admin/ReferralsManager";
+import AuditLogs from "@/components/admin/AuditLogs";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -45,7 +48,7 @@ export default function AdminDashboard() {
         .select("role")
         .eq("user_id", user.id);
 
-      const hasAdminRole = roles?.some(r => r.role === "admin");
+      const hasAdminRole = roles?.some(r => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
       
       if (!hasAdminRole) {
         toast.error("Access denied: Admin privileges required");
@@ -109,12 +112,21 @@ export default function AdminDashboard() {
 
   const updateKycStatus = async (userId: string, status: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("profiles")
         .update({ kyc_status: status })
         .eq("id", userId);
 
       if (error) throw error;
+
+      // Audit log
+      await (supabase as any).from("audit_logs").insert({
+        action: "admin.kyc_status_change",
+        user_id: user?.id,
+        metadata: { target_user_id: userId, new_status: status },
+      });
+
       toast.success("KYC status updated");
       fetchData();
     } catch (error) {
@@ -125,12 +137,21 @@ export default function AdminDashboard() {
 
   const updateAccountStatus = async (accountId: string, status: string) => {
     try {
+      const { data: { user } } = await supabase.auth.getUser();
       const { error } = await supabase
         .from("accounts")
         .update({ status })
         .eq("id", accountId);
 
       if (error) throw error;
+
+      // Audit log
+      await (supabase as any).from("audit_logs").insert({
+        action: status === "suspended" ? "admin.account_freeze" : "admin.account_status_change",
+        user_id: user?.id,
+        metadata: { account_id: accountId, new_status: status },
+      });
+
       toast.success("Account status updated");
       fetchData();
     } catch (error) {
@@ -231,7 +252,7 @@ export default function AdminDashboard() {
         </div>
 
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList>
+          <TabsList className="flex flex-wrap h-auto gap-1">
             <TabsTrigger value="users">Users</TabsTrigger>
             <TabsTrigger value="accounts">Accounts</TabsTrigger>
             <TabsTrigger value="wires">Wire Transfers</TabsTrigger>
@@ -240,9 +261,12 @@ export default function AdminDashboard() {
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
+            <TabsTrigger value="fraud">Fraud Alerts</TabsTrigger>
+            <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
             <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
             <TabsTrigger value="fees">Fees</TabsTrigger>
+            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
             <TabsTrigger value="content">Content</TabsTrigger>
           </TabsList>
 
@@ -492,6 +516,14 @@ export default function AdminDashboard() {
             <LoanManagement />
           </TabsContent>
 
+          <TabsContent value="fraud">
+            <FraudAlerts />
+          </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralsManager />
+          </TabsContent>
+
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
@@ -537,6 +569,10 @@ export default function AdminDashboard() {
 
           <TabsContent value="fees">
             <FeeManagement />
+          </TabsContent>
+
+          <TabsContent value="audit">
+            <AuditLogs />
           </TabsContent>
 
           <TabsContent value="content">
