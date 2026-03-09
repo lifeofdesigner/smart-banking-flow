@@ -186,6 +186,72 @@ export type Database = {
           },
         ]
       }
+      cashback_rewards: {
+        Row: {
+          cashback_amount: number
+          created_at: string
+          credited_at: string | null
+          id: string
+          reward_type: string
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          cashback_amount?: number
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          reward_type?: string
+          status?: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          cashback_amount?: number
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          reward_type?: string
+          status?: string
+          transaction_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      cashback_rules: {
+        Row: {
+          cashback_percentage: number
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          max_cashback: number | null
+          min_transaction_amount: number
+          transaction_type: string
+        }
+        Insert: {
+          cashback_percentage?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_cashback?: number | null
+          min_transaction_amount?: number
+          transaction_type: string
+        }
+        Update: {
+          cashback_percentage?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          max_cashback?: number | null
+          min_transaction_amount?: number
+          transaction_type?: string
+        }
+        Relationships: []
+      }
       fee_rules: {
         Row: {
           amount: number
@@ -225,6 +291,45 @@ export type Database = {
           min_fee?: number | null
           transaction_type?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      fraud_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          details: Json
+          id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          risk_score: number
+          status: string
+          transaction_id: string | null
+          user_id: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          status?: string
+          transaction_id?: string | null
+          user_id: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          risk_score?: number
+          status?: string
+          transaction_id?: string | null
+          user_id?: string
         }
         Relationships: []
       }
@@ -952,6 +1057,7 @@ export type Database = {
           id: string
           kyc_status: string | null
           phone: string | null
+          referral_code: string | null
           updated_at: string | null
         }
         Insert: {
@@ -962,6 +1068,7 @@ export type Database = {
           id: string
           kyc_status?: string | null
           phone?: string | null
+          referral_code?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -972,9 +1079,100 @@ export type Database = {
           id?: string
           kyc_status?: string | null
           phone?: string | null
+          referral_code?: string | null
           updated_at?: string | null
         }
         Relationships: []
+      }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          reward_amount: number
+          reward_issued: boolean
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          reward_amount?: number
+          reward_issued?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          reward_amount?: number
+          reward_issued?: boolean
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      savings_accounts: {
+        Row: {
+          account_id: string | null
+          balance: number
+          created_at: string
+          id: string
+          last_interest_date: string | null
+          product_id: string
+          status: string
+          total_interest_earned: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          account_id?: string | null
+          balance?: number
+          created_at?: string
+          id?: string
+          last_interest_date?: string | null
+          product_id: string
+          status?: string
+          total_interest_earned?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          account_id?: string | null
+          balance?: number
+          created_at?: string
+          id?: string
+          last_interest_date?: string | null
+          product_id?: string
+          status?: string
+          total_interest_earned?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "savings_accounts_account_id_fkey"
+            columns: ["account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "savings_accounts_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "savings_products"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       savings_goals: {
         Row: {
@@ -1015,6 +1213,39 @@ export type Database = {
           target_amount?: number
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      savings_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          interest_frequency: string
+          interest_rate: number
+          is_active: boolean
+          minimum_balance: number
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          interest_frequency?: string
+          interest_rate: number
+          is_active?: boolean
+          minimum_balance?: number
+          name: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          interest_frequency?: string
+          interest_rate?: number
+          is_active?: boolean
+          minimum_balance?: number
+          name?: string
         }
         Relationships: []
       }
@@ -1233,6 +1464,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_referral_code: { Args: { p_code: string }; Returns: string }
       approve_loan: {
         Args: { p_admin_id: string; p_loan_id: string }
         Returns: string
@@ -1240,6 +1472,10 @@ export type Database = {
       archive_old_ledger_entries: {
         Args: { p_before_date?: string }
         Returns: number
+      }
+      calculate_savings_interest: {
+        Args: { p_savings_account_id: string }
+        Returns: string
       }
       check_rate_limit: {
         Args: {
@@ -1249,6 +1485,10 @@ export type Database = {
           p_window_seconds?: number
         }
         Returns: boolean
+      }
+      claim_cashback_reward: {
+        Args: { p_cashback_id: string }
+        Returns: string
       }
       execute_transaction: {
         Args: {
@@ -1262,6 +1502,7 @@ export type Database = {
         Returns: string
       }
       generate_account_number: { Args: never; Returns: string }
+      generate_unique_referral_code: { Args: never; Returns: string }
       get_account_balance: { Args: { p_account_id: string }; Returns: number }
       get_daily_transfer_usage: {
         Args: { p_account_id: string }
