@@ -21,6 +21,13 @@ import AuditLogs from "@/components/admin/AuditLogs";
 import StressTest from "@/components/admin/StressTest";
 import CurrencyRatesManager from "@/components/admin/CurrencyRatesManager";
 import SupportTicketsManager from "@/components/admin/SupportTicketsManager";
+import CardsManager from "@/components/admin/CardsManager";
+import InvestmentsManager from "@/components/admin/InvestmentsManager";
+import BillPaymentsManager from "@/components/admin/BillPaymentsManager";
+import ATMWithdrawalsManager from "@/components/admin/ATMWithdrawalsManager";
+import SavingsManager from "@/components/admin/SavingsManager";
+import CashbackManager from "@/components/admin/CashbackManager";
+import ScheduledTransfersManager from "@/components/admin/ScheduledTransfersManager";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -264,6 +271,13 @@ export default function AdminDashboard() {
             <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
             <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
             <TabsTrigger value="loans">Loans</TabsTrigger>
+            <TabsTrigger value="cards">Cards</TabsTrigger>
+            <TabsTrigger value="investments">Investments</TabsTrigger>
+            <TabsTrigger value="savings">Savings</TabsTrigger>
+            <TabsTrigger value="bills">Bills</TabsTrigger>
+            <TabsTrigger value="atm">ATM</TabsTrigger>
+            <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
+            <TabsTrigger value="cashback">Cashback</TabsTrigger>
             <TabsTrigger value="fraud">Fraud Alerts</TabsTrigger>
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="notifications">Notifications</TabsTrigger>
@@ -595,6 +609,34 @@ export default function AdminDashboard() {
 
           <TabsContent value="stresstest">
             <StressTest />
+          </TabsContent>
+
+          <TabsContent value="cards">
+            <CardsManager />
+          </TabsContent>
+
+          <TabsContent value="investments">
+            <InvestmentsManager />
+          </TabsContent>
+
+          <TabsContent value="savings">
+            <SavingsManager />
+          </TabsContent>
+
+          <TabsContent value="bills">
+            <BillPaymentsManager />
+          </TabsContent>
+
+          <TabsContent value="atm">
+            <ATMWithdrawalsManager />
+          </TabsContent>
+
+          <TabsContent value="scheduled">
+            <ScheduledTransfersManager />
+          </TabsContent>
+
+          <TabsContent value="cashback">
+            <CashbackManager />
           </TabsContent>
         </Tabs>
       </div>
