@@ -292,6 +292,11 @@ export default function AdminDashboard() {
             <TabsTrigger value="content">Content</TabsTrigger>
             <TabsTrigger value="currency">Currency</TabsTrigger>
             <TabsTrigger value="support">Support</TabsTrigger>
+            <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
+            <TabsTrigger value="reports">Reports</TabsTrigger>
+            <TabsTrigger value="liquidity">Liquidity</TabsTrigger>
+            <TabsTrigger value="health">Health</TabsTrigger>
+            <TabsTrigger value="reversal">Reversals</TabsTrigger>
             <TabsTrigger value="stresstest">Stress Test</TabsTrigger>
           </TabsList>
 
