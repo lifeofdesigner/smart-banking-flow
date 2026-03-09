@@ -532,6 +532,10 @@ export default function AdminDashboard() {
           <TabsContent value="kyc">
             <KYCReviews />
           </TabsContent>
+
+          <TabsContent value="fees">
+            <FeeManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
