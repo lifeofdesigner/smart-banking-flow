@@ -538,6 +538,10 @@ export default function AdminDashboard() {
           <TabsContent value="fees">
             <FeeManagement />
           </TabsContent>
+
+          <TabsContent value="content">
+            <ContentManagement />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
