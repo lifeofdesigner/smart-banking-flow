@@ -21,6 +21,13 @@ import AuditLogs from "@/components/admin/AuditLogs";
 import StressTest from "@/components/admin/StressTest";
 import CurrencyRatesManager from "@/components/admin/CurrencyRatesManager";
 import SupportTicketsManager from "@/components/admin/SupportTicketsManager";
+import CardsManager from "@/components/admin/CardsManager";
+import InvestmentsManager from "@/components/admin/InvestmentsManager";
+import BillPaymentsManager from "@/components/admin/BillPaymentsManager";
+import ATMWithdrawalsManager from "@/components/admin/ATMWithdrawalsManager";
+import SavingsManager from "@/components/admin/SavingsManager";
+import CashbackManager from "@/components/admin/CashbackManager";
+import ScheduledTransfersManager from "@/components/admin/ScheduledTransfersManager";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
