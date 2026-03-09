@@ -18,6 +18,7 @@ import ContentManagement from "@/components/admin/ContentManagement";
 import FraudAlerts from "@/components/admin/FraudAlerts";
 import ReferralsManager from "@/components/admin/ReferralsManager";
 import AuditLogs from "@/components/admin/AuditLogs";
+import StressTest from "@/components/admin/StressTest";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
