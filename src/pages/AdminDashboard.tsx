@@ -519,7 +519,7 @@ export default function AdminDashboard() {
                         </TableCell>
                         <TableCell>{n.title}</TableCell>
                         <TableCell className="max-w-xs truncate">{n.message}</TableCell>
-                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-green-600" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
+                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
                         <TableCell>{new Date(n.created_at).toLocaleString()}</TableCell>
                       </TableRow>
                     ))}
