@@ -516,6 +516,14 @@ export default function AdminDashboard() {
             <LoanManagement />
           </TabsContent>
 
+          <TabsContent value="fraud">
+            <FraudAlerts />
+          </TabsContent>
+
+          <TabsContent value="referrals">
+            <ReferralsManager />
+          </TabsContent>
+
           <TabsContent value="notifications">
             <Card>
               <CardHeader>
