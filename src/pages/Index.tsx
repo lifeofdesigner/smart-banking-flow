@@ -1,7 +1,7 @@
 import Navbar from "@/components/Navbar";
-import Hero from "@/components/Hero";
+import DynamicHero from "@/components/DynamicHero";
 import Services from "@/components/Services";
-import Products from "@/components/Products";
+import DynamicProducts from "@/components/DynamicProducts";
 import About from "@/components/About";
 import Testimonials from "@/components/Testimonials";
 import FAQ from "@/components/FAQ";
@@ -12,9 +12,9 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      <Hero />
+      <DynamicHero />
       <Services />
-      <Products />
+      <DynamicProducts />
       <About />
       <Testimonials />
       <FAQ />
