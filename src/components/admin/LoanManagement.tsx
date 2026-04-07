@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import type { BadgeProps } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
@@ -25,8 +26,7 @@ interface Loan {
   loan_products?: { name: string };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const q = supabase as any;
+type BadgeVariant = NonNullable<BadgeProps["variant"]>;
 
 export default function LoanManagement() {
   const [loans, setLoans] = useState<Loan[]>([]);
@@ -39,7 +39,7 @@ export default function LoanManagement() {
   useEffect(() => { fetchLoans(); }, []);
 
   const fetchLoans = async () => {
-    const { data } = await q
+    const { data } = await supabase
       .from("loans")
       .select("*, profiles(full_name, email, kyc_status), loan_products(name)")
       .order("created_at", { ascending: false });
@@ -51,8 +51,12 @@ export default function LoanManagement() {
     setProcessing(loanId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.rpc("approve_loan" as any, {
-        p_loan_id: loanId, p_admin_id: user!.id,
+      if (!user) {
+        toast.error("Authentication required");
+        return;
+      }
+      const { data, error } = await supabase.rpc("approve_loan", {
+        p_loan_id: loanId, p_admin_id: user.id,
       });
       if (error) throw error;
       toast.success(data as string);
@@ -75,8 +79,12 @@ export default function LoanManagement() {
     setProcessing(rejectLoanId);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      const { data, error } = await supabase.rpc("reject_loan" as any, {
-        p_loan_id: rejectLoanId, p_admin_id: user!.id, p_reason: rejectReason,
+      if (!user) {
+        toast.error("Authentication required");
+        return;
+      }
+      const { data, error } = await supabase.rpc("reject_loan", {
+        p_loan_id: rejectLoanId, p_admin_id: user.id, p_reason: rejectReason,
       });
       if (error) throw error;
       toast.success(data as string);
@@ -89,7 +97,7 @@ export default function LoanManagement() {
     }
   };
 
-  const statusColor = (s: string) => {
+  const statusColor = (s: string): BadgeVariant => {
     switch (s) {
       case "active": case "completed": return "default";
       case "pending": return "secondary";
@@ -143,7 +151,7 @@ export default function LoanManagement() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge>
+                    <Badge variant={statusColor(loan.status)}>{loan.status}</Badge>
                   </TableCell>
                   <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
                   <TableCell>

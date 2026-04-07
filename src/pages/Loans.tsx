@@ -9,8 +9,10 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import type { BadgeProps } from "@/components/ui/badge";
 import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
+import type { Tables } from "@/integrations/supabase/types";
 
 interface LoanProduct {
   id: string;
@@ -48,8 +50,7 @@ interface Repayment {
   status: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const q = supabase as any;
+type BadgeVariant = NonNullable<BadgeProps["variant"]>;
 
 export default function Loans() {
   const navigate = useNavigate();
@@ -70,11 +71,11 @@ export default function Loans() {
   const loadData = useCallback(async (uid: string) => {
     try {
       const [productsRes, loansRes, accountsRes] = await Promise.all([
-        q.from("loan_products").select("*").eq("is_active", true),
-        q.from("loans").select("*, loan_products(name)").eq("user_id", uid).order("created_at", { ascending: false }),
+        supabase.from("loan_products").select("*").eq("is_active", true),
+        supabase.from("loans").select("*, loan_products(name)").eq("user_id", uid).order("created_at", { ascending: false }),
         supabase.from("accounts").select("*").eq("user_id", uid).eq("status", "active"),
       ]);
-      if (productsRes.data) setProducts(productsRes.data as LoanProduct[]);
+      if (productsRes.data) setProducts(productsRes.data as Tables<"loan_products">[]);
       if (loansRes.data) setLoans(loansRes.data as Loan[]);
       if (accountsRes.data) setAccounts(accountsRes.data);
     } catch (e) {
@@ -111,7 +112,7 @@ export default function Loans() {
     }
     setApplying(true);
     try {
-      const { error } = await q.from("loans").insert({
+      const { error } = await supabase.from("loans").insert({
         user_id: userId,
         product_id: product.id,
         principal: parsedAmount,
@@ -134,7 +135,7 @@ export default function Loans() {
 
   const viewRepayments = async (loanId: string) => {
     setSelectedLoanId(loanId);
-    const { data } = await q.from("loan_repayments").select("*").eq("loan_id", loanId).order("installment_number");
+    const { data } = await supabase.from("loan_repayments").select("*").eq("loan_id", loanId).order("installment_number");
     setSelectedLoanRepayments((data || []) as Repayment[]);
     setRepaymentDialogOpen(true);
   };
@@ -142,7 +143,7 @@ export default function Loans() {
   const makePayment = async (repaymentId: string) => {
     setPayingId(repaymentId);
     try {
-      const { data, error } = await supabase.rpc("make_loan_repayment" as any, {
+      const { data, error } = await supabase.rpc("make_loan_repayment", {
         p_repayment_id: repaymentId, p_user_id: userId,
       });
       if (error) throw error;
@@ -156,7 +157,7 @@ export default function Loans() {
     }
   };
 
-  const statusColor = (s: string) => {
+  const statusColor = (s: string): BadgeVariant => {
     switch (s) {
       case "active": case "completed": return "default";
       case "pending": return "secondary";
@@ -329,7 +330,7 @@ export default function Loans() {
                           <TableCell>${loan.total_payable.toFixed(2)}</TableCell>
                           <TableCell>{loan.term_months}mo</TableCell>
                           <TableCell>
-                            <Badge variant={statusColor(loan.status) as any}>{loan.status}</Badge>
+                            <Badge variant={statusColor(loan.status)}>{loan.status}</Badge>
                           </TableCell>
                           <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Plus, Pencil, DollarSign, Percent, AlertCircle, TrendingUp, Activity } from "lucide-react";
 import { toast } from "sonner";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 
 interface FeeRule {
   id: string;
@@ -54,7 +55,7 @@ export default function FeeManagement() {
 
   const fetchFeeRules = useCallback(async () => {
     try {
-      const { data, error } = await (supabase as any)
+      const { data, error } = await supabase
         .from("fee_rules")
         .select("*")
         .order("transaction_type", { ascending: true });
@@ -100,7 +101,7 @@ export default function FeeManagement() {
     }
     setSaving(true);
     try {
-      const payload: any = {
+      const payload: TablesUpdate<"fee_rules"> = {
         transaction_type: form.transaction_type,
         fee_type: form.fee_type,
         amount: Number(form.amount),
@@ -112,11 +113,11 @@ export default function FeeManagement() {
       };
 
       if (editingRule) {
-        const { error } = await (supabase as any).from("fee_rules").update(payload).eq("id", editingRule.id);
+        const { error } = await supabase.from("fee_rules").update(payload).eq("id", editingRule.id);
         if (error) throw error;
         toast.success("Fee rule updated");
       } else {
-        const { error } = await (supabase as any).from("fee_rules").insert(payload);
+        const { error } = await supabase.from("fee_rules").insert(payload);
         if (error) throw error;
         toast.success("Fee rule created");
       }
@@ -132,7 +133,7 @@ export default function FeeManagement() {
 
   const toggleActive = async (rule: FeeRule) => {
     try {
-      const { error } = await (supabase as any)
+      const { error } = await supabase
         .from("fee_rules")
         .update({ is_active: !rule.is_active })
         .eq("id", rule.id);

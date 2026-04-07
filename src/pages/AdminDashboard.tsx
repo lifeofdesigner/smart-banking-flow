@@ -2,13 +2,9 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowLeft, Users, CreditCard, Send, DollarSign, CheckCircle, XCircle, BookOpen, Heart, Shield, Bell, FileCheck, AlertTriangle, ScrollText, Gift, Scale, FileText, Landmark, Activity, RotateCcw } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
@@ -33,6 +29,13 @@ import FinancialReports from "@/components/admin/FinancialReports";
 import LiquidityMonitor from "@/components/admin/LiquidityMonitor";
 import SystemHealth from "@/components/admin/SystemHealth";
 import TransactionReversal from "@/components/admin/TransactionReversal";
+import AdminSummaryStats from "@/components/admin/AdminSummaryStats";
+import AdminUsersTab from "@/components/admin/AdminUsersTab";
+import AdminAccountsTab from "@/components/admin/AdminAccountsTab";
+import AdminWiresTab from "@/components/admin/AdminWiresTab";
+import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
+import AdminBeneficiariesTab from "@/components/admin/AdminBeneficiariesTab";
+import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import { toast } from "sonner";
 
 export default function AdminDashboard() {
@@ -216,55 +219,12 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Users className="h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-2xl font-bold">{users.length}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <CreditCard className="h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-2xl font-bold">{accounts.length}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Wire Transfers</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <Send className="h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-2xl font-bold">{wireTransfers.length}</span>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center">
-                <DollarSign className="h-4 w-4 text-muted-foreground mr-2" />
-                <span className="text-2xl font-bold">{transactions.length}</span>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <AdminSummaryStats
+          usersCount={users.length}
+          accountsCount={accounts.length}
+          wireTransfersCount={wireTransfers.length}
+          transactionsCount={transactions.length}
+        />
 
         <Tabs defaultValue="users" className="space-y-4">
           <TabsList className="flex flex-wrap h-auto gap-1">
@@ -301,241 +261,26 @@ export default function AdminDashboard() {
           </TabsList>
 
           <TabsContent value="users">
-            <Card>
-              <CardHeader>
-                <CardTitle>User Management</CardTitle>
-                <CardDescription>Manage user profiles and KYC verification</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Name</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Phone</TableHead>
-                      <TableHead>KYC Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map((user) => (
-                      <TableRow key={user.id}>
-                        <TableCell>{user.full_name}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.phone || "N/A"}</TableCell>
-                        <TableCell>
-                          <Badge variant={user.kyc_status === "verified" ? "default" : "secondary"}>
-                            {user.kyc_status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={user.kyc_status}
-                            onValueChange={(value) => updateKycStatus(user.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="verified">Verified</SelectItem>
-                              <SelectItem value="rejected">Rejected</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminUsersTab users={users} updateKycStatus={updateKycStatus} />
           </TabsContent>
 
           <TabsContent value="accounts">
-            <Card>
-              <CardHeader>
-                <CardTitle>Account Management</CardTitle>
-                <CardDescription>View and manage user bank accounts</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Account Number</TableHead>
-                      <TableHead>Owner</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Balance</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {accounts.map((account) => (
-                      <TableRow key={account.id}>
-                        <TableCell className="font-mono">{account.account_number}</TableCell>
-                        <TableCell>{account.profiles?.full_name}</TableCell>
-                        <TableCell className="capitalize">{account.account_type}</TableCell>
-                        <TableCell>${account.computed_balance?.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge variant={account.status === "active" ? "default" : "secondary"}>
-                            {account.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <Select
-                            value={account.status}
-                            onValueChange={(value) => updateAccountStatus(account.id, value)}
-                          >
-                            <SelectTrigger className="w-32">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="active">Active</SelectItem>
-                              <SelectItem value="suspended">Suspended</SelectItem>
-                              <SelectItem value="closed">Closed</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminAccountsTab accounts={accounts} updateAccountStatus={updateAccountStatus} />
           </TabsContent>
 
           <TabsContent value="wires">
-            <Card>
-              <CardHeader>
-                <CardTitle>Wire Transfer Management</CardTitle>
-                <CardDescription>Monitor and approve wire transfers</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Beneficiary</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Country</TableHead>
-                      <TableHead>Stage</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Actions</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {wireTransfers.map((wire) => (
-                      <TableRow key={wire.id}>
-                        <TableCell>{wire.profiles?.full_name}</TableCell>
-                        <TableCell>{wire.beneficiary_name}</TableCell>
-                        <TableCell>${wire.amount.toFixed(2)}</TableCell>
-                        <TableCell>{wire.beneficiary_country}</TableCell>
-                        <TableCell>{wire.current_stage}/5</TableCell>
-                        <TableCell>
-                          <Badge
-                            variant={
-                              wire.status === "completed"
-                                ? "default"
-                                : wire.status === "failed"
-                                ? "destructive"
-                                : "secondary"
-                            }
-                          >
-                            {wire.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          {wire.status === "pending" && (
-                            <Button
-                              size="sm"
-                              onClick={() => approveWireTransfer(wire.id)}
-                            >
-                              <CheckCircle className="h-4 w-4 mr-1" />
-                              Approve
-                            </Button>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminWiresTab wireTransfers={wireTransfers} approveWireTransfer={approveWireTransfer} />
           </TabsContent>
 
           <TabsContent value="transactions">
-            <Card>
-              <CardHeader>
-                <CardTitle>Transaction History</CardTitle>
-                <CardDescription>View all system transactions</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Account</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {transactions.map((tx) => (
-                      <TableRow key={tx.id}>
-                        <TableCell className="font-mono text-xs">{tx.reference_number}</TableCell>
-                        <TableCell className="font-mono">{tx.accounts?.account_number}</TableCell>
-                        <TableCell className="capitalize">{tx.transaction_type}</TableCell>
-                        <TableCell>${tx.amount.toFixed(2)}</TableCell>
-                        <TableCell>
-                          <Badge variant={tx.status === "completed" ? "default" : "secondary"}>
-                            {tx.status}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{new Date(tx.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminTransactionsTab transactions={transactions} />
           </TabsContent>
           <TabsContent value="ledger">
             <LedgerExplorer />
           </TabsContent>
 
           <TabsContent value="beneficiaries">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Beneficiaries</CardTitle>
-                <CardDescription>Overview of saved beneficiaries across all users</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Nickname</TableHead>
-                      <TableHead>Account Number</TableHead>
-                      <TableHead>Bank</TableHead>
-                      <TableHead>Created</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allBeneficiaries.map((b: any) => (
-                      <TableRow key={b.id}>
-                        <TableCell>{b.user_name}</TableCell>
-                        <TableCell>{b.nickname}</TableCell>
-                        <TableCell className="font-mono">{b.account_number}</TableCell>
-                        <TableCell>{b.bank_name}</TableCell>
-                        <TableCell>{new Date(b.created_at).toLocaleDateString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminBeneficiariesTab allBeneficiaries={allBeneficiaries} />
           </TabsContent>
 
           <TabsContent value="limits">
@@ -555,42 +300,7 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="notifications">
-            <Card>
-              <CardHeader>
-                <CardTitle>All Notifications</CardTitle>
-                <CardDescription>System-wide notification log</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>User</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Title</TableHead>
-                      <TableHead>Message</TableHead>
-                      <TableHead>Read</TableHead>
-                      <TableHead>Date</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {allNotifications.map((n: any) => (
-                      <TableRow key={n.id}>
-                        <TableCell>{n.user_name}</TableCell>
-                        <TableCell>
-                          <Badge variant={n.type === "credit_alert" ? "default" : n.type === "debit_alert" ? "secondary" : "destructive"}>
-                            {n.type}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>{n.title}</TableCell>
-                        <TableCell className="max-w-xs truncate">{n.message}</TableCell>
-                        <TableCell>{n.read ? <CheckCircle className="h-4 w-4 text-primary" /> : <XCircle className="h-4 w-4 text-muted-foreground" />}</TableCell>
-                        <TableCell>{new Date(n.created_at).toLocaleString()}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </CardContent>
-            </Card>
+            <AdminNotificationsTab allNotifications={allNotifications} />
           </TabsContent>
 
           <TabsContent value="kyc">
