@@ -49,9 +49,15 @@ export default function AdminDashboard() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [allBeneficiaries, setAllBeneficiaries] = useState<any[]>([]);
   const [allNotifications, setAllNotifications] = useState<any[]>([]);
+  const [now, setNow] = useState(new Date());
 
   useEffect(() => {
     checkAdmin();
+  }, []);
+
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
   }, []);
 
   const checkAdmin = async () => {
@@ -91,15 +97,16 @@ export default function AdminDashboard() {
       const [usersRes, accountsRes, wiresRes, txRes, benRes, notifRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
         supabase.from("accounts").select("*").order("created_at", { ascending: false }),
-        supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
+        supabase.from("wire_transfers").select("*").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false }),
         supabase.from("beneficiaries").select("*").order("created_at", { ascending: false }),
         supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(100),
       ]);
 
+      const usersById = new Map((usersRes.data || []).map((u: any) => [u.id, u]));
+
       if (usersRes.data) setUsers(usersRes.data);
       if (accountsRes.data) {
-        const usersById = new Map((usersRes.data || []).map((u: any) => [u.id, u]));
         const withBalances = accountsRes.data.map((acc: any) => ({
           ...acc,
           profiles: acc.profiles || (acc.user_id ? usersById.get(acc.user_id) : null),
@@ -107,7 +114,13 @@ export default function AdminDashboard() {
         }));
         setAccounts(withBalances);
       }
-      if (wiresRes.data) setWireTransfers(wiresRes.data);
+      if (wiresRes.data) {
+        const enrichedWires = wiresRes.data.map((wire: any) => ({
+          ...wire,
+          profiles: wire.profiles || (wire.user_id ? usersById.get(wire.user_id) : null),
+        }));
+        setWireTransfers(enrichedWires);
+      }
       if (txRes.data) setTransactions(txRes.data);
       if (benRes.data) {
         // Enrich with user names
@@ -198,6 +211,10 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleViewCodes = (_wireTransferId: string) => {
+    // handled in AdminWiresTab dialog
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -211,15 +228,28 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen admin-premium-page">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={() => navigate("/dashboard")}>
+        <div className="mb-6 border-b border-[var(--bank-navy)]/20 pb-4">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                variant="ghost"
+                className="text-[var(--bank-muted)] hover:bg-[var(--bank-navy)]/5 hover:text-[var(--bank-navy)]"
+                onClick={() => navigate("/dashboard")}
+              >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back
-            </Button>
-            <h1 className="text-3xl font-bold">Admin Dashboard</h1>
+              </Button>
+              <div>
+                <h1 className="admin-premium-heading text-3xl leading-tight text-[var(--bank-navy)]">MicroFinance Bank</h1>
+                <p className="text-sm font-medium tracking-wide text-[var(--bank-gold)]">Administration Portal</p>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-xs uppercase tracking-wide text-[var(--bank-muted)]">Current Date & Time</p>
+              <p className="text-sm font-medium text-[var(--bank-navy)]">{now.toLocaleString()}</p>
+            </div>
           </div>
         </div>
 
@@ -231,37 +261,37 @@ export default function AdminDashboard() {
         />
 
         <Tabs defaultValue="users" className="space-y-4">
-          <TabsList className="flex flex-wrap h-auto gap-1">
-            <TabsTrigger value="users">Users</TabsTrigger>
-            <TabsTrigger value="accounts">Accounts</TabsTrigger>
-            <TabsTrigger value="wires">Wire Transfers</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="ledger">Ledger</TabsTrigger>
-            <TabsTrigger value="beneficiaries">Beneficiaries</TabsTrigger>
-            <TabsTrigger value="limits">Transfer Limits</TabsTrigger>
-            <TabsTrigger value="loans">Loans</TabsTrigger>
-            <TabsTrigger value="cards">Cards</TabsTrigger>
-            <TabsTrigger value="investments">Investments</TabsTrigger>
-            <TabsTrigger value="savings">Savings</TabsTrigger>
-            <TabsTrigger value="bills">Bills</TabsTrigger>
-            <TabsTrigger value="atm">ATM</TabsTrigger>
-            <TabsTrigger value="scheduled">Scheduled</TabsTrigger>
-            <TabsTrigger value="cashback">Cashback</TabsTrigger>
-            <TabsTrigger value="fraud">Fraud Alerts</TabsTrigger>
-            <TabsTrigger value="referrals">Referrals</TabsTrigger>
-            <TabsTrigger value="notifications">Notifications</TabsTrigger>
-            <TabsTrigger value="kyc">KYC Reviews</TabsTrigger>
-            <TabsTrigger value="fees">Fees</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
-            <TabsTrigger value="content">Content</TabsTrigger>
-            <TabsTrigger value="currency">Currency</TabsTrigger>
-            <TabsTrigger value="support">Support</TabsTrigger>
-            <TabsTrigger value="reconciliation">Reconciliation</TabsTrigger>
-            <TabsTrigger value="reports">Reports</TabsTrigger>
-            <TabsTrigger value="liquidity">Liquidity</TabsTrigger>
-            <TabsTrigger value="health">Health</TabsTrigger>
-            <TabsTrigger value="reversal">Reversals</TabsTrigger>
-            <TabsTrigger value="stresstest">Stress Test</TabsTrigger>
+          <TabsList className="h-auto w-full justify-start flex-wrap gap-x-1 gap-y-2 rounded-none border-b-2 border-[var(--bank-navy)]/20 bg-[var(--bank-white)] px-2 py-2 shadow-sm">
+            <TabsTrigger value="users" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Users</TabsTrigger>
+            <TabsTrigger value="accounts" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Accounts</TabsTrigger>
+            <TabsTrigger value="wires" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Wire Transfers</TabsTrigger>
+            <TabsTrigger value="transactions" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Transactions</TabsTrigger>
+            <TabsTrigger value="ledger" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Ledger</TabsTrigger>
+            <TabsTrigger value="beneficiaries" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Beneficiaries</TabsTrigger>
+            <TabsTrigger value="limits" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Transfer Limits</TabsTrigger>
+            <TabsTrigger value="loans" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Loans</TabsTrigger>
+            <TabsTrigger value="cards" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Cards</TabsTrigger>
+            <TabsTrigger value="investments" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Investments</TabsTrigger>
+            <TabsTrigger value="savings" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Savings</TabsTrigger>
+            <TabsTrigger value="bills" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Bills</TabsTrigger>
+            <TabsTrigger value="atm" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">ATM</TabsTrigger>
+            <TabsTrigger value="scheduled" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Scheduled</TabsTrigger>
+            <TabsTrigger value="cashback" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Cashback</TabsTrigger>
+            <TabsTrigger value="fraud" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Fraud Alerts</TabsTrigger>
+            <TabsTrigger value="referrals" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Referrals</TabsTrigger>
+            <TabsTrigger value="notifications" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Notifications</TabsTrigger>
+            <TabsTrigger value="kyc" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">KYC Reviews</TabsTrigger>
+            <TabsTrigger value="fees" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Fees</TabsTrigger>
+            <TabsTrigger value="audit" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Audit Logs</TabsTrigger>
+            <TabsTrigger value="content" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Content</TabsTrigger>
+            <TabsTrigger value="currency" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Currency</TabsTrigger>
+            <TabsTrigger value="support" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Support</TabsTrigger>
+            <TabsTrigger value="reconciliation" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Reconciliation</TabsTrigger>
+            <TabsTrigger value="reports" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Reports</TabsTrigger>
+            <TabsTrigger value="liquidity" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Liquidity</TabsTrigger>
+            <TabsTrigger value="health" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Health</TabsTrigger>
+            <TabsTrigger value="reversal" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Reversals</TabsTrigger>
+            <TabsTrigger value="stresstest" className="rounded-none border-b-[3px] border-transparent bg-transparent text-[var(--bank-muted)] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Stress Test</TabsTrigger>
           </TabsList>
 
           <TabsContent value="users">
@@ -278,7 +308,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="wires">
-            <AdminWiresTab wireTransfers={wireTransfers} approveWireTransfer={approveWireTransfer} />
+            <AdminWiresTab
+              wireTransfers={wireTransfers}
+              approveWireTransfer={approveWireTransfer}
+              adminId={adminId}
+              onViewCodes={handleViewCodes}
+            />
           </TabsContent>
 
           <TabsContent value="transactions">

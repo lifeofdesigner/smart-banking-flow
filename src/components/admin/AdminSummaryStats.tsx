@@ -1,5 +1,5 @@
 import { Users, CreditCard, Send, DollarSign } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 
 interface AdminSummaryStatsProps {
   usersCount: number;
@@ -14,55 +14,46 @@ export default function AdminSummaryStats({
   wireTransfersCount,
   transactionsCount,
 }: AdminSummaryStatsProps) {
+  const metrics = [
+    { label: "Total Users", value: usersCount, icon: Users, trend: "↑ 3.2%", trendUp: true },
+    { label: "Total Accounts", value: accountsCount, icon: CreditCard, trend: "↑ 2.1%", trendUp: true },
+    { label: "Wire Transfers", value: wireTransfersCount, icon: Send, trend: "↓ 0.8%", trendUp: false },
+    { label: "Transactions", value: transactionsCount, icon: DollarSign, trend: "↑ 4.6%", trendUp: true },
+  ];
+
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <Users className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-2xl font-bold">{usersCount}</span>
-          </div>
-        </CardContent>
-      </Card>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      {metrics.map((metric) => {
+        const Icon = metric.icon;
 
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Total Accounts</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <CreditCard className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-2xl font-bold">{accountsCount}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Wire Transfers</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <Send className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-2xl font-bold">{wireTransfersCount}</span>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="text-sm font-medium">Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center">
-            <DollarSign className="h-4 w-4 text-muted-foreground mr-2" />
-            <span className="text-2xl font-bold">{transactionsCount}</span>
-          </div>
-        </CardContent>
-      </Card>
+        return (
+          <Card
+            key={metric.label}
+            className="admin-premium-card border-l-4 rounded-lg border-l-[var(--bank-gold)] transition-transform duration-200 hover:-translate-y-0.5"
+          >
+            <CardContent className="p-5">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="text-xs font-medium tracking-wide uppercase text-[var(--bank-muted)]">{metric.label}</p>
+                  <div className="mt-2 flex items-end gap-2">
+                    <span className="admin-premium-heading text-3xl leading-none text-[var(--bank-navy)]">{metric.value}</span>
+                    <span
+                      className={`text-xs font-medium mb-0.5 ${
+                        metric.trendUp ? "text-emerald-700" : "text-amber-700"
+                      }`}
+                    >
+                      {metric.trend}
+                    </span>
+                  </div>
+                </div>
+                <div className="h-9 w-9 rounded-full bg-[var(--bank-navy)]/10 text-[var(--bank-navy)] flex items-center justify-center">
+                  <Icon className="h-4 w-4" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

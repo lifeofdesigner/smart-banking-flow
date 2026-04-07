@@ -69,14 +69,14 @@ export default function AdminAccountsTab({
 
   return (
     <>
-      <Card>
+      <Card className="admin-premium-card rounded-lg border-0">
         <CardHeader>
-          <CardTitle>Account Management</CardTitle>
-          <CardDescription>View and manage user bank accounts</CardDescription>
+          <CardTitle className="admin-premium-heading text-[var(--bank-navy)]">Account Management</CardTitle>
+          <CardDescription className="text-[var(--bank-muted)]">View and manage user bank accounts</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
-            <TableHeader>
+            <TableHeader className="admin-premium-table-head">
               <TableRow>
                 <TableHead>Account Number</TableHead>
                 <TableHead>Owner</TableHead>
@@ -88,13 +88,21 @@ export default function AdminAccountsTab({
             </TableHeader>
             <TableBody>
               {accounts.map((account) => (
-                <TableRow key={account.id}>
-                  <TableCell className="font-mono">{account.account_number}</TableCell>
+                <TableRow key={account.id} className="admin-premium-row h-11">
+                  <TableCell className="font-mono text-[var(--bank-navy)]">{account.account_number}</TableCell>
                   <TableCell>{account.profiles?.full_name}</TableCell>
                   <TableCell className="capitalize">{account.account_type}</TableCell>
                   <TableCell>${account.computed_balance?.toFixed(2)}</TableCell>
                   <TableCell>
-                    <Badge variant={account.status === "active" ? "default" : "secondary"}>
+                    <Badge
+                      className={`admin-premium-badge ${
+                        account.status === "active"
+                          ? "bg-emerald-100 text-emerald-700"
+                          : account.status === "suspended"
+                            ? "bg-amber-100 text-amber-800"
+                            : "bg-red-100 text-red-700"
+                      }`}
+                    >
                       {account.status}
                     </Badge>
                   </TableCell>
@@ -104,7 +112,7 @@ export default function AdminAccountsTab({
                         value={account.status}
                         onValueChange={(value) => updateAccountStatus(account.id, value)}
                       >
-                        <SelectTrigger className="w-32">
+                        <SelectTrigger className="h-8 w-32 border-[#d7dde6] bg-white text-[var(--bank-navy)] shadow-none focus:ring-1 focus:ring-[var(--bank-slate)]">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -114,7 +122,11 @@ export default function AdminAccountsTab({
                         </SelectContent>
                       </Select>
 
-                      <Button variant="outline" size="sm" onClick={() => openDepositDialog(account)}>
+                      <Button
+                        size="sm"
+                        className="h-8 rounded-md bg-[var(--bank-gold)] px-3 text-xs font-medium text-[#27200d] hover:bg-[#b9973f]"
+                        onClick={() => openDepositDialog(account)}
+                      >
                         Deposit
                       </Button>
                     </div>

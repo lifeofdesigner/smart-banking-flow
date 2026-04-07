@@ -10,14 +10,14 @@ interface AdminUsersTabProps {
 
 export default function AdminUsersTab({ users, updateKycStatus }: AdminUsersTabProps) {
   return (
-    <Card>
+    <Card className="admin-premium-card rounded-lg border-0">
       <CardHeader>
-        <CardTitle>User Management</CardTitle>
-        <CardDescription>Manage user profiles and KYC verification</CardDescription>
+        <CardTitle className="admin-premium-heading text-[var(--bank-navy)]">User Management</CardTitle>
+        <CardDescription className="text-[var(--bank-muted)]">Manage user profiles and KYC verification</CardDescription>
       </CardHeader>
       <CardContent>
         <Table>
-          <TableHeader>
+          <TableHeader className="admin-premium-table-head">
             <TableRow>
               <TableHead>Name</TableHead>
               <TableHead>Email</TableHead>
@@ -28,12 +28,20 @@ export default function AdminUsersTab({ users, updateKycStatus }: AdminUsersTabP
           </TableHeader>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user.id} className="admin-premium-row h-11 hover:bg-[#F0F4FA]">
                 <TableCell>{user.full_name}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>{user.phone || "N/A"}</TableCell>
                 <TableCell>
-                  <Badge variant={user.kyc_status === "verified" ? "default" : "secondary"}>
+                  <Badge
+                    className={`admin-premium-badge ${
+                      user.kyc_status === "verified"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : user.kyc_status === "rejected"
+                          ? "bg-red-100 text-red-700"
+                          : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
                     {user.kyc_status}
                   </Badge>
                 </TableCell>
@@ -42,7 +50,7 @@ export default function AdminUsersTab({ users, updateKycStatus }: AdminUsersTabP
                     value={user.kyc_status}
                     onValueChange={(value) => updateKycStatus(user.id, value)}
                   >
-                    <SelectTrigger className="w-32">
+                    <SelectTrigger className="h-8 w-32 border-[#d7dde6] bg-white text-[var(--bank-navy)] shadow-none focus:ring-1 focus:ring-[var(--bank-slate)]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
