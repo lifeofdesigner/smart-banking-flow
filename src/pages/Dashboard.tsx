@@ -19,6 +19,7 @@ import {
   FileText,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 
 interface Account {
   id: string;
@@ -45,7 +46,7 @@ interface Profile {
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
@@ -60,17 +61,19 @@ const Dashboard = () => {
     if (!user) return;
 
     try {
-      const { data: profileData } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from("profiles")
         .select("*")
         .eq("id", user.id)
         .single();
+      if (profileError) { toast.error(profileError.message); return; }
       if (profileData) setProfile(profileData);
 
-      const { data: accountsData } = await supabase
+      const { data: accountsData, error: accountsError } = await supabase
         .from("accounts")
         .select("*")
         .eq("user_id", user.id);
+      if (accountsError) { toast.error(accountsError.message); return; }
 
       if (accountsData) {
         setAccounts(accountsData.map((a) => ({
@@ -79,17 +82,18 @@ const Dashboard = () => {
         })));
 
         if (accountsData.length > 0) {
-          const { data: txData } = await supabase
+          const { data: txData, error: txError } = await supabase
             .from("transactions")
             .select("*")
             .eq("account_id", accountsData[0].id)
             .order("created_at", { ascending: false })
             .limit(5);
+          if (txError) { toast.error(txError.message); return; }
           if (txData) setTransactions(txData);
         }
       }
     } catch (error: any) {
-      toast({ title: "Error loading data", description: error.message, variant: "destructive" });
+      uiToast({ title: "Error loading data", description: error.message, variant: "destructive" });
     } finally {
       setLoading(false);
     }

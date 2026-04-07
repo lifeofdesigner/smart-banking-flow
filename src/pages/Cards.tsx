@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import { CreditCard, Snowflake, Sun, Loader2 } from "lucide-react";
 
 interface CardData {
@@ -18,7 +19,7 @@ interface CardData {
 }
 
 export default function CardsPage() {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
@@ -28,7 +29,8 @@ export default function CardsPage() {
   const loadCards = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("cards").select("*").eq("user_id", user.id);
+    const { data, error } = await supabase.from("cards").select("*").eq("user_id", user.id);
+    if (error) { toast.error(error.message); return; }
     if (data) setCards(data);
     setLoading(false);
   };
@@ -42,9 +44,9 @@ export default function CardsPage() {
     }).eq("id", card.id);
 
     if (error) {
-      toast({ title: "Failed to update card", description: error.message, variant: "destructive" });
+      uiToast({ title: "Failed to update card", description: error.message, variant: "destructive" });
     } else {
-      toast({ title: newStatus === "frozen" ? "Card frozen" : "Card unfrozen" });
+      uiToast({ title: newStatus === "frozen" ? "Card frozen" : "Card unfrozen" });
       loadCards();
     }
     setToggling(null);

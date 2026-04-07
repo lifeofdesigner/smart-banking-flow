@@ -114,7 +114,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       .from("user_roles")
       .select("role")
       .eq("user_id", user.id);
-    setIsAdmin(roles?.some((r) => r.role === "admin") || false);
+    setIsAdmin(roles?.some((r) => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role)) || false);
     setLoading(false);
   };
 

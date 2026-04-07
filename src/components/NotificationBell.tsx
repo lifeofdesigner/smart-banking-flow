@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface Notification {
   id: string;
@@ -45,12 +46,13 @@ export default function NotificationBell() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("notifications")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(20);
+    if (error) { toast.error(error.message); return; }
 
     if (data) {
       setNotifications(data as Notification[]);
@@ -59,7 +61,8 @@ export default function NotificationBell() {
   };
 
   const markAsRead = async (id: string) => {
-    await supabase.from("notifications").update({ read: true }).eq("id", id);
+    const { error } = await supabase.from("notifications").update({ read: true }).eq("id", id);
+    if (error) { toast.error(error.message); return; }
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, read: true } : n))
     );
@@ -69,7 +72,8 @@ export default function NotificationBell() {
   const markAllAsRead = async () => {
     const unreadIds = notifications.filter((n) => !n.read).map((n) => n.id);
     if (unreadIds.length === 0) return;
-    await supabase.from("notifications").update({ read: true }).in("id", unreadIds);
+    const { error } = await supabase.from("notifications").update({ read: true }).in("id", unreadIds);
+    if (error) { toast.error(error.message); return; }
     setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
     setUnreadCount(0);
   };
