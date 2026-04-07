@@ -42,6 +42,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [adminId, setAdminId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
   const [wireTransfers, setWireTransfers] = useState<any[]>([]);
@@ -74,6 +75,7 @@ export default function AdminDashboard() {
         return;
       }
 
+      setAdminId(user.id);
       setIsAdmin(true);
       await fetchData();
     } catch (error) {
@@ -265,7 +267,12 @@ export default function AdminDashboard() {
           </TabsContent>
 
           <TabsContent value="accounts">
-            <AdminAccountsTab accounts={accounts} updateAccountStatus={updateAccountStatus} />
+            <AdminAccountsTab
+              accounts={accounts}
+              adminId={adminId}
+              onDepositSuccess={fetchData}
+              updateAccountStatus={updateAccountStatus}
+            />
           </TabsContent>
 
           <TabsContent value="wires">
