@@ -27,6 +27,7 @@ import {
 import { CalendarIcon, Download, FileText, Search, Filter, X } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 
 interface Transaction {
   id: string;
@@ -70,17 +71,26 @@ export default function TransactionHistory() {
   const loadTransactions = useCallback(async () => {
     setLoading(true);
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
     // Get user accounts first
-    const { data: userAccounts } = await supabase
+    const { data: userAccountsData, error: accError } = await supabase
       .from("accounts")
       .select("id, account_number")
       .eq("user_id", user.id);
 
-    if (userAccounts) {
-      setAccounts(userAccounts);
-      const accountIds = userAccounts.map(a => a.id);
+    if (accError) {
+      toast.error(accError.message);
+      setLoading(false);
+      return;
+    }
+
+    if (userAccountsData) {
+      setAccounts(userAccountsData);
+      const accountIds = userAccountsData.map(a => a.id);
 
       if (accountIds.length === 0) {
         setTransactions([]);
@@ -121,7 +131,12 @@ export default function TransactionHistory() {
       const from = (currentPage - 1) * PAGE_SIZE;
       query = query.range(from, from + PAGE_SIZE - 1);
 
-      const { data, count } = await query;
+      const { data, count, error: txError } = await query;
+      if (txError) {
+        toast.error(txError.message);
+        setLoading(false);
+        return;
+      }
       if (data) setTransactions(data);
       if (count !== null) setTotalCount(count);
     }

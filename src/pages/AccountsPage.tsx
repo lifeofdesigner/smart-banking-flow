@@ -23,6 +23,7 @@ import {
   Tooltip,
   CartesianGrid,
 } from "recharts";
+import { toast } from "sonner";
 
 interface Account {
   id: string;
@@ -60,23 +61,32 @@ export default function AccountsPage() {
   const loadAccounts = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("accounts")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+    if (error) {
+      toast.error(error.message);
+      setLoading(false);
+      return;
+    }
     if (data) setAccounts(data);
     setLoading(false);
   };
 
   const loadAccountTransactions = async (accountId: string, days: number) => {
     const since = subDays(new Date(), days).toISOString();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("transactions")
       .select("*")
       .eq("account_id", accountId)
       .gte("created_at", since)
       .order("created_at", { ascending: true });
+    if (error) {
+      toast.error(error.message);
+      return [];
+    }
     return data ?? [];
   };
 

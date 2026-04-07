@@ -82,10 +82,11 @@ const Dashboard = () => {
         })));
 
         if (accountsData.length > 0) {
+          const allAccountIds = accountsData.map((a) => a.id);
           const { data: txData, error: txError } = await supabase
             .from("transactions")
             .select("*")
-            .eq("account_id", accountsData[0].id)
+            .in("account_id", allAccountIds)
             .order("created_at", { ascending: false })
             .limit(5);
           if (txError) { toast.error(txError.message); return; }
