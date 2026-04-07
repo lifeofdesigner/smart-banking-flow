@@ -90,7 +90,7 @@ export default function AdminDashboard() {
     try {
       const [usersRes, accountsRes, wiresRes, txRes, benRes, notifRes] = await Promise.all([
         supabase.from("profiles").select("*").order("created_at", { ascending: false }),
-        supabase.from("accounts").select("*, profiles(full_name, email)").not("user_id", "is", null).order("created_at", { ascending: false }),
+        supabase.from("accounts").select("*").order("created_at", { ascending: false }),
         supabase.from("wire_transfers").select("*, profiles(full_name, email)").order("created_at", { ascending: false }),
         supabase.from("transactions").select("*, accounts(account_number)").order("created_at", { ascending: false }),
         supabase.from("beneficiaries").select("*").order("created_at", { ascending: false }),
@@ -99,8 +99,10 @@ export default function AdminDashboard() {
 
       if (usersRes.data) setUsers(usersRes.data);
       if (accountsRes.data) {
+        const usersById = new Map((usersRes.data || []).map((u: any) => [u.id, u]));
         const withBalances = accountsRes.data.map((acc: any) => ({
           ...acc,
+          profiles: acc.profiles || (acc.user_id ? usersById.get(acc.user_id) : null),
           computed_balance: acc.available_balance ?? acc.balance ?? 0,
         }));
         setAccounts(withBalances);
