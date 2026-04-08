@@ -3,6 +3,8 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
   const siteSettings = useSiteSettings();
+  const logoUrl = siteSettings["site_logo_url"];
+  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
 
   return (
     <footer className="bg-primary text-primary-foreground py-16">
@@ -10,10 +12,18 @@ const Footer = () => {
         <div className="grid md:grid-cols-4 gap-12 mb-12">
           <div className="space-y-4">
             <div className="flex items-center space-x-2">
-              <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
-                <span className="text-accent-foreground font-bold text-xl">M</span>
-              </div>
-              <span className="text-xl font-bold">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={siteName}
+                  style={{ height: "36px", width: "auto", objectFit: "contain" }}
+                />
+              ) : (
+                <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
+                  <span className="text-accent-foreground font-bold text-xl">M</span>
+                </div>
+              )}
+              <span className="text-xl font-bold">{siteName}</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               Empowering communities through accessible financial services since 2010.
@@ -68,7 +78,7 @@ const Footer = () => {
         <div className="border-t border-primary-foreground/20 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-primary-foreground/80 text-sm">
-              © {new Date().getFullYear()} {siteSettings["site_name"] || "MicroFinance Bank"}. All rights reserved.
+              © {new Date().getFullYear()} {siteName}. All rights reserved.
             </p>
             <p className="text-primary-foreground/80 text-sm">
               Member of Deposit Insurance Corporation

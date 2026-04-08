@@ -28,6 +28,7 @@ import {
   BarChart3,
   FileText,
   MoreHorizontal,
+  ChevronDown,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
@@ -70,6 +71,7 @@ const Dashboard = () => {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [totalBalance, setTotalBalance] = useState(0);
   const [monthlyChartData, setMonthlyChartData] = useState<MonthlyChartPoint[]>([]);
+  const [overviewOpen, setOverviewOpen] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -257,69 +259,79 @@ const Dashboard = () => {
           <p className="text-muted-foreground">Here's your financial overview</p>
         </div>
 
-        {/* Financial Health */}
-        <div className="hidden md:block">
-          <FinancialHealthWidget />
-        </div>
-
-        {/* Smart Insights */}
-        <div className="hidden md:block">
-          <SmartInsightsWidget />
-        </div>
-
-        <Card className="rounded-2xl border-0 bg-white p-4 shadow-sm md:rounded-lg md:p-6">
-          <div className="flex items-center justify-between mb-4">
+        <Card className="hidden border-0 bg-white p-4 shadow-sm md:block md:rounded-lg md:p-6">
+          <button
+            type="button"
+            onClick={() => setOverviewOpen((v) => !v)}
+            className="flex w-full items-center justify-between text-left"
+          >
             <h3 className="text-lg font-semibold" style={{ color: "var(--bank-navy)" }}>
-              Income vs Spending — Last 6 Months
+              Financial Overview
             </h3>
-            <div className="hidden items-center gap-4 text-sm sm:flex">
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--bank-slate, #2C4A7C)" }}
-                />
-                <span className="text-muted-foreground">Income</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--bank-gold, #C9A84C)" }}
-                />
-                <span className="text-muted-foreground">Spending</span>
-              </div>
-            </div>
-          </div>
+            <ChevronDown className={`h-5 w-5 text-muted-foreground transition-transform ${overviewOpen ? "rotate-180" : ""}`} />
+          </button>
 
-          <div className="h-64 md:h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={monthlyChartData}>
-                <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.2} />
-                <XAxis dataKey="month" tickLine={false} axisLine={false} />
-                <YAxis tickLine={false} axisLine={false} width={42} />
-                <Tooltip
-                  formatter={(value: number) =>
-                    `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="income"
-                  stroke="var(--bank-slate, #2C4A7C)"
-                  fill="var(--bank-slate, #2C4A7C)"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="spending"
-                  stroke="var(--bank-gold, #C9A84C)"
-                  fill="var(--bank-gold, #C9A84C)"
-                  fillOpacity={0.15}
-                  strokeWidth={2}
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
+          {overviewOpen && (
+            <div className="mt-4 space-y-4">
+              <FinancialHealthWidget />
+              <SmartInsightsWidget />
+
+              <Card className="rounded-lg border-0 bg-white p-4 shadow-sm md:p-6">
+                <div className="mb-4 flex items-center justify-between">
+                  <h3 className="text-lg font-semibold" style={{ color: "var(--bank-navy)" }}>
+                    Income vs Spending — Last 6 Months
+                  </h3>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: "var(--bank-slate, #2C4A7C)" }}
+                      />
+                      <span className="text-muted-foreground">Income</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span
+                        className="h-2.5 w-2.5 rounded-full"
+                        style={{ backgroundColor: "var(--bank-gold, #C9A84C)" }}
+                      />
+                      <span className="text-muted-foreground">Spending</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="h-64 md:h-72">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={monthlyChartData}>
+                      <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.2} />
+                      <XAxis dataKey="month" tickLine={false} axisLine={false} />
+                      <YAxis tickLine={false} axisLine={false} width={42} />
+                      <Tooltip
+                        formatter={(value: number) =>
+                          `$${value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                        }
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="income"
+                        stroke="var(--bank-slate, #2C4A7C)"
+                        fill="var(--bank-slate, #2C4A7C)"
+                        fillOpacity={0.15}
+                        strokeWidth={2}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="spending"
+                        stroke="var(--bank-gold, #C9A84C)"
+                        fill="var(--bank-gold, #C9A84C)"
+                        fillOpacity={0.15}
+                        strokeWidth={2}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </Card>
+            </div>
+          )}
         </Card>
 
         <Card className="card-banking hidden p-6 md:block">

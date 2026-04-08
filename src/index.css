@@ -175,4 +175,119 @@ All colors MUST be HSL.
     padding: 0.25rem 0.55rem;
     border: 1px solid transparent;
   }
+
+  /* Landing Theme Overrides */
+  .theme-split-screen {
+    --background: 210 20% 96%;
+    --foreground: 216 46% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 216 46% 12%;
+    --muted: 210 22% 94%;
+    --muted-foreground: 215 16% 46%;
+    --border: 214 20% 88%;
+    --input: 214 20% 82%;
+    --primary: 216 60% 10%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 43 53% 54%;
+    --accent-foreground: 216 60% 10%;
+    --ring: 43 53% 54%;
+  }
+
+  .theme-split-screen-hero-left {
+    background-color: hsl(var(--primary));
+  }
+
+  .theme-magazine {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 6%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 6%;
+    --muted: 0 0% 96%;
+    --muted-foreground: 0 0% 34%;
+    --border: 0 0% 10%;
+    --input: 0 0% 20%;
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 0 73% 52%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 0 0% 0%;
+  }
+
+  .theme-magazine,
+  .theme-magazine h1,
+  .theme-magazine h2,
+  .theme-magazine h3 {
+    font-family: "DM Sans", sans-serif;
+    font-weight: 800;
+    letter-spacing: 0.01em;
+  }
+
+  .theme-magazine-hero {
+    border-top: 4px solid hsl(var(--primary));
+    border-bottom: 4px solid hsl(var(--primary));
+  }
+
+  .theme-soft-modern {
+    --background: 225 100% 98%;
+    --foreground: 226 34% 22%;
+    --card: 0 0% 100%;
+    --card-foreground: 226 34% 22%;
+    --muted: 230 100% 97%;
+    --muted-foreground: 228 20% 45%;
+    --border: 230 45% 90%;
+    --input: 230 45% 86%;
+    --primary: 243 75% 59%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 243 75% 59%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 243 75% 59%;
+  }
+
+  .theme-cinematic {
+    --background: 240 27% 13%;
+    --foreground: 38 25% 94%;
+    --card: 240 24% 17%;
+    --card-foreground: 38 25% 94%;
+    --muted: 239 20% 20%;
+    --muted-foreground: 38 12% 72%;
+    --border: 240 17% 28%;
+    --input: 240 17% 28%;
+    --primary: 240 21% 10%;
+    --primary-foreground: 38 25% 94%;
+    --accent: 43 64% 53%;
+    --accent-foreground: 240 27% 13%;
+    --ring: 43 64% 53%;
+  }
+
+  .theme-dashboard-app {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 11%;
+    --card: 220 14% 96%;
+    --card-foreground: 222 47% 11%;
+    --muted: 220 17% 95%;
+    --muted-foreground: 215 16% 42%;
+    --border: 214 19% 89%;
+    --input: 214 19% 84%;
+    --primary: 222 47% 11%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 142 71% 45%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 142 71% 45%;
+  }
+
+  .theme-geometric {
+    --background: 0 0% 100%;
+    --foreground: 222 47% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 12%;
+    --muted: 214 45% 96%;
+    --muted-foreground: 217 19% 43%;
+    --border: 214 31% 89%;
+    --input: 214 31% 84%;
+    --primary: 221 83% 38%;
+    --primary-foreground: 0 0% 100%;
+    --accent: 213 94% 56%;
+    --accent-foreground: 0 0% 100%;
+    --ring: 213 94% 56%;
+  }
 }

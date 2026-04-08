@@ -130,35 +130,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
-  const getPageTitle = (pathname: string) => {
-    const routeTitles: Record<string, string> = {
-      "/dashboard": "Home",
-      "/accounts": "Accounts",
-      "/transactions": "Transactions",
-      "/transfer": "Transfer",
-      "/wire-transfer": "Wire Transfer",
-      "/atm-withdrawal": "ATM Withdrawal",
-      "/beneficiaries": "Beneficiaries",
-      "/savings-goals": "Savings",
-      "/loans": "Loans",
-      "/bills": "Bills",
-      "/cards": "Cards",
-      "/investments": "Investments",
-      "/analytics": "Analytics",
-      "/spending-insights": "Insights",
-      "/budgets": "Budgets",
-      "/statements": "Statements",
-      "/referral": "Referral",
-      "/profile": "Profile",
-      "/security": "Security",
-      "/help": "Help",
-      "/kyc": "KYC",
-      "/admin": "Admin",
-    };
-
-    return routeTitles[pathname] || "Banking";
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -271,11 +242,17 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
 
             <div className="flex h-14 items-center justify-between bg-[#0A1628] px-4 md:hidden">
-              <div className="min-w-0 max-w-[33%]">
-                <p className="truncate text-[14px] font-semibold text-[#C9A84C]">{siteName}</p>
-              </div>
-              <div className="max-w-[34%] px-2 text-center">
-                <p className="truncate text-sm font-semibold text-white">{getPageTitle(location.pathname)}</p>
+              <div className="flex min-w-0 max-w-[42%] items-center">
+                {logoUrl ? (
+                  <img
+                    src={logoUrl}
+                    alt={siteName}
+                    style={{ height: "32px", width: "auto", objectFit: "contain" }}
+                    className="max-w-[150px]"
+                  />
+                ) : (
+                  <p className="truncate text-[14px] font-semibold text-[#C9A84C]">{siteName}</p>
+                )}
               </div>
               <div className="flex max-w-[33%] items-center gap-2">
                 <NotificationBell />
