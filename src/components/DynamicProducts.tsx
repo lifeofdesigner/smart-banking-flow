@@ -5,13 +5,13 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "sonner";
 
 interface Product {
   id: string;
   product_name: string;
   slug: string;
   short_description: string | null;
-  icon: string | null;
   display_order: number;
 }
 
@@ -30,8 +30,8 @@ export default function DynamicProducts() {
     const [prodRes, secRes] = await Promise.all([
       supabase
         .from("product_pages")
-        .select("id, product_name, slug, short_description, icon, display_order")
-        .eq("status", "active")
+        .select("id, product_name, slug, short_description, display_order")
+        .in("status", ["published", "active"])
         .order("display_order"),
       supabase
         .from("homepage_sections")
@@ -40,6 +40,13 @@ export default function DynamicProducts() {
         .eq("status", "active")
         .single(),
     ]);
+
+    if (prodRes.error) {
+      toast.error(prodRes.error.message);
+    }
+    if (secRes.error) {
+      toast.error(secRes.error.message);
+    }
 
     if (prodRes.data) setProducts(prodRes.data);
     if (secRes.data) {

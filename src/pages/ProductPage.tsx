@@ -81,7 +81,7 @@ export default function ProductPageView() {
       .from("product_pages")
       .select("*")
       .eq("slug", slug)
-      .eq("status", "active")
+      .in("status", ["published", "active"])
       .single();
 
     if (!prod) {

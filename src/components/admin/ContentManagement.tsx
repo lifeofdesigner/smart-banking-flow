@@ -96,6 +96,12 @@ export default function ContentManagement() {
       supabase.from("homepage_sections").select("*").order("display_order"),
       supabase.from("media_library").select("*").order("created_at", { ascending: false }),
     ]);
+    if (prodRes.error) {
+      toast.error(prodRes.error.message);
+    }
+    if (hpRes.error) {
+      toast.error(hpRes.error.message);
+    }
     if (prodRes.data) setProducts(prodRes.data);
     if (hpRes.data) setHomepageSections(hpRes.data);
     if (mediaRes.data) setMedia(mediaRes.data);
