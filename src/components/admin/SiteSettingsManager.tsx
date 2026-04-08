@@ -26,7 +26,63 @@ const DEFAULTS: SiteSettingsMap = {
   site_twitter_handle: "",
   site_google_verification: "",
   site_canonical_url: "",
+  active_theme: "navy-gold",
+  active_landing: "classic",
 };
+
+const LANDING_THEMES = [
+  {
+    key: "classic",
+    name: "Navy & Gold Classic",
+    description: "Timeless premium banking look",
+    colors: ["#0A1628", "#C9A84C", "#F4F5F7"],
+  },
+  {
+    key: "split-screen",
+    name: "Split Screen Bold",
+    description: "High-contrast hero with dashboard split",
+    colors: ["#0A1628", "#C9A84C", "#ffffff"],
+  },
+  {
+    key: "magazine",
+    name: "Editorial Magazine",
+    description: "Typography-first black and white style",
+    colors: ["#000000", "#E53E3E", "#ffffff"],
+  },
+  {
+    key: "soft-modern",
+    name: "Soft Modern",
+    description: "Rounded fintech interface with indigo tones",
+    colors: ["#4F46E5", "#F0F4FF", "#ffffff"],
+  },
+  {
+    key: "cinematic",
+    name: "Cinematic Dark",
+    description: "Luxury dark visuals with gold accents",
+    colors: ["#1a1a2e", "#D4AF37", "#0F0F1A"],
+  },
+  {
+    key: "dashboard-app",
+    name: "App Dashboard",
+    description: "Product-focused app interface layout",
+    colors: ["#111827", "#22C55E", "#ffffff"],
+  },
+  {
+    key: "geometric",
+    name: "Geometric Corporate",
+    description: "Structured corporate style with royal blue",
+    colors: ["#1E40AF", "#ffffff", "#EFF6FF"],
+  },
+];
+
+const DASHBOARD_COLOR_THEMES = [
+  { key: "navy-gold", label: "Navy Gold", colors: ["#0A1628", "#C9A84C", "#F4F5F7"] },
+  { key: "forest-amber", label: "Forest Amber", colors: ["#14532D", "#F59E0B", "#ECFCCB"] },
+  { key: "midnight-steel", label: "Midnight Steel", colors: ["#0F172A", "#64748B", "#E2E8F0"] },
+  { key: "ivory-burgundy", label: "Ivory Burgundy", colors: ["#7F1D1D", "#FEF2F2", "#E7E5E4"] },
+  { key: "slate-teal", label: "Slate Teal", colors: ["#1E293B", "#0F766E", "#CCFBF1"] },
+  { key: "royal-purple", label: "Royal Purple", colors: ["#4C1D95", "#8B5CF6", "#F5F3FF"] },
+];
 
 export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProps) {
   const [settings, setSettings] = useState<SiteSettingsMap>(DEFAULTS);
@@ -85,6 +141,25 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
     toast.success("Settings saved");
   };
 
+  const saveSingleKey = async (key: string, value: string, successMessage: string) => {
+    const { error } = await supabase.from("site_settings").upsert(
+      {
+        key,
+        value,
+        updated_by: adminId ?? null,
+      },
+      { onConflict: "key" }
+    );
+
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+
+    setSettings((prev) => ({ ...prev, [key]: value }));
+    toast.success(successMessage);
+  };
+
   const uploadBrandingAsset = async (key: "site_logo_url" | "site_favicon_url" | "site_og_image_url", file?: File | null) => {
     if (!file) return;
 
@@ -127,12 +202,102 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="branding">
+      <Tabs defaultValue="themes">
         <TabsList className="flex-wrap">
+          <TabsTrigger value="themes">Themes</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
         </TabsList>
+
+        <TabsContent value="themes" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Landing Page Theme</CardTitle>
+              <CardDescription>Choose how your public website looks</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                {LANDING_THEMES.map((theme) => {
+                  const isActive = settings.active_landing === theme.key;
+                  return (
+                    <button
+                      key={theme.key}
+                      type="button"
+                      onClick={() => saveSingleKey("active_landing", theme.key, "Theme updated — refresh your site to see changes")}
+                      className={`rounded-lg border bg-card p-4 text-left transition hover:shadow-md ${
+                        isActive ? "border-[#C9A84C] ring-1 ring-[#C9A84C]/30" : "border-border"
+                      }`}
+                    >
+                      <div className="mb-3 flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-semibold">{theme.name}</h4>
+                          <p className="mt-1 text-xs text-muted-foreground">{theme.description}</p>
+                        </div>
+                        {isActive && (
+                          <span className="rounded-full bg-[#C9A84C] px-2 py-0.5 text-[10px] font-semibold text-[#0A1628]">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {theme.colors.map((color) => (
+                          <span
+                            key={`${theme.key}-${color}`}
+                            className="h-4 w-4 rounded-full border border-black/10"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Dashboard Color Theme</CardTitle>
+              <CardDescription>Choose admin dashboard accent colors</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+                {DASHBOARD_COLOR_THEMES.map((theme) => {
+                  const isActive = settings.active_theme === theme.key;
+                  return (
+                    <button
+                      key={theme.key}
+                      type="button"
+                      onClick={() => saveSingleKey("active_theme", theme.key, "Dashboard color theme updated")}
+                      className={`rounded-lg border p-4 text-left transition hover:shadow-md ${
+                        isActive ? "border-[#C9A84C] ring-1 ring-[#C9A84C]/30" : "border-border"
+                      }`}
+                    >
+                      <div className="mb-2 flex items-center justify-between gap-2">
+                        <p className="text-sm font-semibold">{theme.label}</p>
+                        {isActive && (
+                          <span className="rounded-full bg-[#C9A84C] px-2 py-0.5 text-[10px] font-semibold text-[#0A1628]">
+                            Active
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {theme.colors.map((color) => (
+                          <span
+                            key={`${theme.key}-${color}`}
+                            className="h-4 w-4 rounded-full border border-black/10"
+                            style={{ backgroundColor: color }}
+                          />
+                        ))}
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="branding" className="space-y-4">
           <Card>

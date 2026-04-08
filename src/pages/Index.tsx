@@ -1,27 +1,33 @@
-import Navbar from "@/components/Navbar";
-import DynamicHero from "@/components/DynamicHero";
-import Services from "@/components/Services";
-import DynamicProducts from "@/components/DynamicProducts";
-import About from "@/components/About";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
-import Contact from "@/components/Contact";
-import Footer from "@/components/Footer";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import LandingNavyGold from "@/components/landing/LandingNavyGold";
+import LandingSplitScreen from "@/components/landing/LandingSplitScreen";
+import LandingMagazine from "@/components/landing/LandingMagazine";
+import LandingSoftModern from "@/components/landing/LandingSoftModern";
+import LandingCinematic from "@/components/landing/LandingCinematic";
+import LandingDashboardApp from "@/components/landing/LandingDashboardApp";
+import LandingGeometric from "@/components/landing/LandingGeometric";
 
 const Index = () => {
-  return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      <DynamicHero />
-      <Services />
-      <DynamicProducts />
-      <About />
-      <Testimonials />
-      <FAQ />
-      <Contact />
-      <Footer />
-    </div>
-  );
+  const siteSettings = useSiteSettings();
+  const activeLanding = siteSettings["active_landing"] || "classic";
+
+  switch (activeLanding) {
+    case "split-screen":
+      return <LandingSplitScreen />;
+    case "magazine":
+      return <LandingMagazine />;
+    case "soft-modern":
+      return <LandingSoftModern />;
+    case "cinematic":
+      return <LandingCinematic />;
+    case "dashboard-app":
+      return <LandingDashboardApp />;
+    case "geometric":
+      return <LandingGeometric />;
+    case "classic":
+    default:
+      return <LandingNavyGold />;
+  }
 };
 
 export default Index;
