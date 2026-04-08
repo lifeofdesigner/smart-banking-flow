@@ -29,6 +29,8 @@ import { CalendarIcon, Download, FileText, Search, Filter, X } from "lucide-reac
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
+import { ArrowDownRight, ArrowUpRight } from "lucide-react";
 
 interface Transaction {
   id: string;
@@ -49,7 +51,9 @@ interface Account {
 const PAGE_SIZE = 10;
 
 export default function TransactionHistory() {
+  const isMobile = useIsMobile();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [mobileTransactions, setMobileTransactions] = useState<Transaction[]>([]);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [totalCount, setTotalCount] = useState(0);
@@ -139,10 +143,17 @@ export default function TransactionHistory() {
         return;
       }
       if (data) setTransactions(data);
+      if (data) {
+        if (isMobile && currentPage > 1) {
+          setMobileTransactions((prev) => [...prev, ...data]);
+        } else {
+          setMobileTransactions(data);
+        }
+      }
       if (count !== null) setTotalCount(count);
     }
     setLoading(false);
-  }, [currentPage, searchTerm, selectedType, selectedAccount, startDate, endDate, minAmount, maxAmount]);
+  }, [currentPage, searchTerm, selectedType, selectedAccount, startDate, endDate, minAmount, maxAmount, isMobile]);
 
   useEffect(() => {
     loadTransactions();
@@ -157,6 +168,7 @@ export default function TransactionHistory() {
     setMinAmount("");
     setMaxAmount("");
     setCurrentPage(1);
+    setMobileTransactions([]);
   };
 
   const exportCSV = () => {
@@ -184,6 +196,7 @@ export default function TransactionHistory() {
   };
 
   const totalPages = Math.ceil(totalCount / PAGE_SIZE);
+  const displayedTransactions = isMobile ? mobileTransactions : transactions;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -209,26 +222,57 @@ export default function TransactionHistory() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Transaction History</h1>
             <p className="text-muted-foreground">View and export your transactions</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" className="border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportCSV}>
+            <Button variant="outline" className="min-h-[44px] border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportCSV}>
               <Download className="h-4 w-4 mr-2" />
               CSV
             </Button>
-            <Button variant="outline" className="border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportPDF}>
+            <Button variant="outline" className="min-h-[44px] border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportPDF}>
               <FileText className="h-4 w-4 mr-2" />
               Print/PDF
             </Button>
           </div>
         </div>
 
+        {/* Mobile filter chips */}
+        <div className="mb-4 overflow-x-auto pb-1 md:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <div className="flex min-w-max items-center gap-2">
+            {[
+              { label: "All", value: "all" },
+              { label: "Transfer", value: "transfer" },
+              { label: "Deposit", value: "deposit" },
+              { label: "Withdrawal", value: "withdrawal" },
+              { label: "Fees", value: "fee" },
+            ].map((chip) => (
+              <button
+                key={chip.value}
+                type="button"
+                onClick={() => {
+                  setSelectedType(chip.value);
+                  setCurrentPage(1);
+                  setMobileTransactions([]);
+                }}
+                className={cn(
+                  "min-h-[44px] rounded-full px-4 text-sm font-medium",
+                  selectedType === chip.value
+                    ? "bg-[#0A1628] text-white"
+                    : "bg-white text-[#0A1628]"
+                )}
+              >
+                {chip.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Filters */}
-        <Card className="mb-6 bg-white rounded-xl shadow-sm border-0">
+        <Card className="mb-6 hidden bg-white rounded-xl shadow-sm border-0 md:block">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -332,7 +376,7 @@ export default function TransactionHistory() {
                   <Skeleton key={idx} className="h-12 w-full" />
                 ))}
               </div>
-            ) : transactions.length === 0 ? (
+            ) : displayedTransactions.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="h-12 w-12 mx-auto text-[var(--bank-slate)] mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No transactions found</h3>
@@ -340,7 +384,36 @@ export default function TransactionHistory() {
               </div>
             ) : (
               <>
-                <Table>
+                <div className="md:hidden space-y-3 p-3">
+                  {displayedTransactions.map((tx) => {
+                    const credit = tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement";
+                    return (
+                      <div key={tx.id} className="rounded-2xl bg-white p-3 shadow-sm">
+                        <div className="flex min-h-[56px] items-center justify-between gap-3">
+                          <div className="flex items-center gap-3">
+                            <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full", credit ? "bg-emerald-100" : "bg-red-100")}>
+                              {credit ? <ArrowDownRight className="h-4 w-4 text-emerald-700" /> : <ArrowUpRight className="h-4 w-4 text-red-700" />}
+                            </span>
+                            <div>
+                              <p className="text-sm font-medium capitalize">{tx.transaction_type.replace(/_/g, " ")}</p>
+                              <p className="text-xs text-muted-foreground">{format(new Date(tx.created_at), "MMM dd, yyyy")}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className={cn("text-sm font-semibold", credit ? "text-emerald-700" : "text-red-700")}>
+                              {credit ? "+" : "-"}${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            </p>
+                            <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${getStatusColor(tx.status)}`}>
+                              {tx.status}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
                       <TableHead className="text-white">Date</TableHead>
@@ -386,10 +459,10 @@ export default function TransactionHistory() {
 
                 {totalPages > 1 && (
                   <div className="flex items-center justify-between px-4 py-3 border-t print:hidden">
-                    <p className="text-sm text-muted-foreground">
+                    <p className="hidden text-sm text-muted-foreground md:block">
                       Showing {((currentPage - 1) * PAGE_SIZE) + 1} to {Math.min(currentPage * PAGE_SIZE, totalCount)} of {totalCount} transactions
                     </p>
-                    <Pagination>
+                    <Pagination className="hidden md:block">
                       <PaginationContent>
                         <PaginationItem>
                           <PaginationPrevious 
@@ -422,6 +495,16 @@ export default function TransactionHistory() {
                         </PaginationItem>
                       </PaginationContent>
                     </Pagination>
+
+                    <div className="w-full md:hidden">
+                      <Button
+                        className="h-11 w-full rounded-xl bg-[#0A1628] text-white hover:bg-[#1E3A5F]"
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                        disabled={currentPage >= totalPages}
+                      >
+                        Load More
+                      </Button>
+                    </div>
                   </div>
                 )}
               </>

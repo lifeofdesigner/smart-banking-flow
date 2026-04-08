@@ -76,7 +76,7 @@ export default function CardsPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6 space-y-6">
+      <div className="min-h-screen bg-[#F4F5F7] space-y-4 px-4 py-4 md:space-y-6 md:p-6">
         <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">My Cards</h2>
 
         {cards.length === 0 ? (
@@ -86,11 +86,11 @@ export default function CardsPage() {
             <p className="text-muted-foreground">A card will be issued automatically with your next eligible account.</p>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid gap-4 md:grid-cols-2 md:gap-6 lg:grid-cols-3">
             {cards.map(card => (
               <div key={card.id} className="relative">
                 {/* Visual Card */}
-                <div className={`rounded-2xl p-6 text-primary-foreground aspect-[1.6/1] flex flex-col justify-between ${
+                <div className={`w-full rounded-2xl p-5 text-primary-foreground [aspect-ratio:1.586/1] flex flex-col justify-between ${
                   card.status === "frozen"
                     ? "bg-gradient-to-br from-slate-400 to-slate-600"
                     : "bg-gradient-to-br from-primary to-primary/80"
@@ -101,24 +101,38 @@ export default function CardsPage() {
                     {card.status === "frozen" && <Snowflake className="h-5 w-5 opacity-80" />}
                   </div>
                   <div>
-                    <p className="text-lg tracking-[0.26em] font-mono mb-1">{card.card_number}</p>
+                    <p className="mb-1 font-mono text-lg tracking-[0.22em]">
+                      {card.card_number.replace(/\s+/g, "").replace(/(.{4})/g, "$1 ").trim()}
+                    </p>
                     <p className="text-xs opacity-70">Expires {new Date(card.expires_at).toLocaleDateString("en-US", { month: "2-digit", year: "2-digit" })}</p>
                   </div>
                 </div>
 
                 {/* Card Actions */}
-                <Card className="mt-3 bg-white rounded-xl shadow-sm border-0 p-4 space-y-3">
+                <Card className="mt-3 rounded-2xl border-0 bg-white p-4 shadow-sm md:rounded-xl">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status</span>
                     <span className={`font-medium capitalize ${card.status === "active" ? "text-green-600" : "text-yellow-600"}`}>{card.status}</span>
                   </div>
-                  <div className="flex justify-between text-sm">
+                  <div className="flex justify-between text-sm pb-2 border-b border-[#EEF1F5]">
                     <span className="text-muted-foreground">Daily Limit</span>
                     <span className="font-medium">${card.daily_limit.toLocaleString()}</span>
                   </div>
+
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Type</span>
+                      <span className="font-medium uppercase">{card.card_type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Last 4</span>
+                      <span className="font-mono font-medium">{card.card_number.slice(-4)}</span>
+                    </div>
+                  </div>
+
                   <Button
                     variant="outline"
-                    className={`w-full ${card.status === "frozen" ? "border-red-300 text-red-700 hover:bg-red-50" : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}
+                    className={`min-h-[52px] w-full rounded-xl ${card.status === "frozen" ? "border-red-300 text-red-700 hover:bg-red-50" : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}
                     onClick={() => toggleFreeze(card)}
                     disabled={toggling === card.id}
                   >

@@ -19,6 +19,7 @@ import {
 import {
   ArrowUpRight,
   ArrowDownRight,
+  ArrowDownLeft,
   Send,
   Globe,
   Shield,
@@ -26,6 +27,7 @@ import {
   PiggyBank,
   BarChart3,
   FileText,
+  MoreHorizontal,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
@@ -191,25 +193,86 @@ const Dashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-6">
-        {/* Welcome */}
-        <div>
+      <div className="space-y-4 px-4 py-4 md:space-y-6 md:p-6">
+        {/* Mobile Greeting + Hero */}
+        <div className="space-y-3 md:hidden">
+          <div className="rounded-2xl bg-gradient-to-r from-[#0A1628] to-[#1E3A5F] p-4 shadow-sm">
+            <p className="text-xs font-medium text-[#C9A84C]">Good morning, {profile?.full_name?.split(" ")[0] || "User"}</p>
+            <p className="mt-1 text-[11px] text-white/80">Your finances at a glance</p>
+
+            <div className="mt-4 rounded-2xl bg-white/5 p-4">
+              <p className="text-[11px] text-slate-300">Total Balance</p>
+              <p className="mt-1 text-[28px] font-bold text-white" style={{ fontFamily: "'Playfair Display', serif" }}>
+                ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+              </p>
+              <p className="mt-1 text-[11px] text-slate-300">Across {accounts.length} accounts</p>
+
+              <div className="mt-4 grid grid-cols-4 gap-2">
+                {[
+                  { label: "Send", icon: Send, path: "/transfer" },
+                  { label: "Receive", icon: ArrowDownLeft, path: "/accounts" },
+                  { label: "Pay", icon: FileText, path: "/bills" },
+                  { label: "More", icon: MoreHorizontal, path: "/analytics" },
+                ].map(({ label, icon: Icon, path }) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => navigate(path)}
+                    className="flex min-h-[44px] flex-col items-center justify-start gap-1"
+                  >
+                    <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white text-[#0A1628]">
+                      <Icon className="h-4 w-4" />
+                    </span>
+                    <span className="text-[10px] text-white">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            <div className="flex min-w-max gap-3">
+              {accounts.map((account) => (
+                <button
+                  key={account.id}
+                  type="button"
+                  onClick={() => navigate("/accounts")}
+                  className="w-[200px] rounded-2xl bg-[#0A1628] p-4 text-left text-white shadow-sm"
+                >
+                  <p className="text-[11px] uppercase text-white/70">{account.account_type}</p>
+                  <p className="mt-1 font-mono text-sm tracking-widest">•••• {account.account_number.slice(-4)}</p>
+                  <p className="mt-3 text-xs text-white/70">Balance</p>
+                  <p className="text-lg font-semibold">
+                    {account.currency || "USD"} {account.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </p>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Desktop Welcome */}
+        <div className="hidden md:block">
           <h2 className="text-2xl md:text-3xl font-bold">Welcome back, {profile?.full_name}!</h2>
           <p className="text-muted-foreground">Here's your financial overview</p>
         </div>
 
         {/* Financial Health */}
-        <FinancialHealthWidget />
+        <div className="hidden md:block">
+          <FinancialHealthWidget />
+        </div>
 
         {/* Smart Insights */}
-        <SmartInsightsWidget />
+        <div className="hidden md:block">
+          <SmartInsightsWidget />
+        </div>
 
-        <Card className="bg-white rounded-lg shadow-sm p-6">
+        <Card className="rounded-2xl border-0 bg-white p-4 shadow-sm md:rounded-lg md:p-6">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-semibold" style={{ color: "var(--bank-navy)" }}>
               Income vs Spending — Last 6 Months
             </h3>
-            <div className="flex items-center gap-4 text-sm">
+            <div className="hidden items-center gap-4 text-sm sm:flex">
               <div className="flex items-center gap-2">
                 <span
                   className="w-2.5 h-2.5 rounded-full"
@@ -227,7 +290,7 @@ const Dashboard = () => {
             </div>
           </div>
 
-          <div className="h-72">
+          <div className="h-64 md:h-72">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={monthlyChartData}>
                 <CartesianGrid vertical={false} stroke="hsl(var(--border))" strokeOpacity={0.2} />
@@ -259,7 +322,7 @@ const Dashboard = () => {
           </div>
         </Card>
 
-        <Card className="card-banking p-6">
+        <Card className="card-banking hidden p-6 md:block">
           <p className="text-sm text-muted-foreground">Total Portfolio Balance</p>
           <p className="text-3xl font-bold mt-1">
             ${totalBalance.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -268,7 +331,7 @@ const Dashboard = () => {
         </Card>
 
         {/* Account Cards */}
-        <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
+        <div className="hidden gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:grid md:grid-cols-2 lg:grid-cols-3 md:overflow-visible">
           {accounts.map((account) => (
             <div key={account.id} className="snap-center flex-shrink-0 w-[85vw] md:w-auto">
               <AccountCard
@@ -288,9 +351,9 @@ const Dashboard = () => {
           )}
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid gap-4 md:gap-6 lg:grid-cols-3">
           {/* Quick Actions */}
-          <Card className="card-banking p-6 lg:col-span-1">
+          <Card className="card-banking hidden p-6 lg:col-span-1 md:block">
             <h3 className="text-lg font-bold mb-4">Quick Actions</h3>
             <div className="space-y-2">
               {[
@@ -316,22 +379,23 @@ const Dashboard = () => {
           </Card>
 
           {/* Recent Transactions */}
-          <Card className="card-banking p-6 lg:col-span-2">
+          <Card className="card-banking rounded-2xl border-0 p-4 shadow-sm md:rounded-xl md:p-6 lg:col-span-2">
             <div className="flex justify-between items-center mb-6">
               <h3 className="text-lg font-bold">Recent Transactions</h3>
-              <Button variant="ghost" size="sm" onClick={() => navigate("/transactions")}>
-                View All
+              <Button variant="ghost" size="sm" className="h-11" onClick={() => navigate("/transactions")}>
+                <span className="md:hidden">See All</span>
+                <span className="hidden md:inline">View All</span>
               </Button>
             </div>
 
             {transactions.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">No recent transactions</p>
             ) : (
-              <div className="space-y-3">
+              <div className="space-y-2 md:space-y-3">
                 {transactions.map((transaction) => (
                   <div
                     key={transaction.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-secondary/50 hover:bg-secondary transition-colors"
+                    className="flex min-h-[56px] items-center justify-between rounded-2xl border-0 bg-white p-3 shadow-sm transition-colors md:rounded-xl md:bg-secondary/50 md:shadow-none md:hover:bg-secondary"
                   >
                     <div className="flex items-center space-x-3">
                       <div className={`w-9 h-9 rounded-full flex items-center justify-center ${

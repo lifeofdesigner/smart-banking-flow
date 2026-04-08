@@ -93,6 +93,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const siteSettings = useSiteSettings();
+  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
+  const logoUrl = siteSettings["site_logo_url"];
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -127,6 +129,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
+
+  const getPageTitle = (pathname: string) => {
+    const routeTitles: Record<string, string> = {
+      "/dashboard": "Home",
+      "/accounts": "Accounts",
+      "/transactions": "Transactions",
+      "/transfer": "Transfer",
+      "/wire-transfer": "Wire Transfer",
+      "/atm-withdrawal": "ATM Withdrawal",
+      "/beneficiaries": "Beneficiaries",
+      "/savings-goals": "Savings",
+      "/loans": "Loans",
+      "/bills": "Bills",
+      "/cards": "Cards",
+      "/investments": "Investments",
+      "/analytics": "Analytics",
+      "/spending-insights": "Insights",
+      "/budgets": "Budgets",
+      "/statements": "Statements",
+      "/referral": "Referral",
+      "/profile": "Profile",
+      "/security": "Security",
+      "/help": "Help",
+      "/kyc": "KYC",
+      "/admin": "Admin",
+    };
+
+    return routeTitles[pathname] || "Banking";
+  };
 
   if (loading) {
     return (
@@ -165,11 +196,20 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <Sidebar collapsible="icon" className="hidden md:flex">
           <SidebarHeader className="border-b border-border p-4">
             <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
-                <span className="text-primary-foreground font-bold text-sm">M</span>
-              </div>
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt={siteName}
+                  style={{ height: "32px", width: "auto", objectFit: "contain" }}
+                  className="flex-shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                  <span className="text-primary-foreground font-bold text-sm">M</span>
+                </div>
+              )}
               <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-                <span className="font-semibold text-sm truncate">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
+                <span className="font-semibold text-sm truncate">{siteName}</span>
                 <span className="text-xs text-muted-foreground">Internet Banking</span>
               </div>
             </div>
@@ -216,20 +256,40 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 sticky top-0 z-10">
-            <SidebarTrigger className="-ml-1 hidden md:flex" />
-            <span className="font-semibold text-sm md:hidden">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
-            <div className="flex items-center gap-2">
-              <NotificationBell />
-              <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={() => navigate("/profile")}>
-                <User className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon" onClick={handleLogout}>
-                <LogOut className="h-5 w-5" />
-              </Button>
+          <header className="sticky top-0 z-50">
+            <div className="hidden h-14 items-center justify-between border-b border-border bg-background px-4 md:flex">
+              <SidebarTrigger className="-ml-1" />
+              <div className="flex items-center gap-2">
+                <NotificationBell />
+                <Button variant="ghost" size="icon" onClick={() => navigate("/profile")}>
+                  <User className="h-5 w-5" />
+                </Button>
+                <Button variant="ghost" size="icon" onClick={handleLogout}>
+                  <LogOut className="h-5 w-5" />
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex h-14 items-center justify-between bg-[#0A1628] px-4 md:hidden">
+              <div className="min-w-0 max-w-[33%]">
+                <p className="truncate text-[14px] font-semibold text-[#C9A84C]">{siteName}</p>
+              </div>
+              <div className="max-w-[34%] px-2 text-center">
+                <p className="truncate text-sm font-semibold text-white">{getPageTitle(location.pathname)}</p>
+              </div>
+              <div className="flex max-w-[33%] items-center gap-2">
+                <NotificationBell />
+                <button
+                  type="button"
+                  onClick={() => navigate("/profile")}
+                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1E3A5F] text-[11px] font-semibold text-[#C9A84C]"
+                >
+                  {profile?.full_name ? getInitials(profile.full_name) : "U"}
+                </button>
+              </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto pb-20 md:pb-0">
+          <main className="flex-1 overflow-auto bg-[#F4F5F7] pb-24 md:bg-transparent md:pb-0">
             {children}
           </main>
         </div>

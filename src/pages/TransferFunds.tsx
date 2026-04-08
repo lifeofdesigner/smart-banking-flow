@@ -451,7 +451,7 @@ const TransferFunds = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] p-6">
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
       <header className="bg-white rounded-xl shadow-sm border-0">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-3">
@@ -469,9 +469,9 @@ const TransferFunds = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-2xl">
+      <div className="container mx-auto max-w-2xl px-0 py-4 md:px-4 md:py-8">
         {/* Step indicator */}
-        <div className="flex items-center justify-center gap-2 mb-8 bg-white rounded-xl shadow-sm border-0 p-4">
+        <div className="mb-6 flex items-center justify-center gap-2 rounded-2xl border-0 bg-white p-4 shadow-sm md:mb-8 md:rounded-xl">
           {([
             { key: "form", label: "Details" },
             { key: "confirm", label: "Confirm" },
@@ -479,7 +479,7 @@ const TransferFunds = () => {
           ] as { key: Step; label: string }[]).map((s, i) => (
             <div key={s.key} className="flex items-center gap-2">
               <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-medium ${
+                className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-medium md:h-9 md:w-9 ${
                   step === s.key
                     ? "bg-[var(--bank-navy)] text-white"
                     : i < ["form", "confirm", "success"].indexOf(step)
@@ -490,14 +490,14 @@ const TransferFunds = () => {
                 {i < ["form", "confirm", "success"].indexOf(step) ? <CheckCircle2 className="h-4 w-4" /> : i + 1}
               </div>
               <span className="text-xs font-medium text-muted-foreground hidden sm:inline">{s.label}</span>
-              {i < 2 && <div className="w-10 h-0.5 bg-border" />}
+              {i < 2 && <div className="h-0.5 w-12 bg-border md:w-10" />}
             </div>
           ))}
         </div>
 
         {/* FORM STEP */}
         {step === "form" && (
-          <Card className="bg-white rounded-xl shadow-sm border-0">
+          <Card className="rounded-2xl border-0 bg-white shadow-sm md:rounded-xl">
             <CardHeader>
               <CardTitle>Transfer Details</CardTitle>
             </CardHeader>
@@ -569,6 +569,7 @@ const TransferFunds = () => {
                       value={toAccountNumber}
                       onChange={(e) => setToAccountNumber(e.target.value.replace(/\D/g, ""))}
                       maxLength={20}
+                      className="h-12 rounded-xl text-base"
                     />
                     {lookupLoading && (
                       <Loader2 className="absolute right-3 top-2.5 h-5 w-5 animate-spin text-muted-foreground" />
@@ -621,7 +622,7 @@ const TransferFunds = () => {
 
               {/* Recipient info display */}
               {recipient && (
-                <div className="rounded-lg border border-[#E6EAF0] bg-white p-4 space-y-1 shadow-sm">
+                <div className="space-y-1 rounded-2xl border-0 bg-white p-4 shadow-sm md:rounded-lg">
                   <p className="font-semibold text-[#0A1628]">{recipient.holder_name}</p>
                   <p className="text-sm text-muted-foreground">
                     Account: {recipient.account_number}
@@ -657,7 +658,7 @@ const TransferFunds = () => {
                     step="0.01"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    className="h-12 text-lg font-semibold pl-8"
+                    className="h-12 rounded-xl pl-8 text-center text-[32px] font-semibold leading-none"
                   />
                 </div>
                 {errors.amount && (
@@ -714,7 +715,7 @@ const TransferFunds = () => {
               </div>
 
               <Button
-                className="w-full"
+                className="hidden w-full md:inline-flex"
                 size="lg"
                 onClick={handleReview}
                 disabled={!fromAccountId || !recipient || !amount}
@@ -722,18 +723,20 @@ const TransferFunds = () => {
                 Review Transfer
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
+
+              <div className="h-20 md:hidden" />
             </CardContent>
           </Card>
         )}
 
         {/* CONFIRM STEP */}
         {step === "confirm" && recipient && selectedFromAccount && (
-          <Card className="bg-white rounded-xl shadow-sm border-0">
+          <Card className="rounded-2xl border-0 bg-white shadow-sm md:rounded-xl">
             <CardHeader>
               <CardTitle>Confirm Transfer</CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="rounded-lg border border-[#E6EAF0] bg-white p-4 space-y-4">
+              <div className="space-y-4 rounded-2xl border border-dashed border-[#C9A84C] bg-white p-4 md:rounded-lg md:border-solid md:border-[#E6EAF0]">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">From</span>
                   <span className="font-medium">
@@ -767,7 +770,7 @@ const TransferFunds = () => {
                 )}
               </div>
 
-              <div className="flex gap-3">
+                <div className="flex gap-3">
                 <Button
                   variant="outline"
                   className="flex-1"
@@ -794,13 +797,15 @@ const TransferFunds = () => {
                   )}
                 </Button>
               </div>
+
+              <div className="h-20 md:hidden" />
             </CardContent>
           </Card>
         )}
 
         {/* SUCCESS STEP */}
         {step === "success" && successData && (
-          <Card className="bg-white rounded-xl shadow-sm border-0">
+          <Card className="rounded-2xl border-0 bg-white shadow-sm md:rounded-xl">
             <CardContent className="pt-8 text-center space-y-6">
               <div className="w-20 h-20 rounded-full bg-green-500/10 flex items-center justify-center mx-auto">
                 <CheckCircle2 className="h-10 w-10 text-green-600" />
@@ -841,7 +846,7 @@ const TransferFunds = () => {
 
         {/* Recent Transfers */}
         {step === "form" && (
-          <Card className="mt-8 bg-white rounded-xl shadow-sm border-0">
+          <Card className="mt-8 hidden rounded-2xl border-0 bg-white shadow-sm md:block md:rounded-xl">
             <CardHeader>
               <CardTitle className="text-lg">Recent Transfers</CardTitle>
             </CardHeader>
@@ -894,6 +899,19 @@ const TransferFunds = () => {
           </Card>
         )}
       </div>
+
+      {step === "form" && (
+        <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E7EB] bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
+          <Button
+            className="h-[52px] w-full rounded-xl bg-[#0A1628] text-white hover:bg-[#1E3A5F]"
+            onClick={handleReview}
+            disabled={!fromAccountId || !recipient || !amount}
+          >
+            Continue
+            <ArrowRight className="ml-2 h-4 w-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

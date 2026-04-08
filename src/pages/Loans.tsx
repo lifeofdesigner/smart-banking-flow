@@ -14,6 +14,7 @@ import type { BadgeProps } from "@/components/ui/badge";
 import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface LoanProduct {
   id: string;
@@ -54,6 +55,7 @@ interface Repayment {
 type BadgeVariant = NonNullable<BadgeProps["variant"]>;
 
 export default function Loans() {
+  const isMobile = useIsMobile();
   const navigate = useNavigate();
   const [userId, setUserId] = useState<string>("");
   const [loading, setLoading] = useState(true);
@@ -68,6 +70,7 @@ export default function Loans() {
   const [selectedLoanId, setSelectedLoanId] = useState<string>("");
   const [repaymentDialogOpen, setRepaymentDialogOpen] = useState(false);
   const [payingId, setPayingId] = useState<string>("");
+  const [activeTab, setActiveTab] = useState("apply");
 
   const loadData = useCallback(async (uid: string) => {
     try {
@@ -188,7 +191,7 @@ export default function Loans() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F4F5F7] p-6">
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
       <div className="max-w-6xl mx-auto space-y-6">
         <Skeleton className="h-10 w-48" />
         <div className="grid md:grid-cols-2 gap-6">
@@ -206,7 +209,7 @@ export default function Loans() {
   );
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] p-6">
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
       <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
@@ -215,14 +218,14 @@ export default function Loans() {
           <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Loan Services</h1>
         </div>
 
-        <Tabs defaultValue="apply" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList>
             <TabsTrigger value="apply">Apply for Loan</TabsTrigger>
             <TabsTrigger value="my-loans">My Loans ({loans.length})</TabsTrigger>
           </TabsList>
 
           <TabsContent value="apply">
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className="grid gap-4 md:grid-cols-2 md:gap-6">
               {/* Product selection */}
               <Card className="bg-white rounded-xl shadow-sm border-0">
                 <CardHeader>
@@ -231,7 +234,33 @@ export default function Loans() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {products.map(p => (
+                  <div className="md:hidden overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                    <div className="flex min-w-max gap-3">
+                      {products.map(p => (
+                        <Card
+                          key={`mobile-${p.id}`}
+                          className={`w-[85vw] max-w-[320px] cursor-pointer rounded-2xl border-0 bg-white p-4 shadow-sm ${selectedProduct === p.id ? "ring-2 ring-[var(--bank-gold)]" : ""}`}
+                          onClick={() => setSelectedProduct(p.id)}
+                        >
+                          <CardContent className="p-0">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <h4 className="font-semibold">{p.name}</h4>
+                                <p className="text-xs text-muted-foreground">{p.description}</p>
+                              </div>
+                              <p className="text-xl font-bold text-[var(--bank-navy)]">{p.interest_rate}%</p>
+                            </div>
+                            <p className="mt-3 text-xs text-muted-foreground">
+                              ${p.min_amount.toLocaleString()} – ${p.max_amount.toLocaleString()} • {p.term_months} months
+                            </p>
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="hidden space-y-3 md:block">
+                    {products.map(p => (
                     <Card
                       key={p.id}
                       className={`cursor-pointer transition-all bg-white rounded-xl shadow-sm border-0 ${selectedProduct === p.id ? "ring-2 ring-[var(--bank-gold)]" : "hover:ring-1 hover:ring-[var(--bank-gold)]"}`}
@@ -265,7 +294,8 @@ export default function Loans() {
                         </Button>
                       </CardContent>
                     </Card>
-                  ))}
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
 
@@ -334,12 +364,14 @@ export default function Loans() {
                   )}
 
                   <Button
-                    className="w-full"
+                    className="hidden w-full md:inline-flex"
                     disabled={!product || parsedAmount <= 0 || !selectedAccount || applying}
                     onClick={handleApply}
                   >
                     {applying ? "Submitting..." : "Submit Loan Application"}
                   </Button>
+
+                  <div className="h-16 md:hidden" />
                 </CardContent>
               </Card>
             </div>
@@ -359,7 +391,34 @@ export default function Loans() {
                     <p className="text-muted-foreground">Apply for a loan product to get started.</p>
                   </div>
                 ) : (
-                  <Table>
+                  <>
+                    <div className="space-y-3 md:hidden">
+                      {loans.map((loan) => (
+                        <Card key={`mobile-loan-${loan.id}`} className="rounded-2xl border-0 bg-white p-4 shadow-sm">
+                          <CardContent className="p-0 space-y-3">
+                            <div className="flex items-center justify-between">
+                              <p className="font-semibold text-[#0A1628]">{loan.loan_products?.name}</p>
+                              <Badge variant={statusColor(loan.status)} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${statusBadgeClass(loan.status)}`}>{loan.status}</Badge>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2 text-sm">
+                              <p className="text-muted-foreground">Principal</p>
+                              <p className="text-right font-semibold">${loan.principal.toFixed(2)}</p>
+                              <p className="text-muted-foreground">Monthly</p>
+                              <p className="text-right font-semibold">${loan.monthly_payment.toFixed(2)}</p>
+                              <p className="text-muted-foreground">Total</p>
+                              <p className="text-right font-semibold">${loan.total_payable.toFixed(2)}</p>
+                            </div>
+                            {(loan.status === "active" || loan.status === "completed") && (
+                              <Button className="min-h-[44px] w-full rounded-xl" variant="outline" onClick={() => viewRepayments(loan.id)}>
+                                Repayments
+                              </Button>
+                            )}
+                          </CardContent>
+                        </Card>
+                      ))}
+                    </div>
+
+                    <Table className="hidden md:table">
                     <TableHeader>
                       <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
                         <TableHead className="text-white">Product</TableHead>
@@ -397,12 +456,25 @@ export default function Loans() {
                         </TableRow>
                       ))}
                     </TableBody>
-                  </Table>
+                    </Table>
+                  </>
                 )}
               </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
+
+        {isMobile && activeTab === "apply" && selectedProduct && (
+          <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E7EB] bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
+            <Button
+              className="h-[52px] w-full rounded-xl bg-[#0A1628] text-white hover:bg-[#1E3A5F]"
+              disabled={!product || parsedAmount <= 0 || !selectedAccount || applying}
+              onClick={handleApply}
+            >
+              {applying ? "Submitting..." : "Submit Loan Application"}
+            </Button>
+          </div>
+        )}
 
         {/* Repayment Schedule Dialog */}
         <Dialog open={repaymentDialogOpen} onOpenChange={setRepaymentDialogOpen}>

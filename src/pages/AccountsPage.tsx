@@ -123,7 +123,7 @@ export default function AccountsPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">My Accounts</h1>
           <p className="text-muted-foreground mt-2">Manage your bank accounts</p>
@@ -148,23 +148,55 @@ export default function AccountsPage() {
           </Card>
         ) : (
           <>
-            {/* Mobile: horizontal scroll carousel */}
-            <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:hidden">
+            {/* Mobile: full-width stacked cards */}
+            <div className="space-y-3 md:hidden">
               {accounts.map((account) => (
-                <div key={account.id} className="snap-center flex-shrink-0 w-[85vw]">
+                <div key={account.id}>
                   <button
                     onClick={() => handleViewAccount(account)}
-                    className="w-full text-left bg-white rounded-xl shadow-sm border-0 p-5 transition-all hover:shadow-md"
+                    className="w-full rounded-2xl bg-white p-4 text-left shadow-sm transition-all"
                   >
-                    <div className="flex items-center justify-between mb-5">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">{account.account_type} Account</p>
-                      <Badge className="rounded-full bg-[var(--bank-navy)] text-white border-0 capitalize px-3 py-1 text-xs">{account.status || "active"}</Badge>
+                    <div className="mb-4 flex items-center justify-between gap-2">
+                      <Badge className="rounded-full bg-[var(--bank-navy)] px-3 py-1 text-xs capitalize text-white border-0">
+                        {account.account_type}
+                      </Badge>
+                      <Badge className="rounded-full bg-[#EAF0FA] px-3 py-1 text-xs capitalize text-[var(--bank-navy)] border-0">
+                        {account.status || "active"}
+                      </Badge>
                     </div>
-                    <p className="text-sm font-mono text-[var(--bank-slate)] mb-3">•••• •••• •••• {account.account_number.slice(-4)}</p>
-                    <p className="text-xs text-muted-foreground">Available Balance</p>
-                    <p className="text-3xl font-bold tracking-tight text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
+
+                    <p className="mb-2 text-sm font-mono text-[var(--bank-slate)]">{account.account_number}</p>
+                    <p className="text-[11px] text-muted-foreground">Available Balance</p>
+                    <p
+                      className="text-3xl font-bold tracking-tight text-[var(--bank-navy)]"
+                      style={{ fontFamily: "'Playfair Display', serif" }}
+                    >
                       {account.currency || "USD"} {account.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
+
+                    <div className="mt-4 grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        className="min-h-[44px] rounded-xl"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewAccount(account);
+                        }}
+                      >
+                        View Transactions
+                      </Button>
+                      <Button
+                        type="button"
+                        className="min-h-[44px] rounded-xl bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleViewAccount(account);
+                        }}
+                      >
+                        Details
+                      </Button>
+                    </div>
                   </button>
                 </div>
               ))}
