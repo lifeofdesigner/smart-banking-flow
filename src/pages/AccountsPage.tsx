@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
-import AccountCard from "@/components/AccountCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Sheet,
   SheetContent,
@@ -123,21 +123,28 @@ export default function AccountsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold">My Accounts</h1>
-          <p className="text-muted-foreground">Manage and view your bank accounts</p>
+          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">My Accounts</h1>
+          <p className="text-muted-foreground mt-2">Manage your bank accounts</p>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Card key={idx} className="bg-white rounded-xl shadow-sm border-0 p-5 space-y-4">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-4 w-40" />
+                <Skeleton className="h-10 w-56" />
+                <Skeleton className="h-3 w-32" />
+              </Card>
+            ))}
           </div>
         ) : accounts.length === 0 ? (
-          <Card className="card-banking p-12 text-center">
-            <CreditCard className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No accounts found</h3>
-            <p className="text-muted-foreground">Contact support to open a new account.</p>
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-12 text-center">
+            <CreditCard className="h-12 w-12 mx-auto text-[#2C4A7C] mb-4" />
+            <h3 className="text-lg font-semibold text-[#0A1628] mb-1">No accounts found</h3>
+            <p className="text-muted-foreground">You don’t have any accounts yet. Contact support to open one.</p>
           </Card>
         ) : (
           <>
@@ -145,14 +152,20 @@ export default function AccountsPage() {
             <div className="flex gap-4 overflow-x-auto pb-2 snap-x snap-mandatory md:hidden">
               {accounts.map((account) => (
                 <div key={account.id} className="snap-center flex-shrink-0 w-[85vw]">
-                  <AccountCard
-                    accountType={account.account_type}
-                    accountNumber={account.account_number}
-                    balance={account.available_balance}
-                    currency={account.currency || "USD"}
-                    status={account.status || "active"}
+                  <button
                     onClick={() => handleViewAccount(account)}
-                  />
+                    className="w-full text-left bg-white rounded-xl shadow-sm border-0 p-5 transition-all hover:shadow-md"
+                  >
+                    <div className="flex items-center justify-between mb-5">
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">{account.account_type} Account</p>
+                      <Badge className="rounded-full bg-[var(--bank-navy)] text-white border-0 capitalize px-3 py-1 text-xs">{account.status || "active"}</Badge>
+                    </div>
+                    <p className="text-sm font-mono text-[var(--bank-slate)] mb-3">•••• •••• •••• {account.account_number.slice(-4)}</p>
+                    <p className="text-xs text-muted-foreground">Available Balance</p>
+                    <p className="text-3xl font-bold tracking-tight text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                      {account.currency || "USD"} {account.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </p>
+                  </button>
                 </div>
               ))}
             </div>
@@ -160,15 +173,21 @@ export default function AccountsPage() {
             {/* Desktop: grid */}
             <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {accounts.map((account) => (
-                <AccountCard
+                <button
                   key={account.id}
-                  accountType={account.account_type}
-                  accountNumber={account.account_number}
-                  balance={account.available_balance}
-                  currency={account.currency || "USD"}
-                  status={account.status || "active"}
                   onClick={() => handleViewAccount(account)}
-                />
+                  className="w-full text-left bg-white rounded-xl shadow-sm border-0 p-5 transition-all hover:shadow-md"
+                >
+                  <div className="flex items-center justify-between mb-5">
+                    <p className="text-xs uppercase tracking-wide text-muted-foreground">{account.account_type} Account</p>
+                    <Badge className="rounded-full bg-[var(--bank-navy)] text-white border-0 capitalize px-3 py-1 text-xs">{account.status || "active"}</Badge>
+                  </div>
+                  <p className="text-sm font-mono text-[var(--bank-slate)] mb-3">•••• •••• •••• {account.account_number.slice(-4)}</p>
+                  <p className="text-xs text-muted-foreground">Available Balance</p>
+                  <p className="text-3xl font-bold tracking-tight text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                    {account.currency || "USD"} {account.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </p>
+                </button>
               ))}
             </div>
           </>
@@ -187,15 +206,15 @@ export default function AccountsPage() {
 
             {selectedAccount && (
               <div className="mt-6 space-y-6">
-                <Card className="bg-gradient-to-br from-primary to-primary/80 text-primary-foreground rounded-2xl">
+                <Card className="bg-white rounded-xl shadow-sm border-0">
                   <CardContent className="pt-6">
-                    <p className="text-sm opacity-80">Available Balance</p>
-                    <p className="text-3xl font-bold mt-1">
+                    <p className="text-sm text-muted-foreground">Available Balance</p>
+                    <p className="text-3xl font-bold mt-1 text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
                       {selectedAccount.currency} {selectedAccount.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                     </p>
-                    <div className="mt-4 flex justify-between text-sm opacity-80">
+                    <div className="mt-4 flex justify-between text-sm text-muted-foreground">
                       <span>Ledger: {selectedAccount.currency} {selectedAccount.ledger_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}</span>
-                      <Badge variant="secondary">{selectedAccount.status}</Badge>
+                      <Badge className="rounded-full bg-[var(--bank-navy)] text-white border-0 capitalize">{selectedAccount.status}</Badge>
                     </div>
                   </CardContent>
                 </Card>
@@ -224,15 +243,15 @@ export default function AccountsPage() {
                         <AreaChart data={balanceHistory}>
                           <defs>
                             <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor="hsl(221, 83%, 35%)" stopOpacity={0.3} />
-                              <stop offset="95%" stopColor="hsl(221, 83%, 35%)" stopOpacity={0} />
+                              <stop offset="5%" stopColor="var(--bank-gold)" stopOpacity={0.28} />
+                              <stop offset="95%" stopColor="var(--bank-gold)" stopOpacity={0} />
                             </linearGradient>
                           </defs>
                           <CartesianGrid strokeDasharray="3 3" vertical={false} />
                           <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                           <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => `$${v}`} width={55} />
                           <Tooltip formatter={(v: number) => `$${v.toLocaleString()}`} />
-                          <Area type="monotone" dataKey="balance" stroke="hsl(221, 83%, 35%)" fill="url(#balGrad)" strokeWidth={2} />
+                          <Area type="monotone" dataKey="balance" stroke="var(--bank-navy)" fill="url(#balGrad)" strokeWidth={2} />
                         </AreaChart>
                       </ResponsiveContainer>
                     </div>

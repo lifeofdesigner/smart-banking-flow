@@ -49,7 +49,7 @@ export default function SmartInsightsWidget() {
     const sumByKind = (txns: any[], isIncome: boolean) =>
       (txns ?? [])
         .filter((t) => {
-          const inc = ["deposit", "cashback", "system"].some((k) => t.transaction_type.includes(k));
+          const inc = ["deposit", "loan_disbursement", "cashback", "system"].some((k) => t.transaction_type.includes(k));
           return isIncome ? inc : !inc && !t.transaction_type.includes("fee");
         })
         .reduce((s: number, t: any) => s + t.amount, 0);
@@ -84,7 +84,15 @@ export default function SmartInsightsWidget() {
     }
 
     if (result.length === 0) {
-      result.push({ text: "Keep transacting to unlock insights", type: "neutral" });
+      const hasTransactions = (thisMonthTxns?.length ?? 0) > 0 || (lastMonthTxns?.length ?? 0) > 0;
+
+      if (hasTransactions) {
+        result.push({ text: "Your account is active and transactions are being tracked", type: "good" });
+        result.push({ text: "Check back monthly for spending pattern analysis", type: "neutral" });
+        result.push({ text: "Tip: Regular deposits improve your financial health score", type: "good" });
+      } else {
+        result.push({ text: "Keep transacting to unlock insights", type: "neutral" });
+      }
     }
 
     setInsights(result);

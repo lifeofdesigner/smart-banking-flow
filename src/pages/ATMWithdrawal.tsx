@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Banknote, Copy, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
@@ -86,14 +87,14 @@ export default function ATMWithdrawal() {
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-4xl mx-auto">
+      <div className="min-h-screen bg-[#F4F5F7] p-6 max-w-5xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">ATM Withdrawal</h1>
+          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">ATM Withdrawal</h1>
           <p className="text-muted-foreground">Generate a code to withdraw cash at any ATM</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Banknote className="h-5 w-5" />
@@ -132,7 +133,7 @@ export default function ATMWithdrawal() {
               </div>
 
               <Button
-                className="w-full"
+                className="w-full bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
                 onClick={handleWithdraw}
                 disabled={submitting || !selectedAccount || !amount || parseFloat(amount) <= 0}
               >
@@ -142,18 +143,18 @@ export default function ATMWithdrawal() {
           </Card>
 
           {generatedCode && (
-            <Card className="border-primary/50 bg-primary/5">
+            <Card className="bg-white rounded-xl shadow-sm border-0">
               <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-primary">
+                <CardTitle className="flex items-center gap-2 text-[var(--bank-navy)]">
                   <CheckCircle2 className="h-5 w-5" />
                   Your Withdrawal Code
                 </CardTitle>
                 <CardDescription>Use this code at any ATM within 30 minutes</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center justify-center gap-3">
-                  <span className="text-4xl font-mono font-bold tracking-[0.5em]">{generatedCode}</span>
-                  <Button variant="ghost" size="icon" onClick={() => copyCode(generatedCode)}>
+                <div className="rounded-xl bg-[var(--bank-navy)] px-5 py-6 flex items-center justify-center gap-3">
+                  <span className="text-4xl font-mono font-bold tracking-[0.38em] text-white">{generatedCode}</span>
+                  <Button variant="ghost" size="icon" className="text-white hover:bg-white/20" onClick={() => copyCode(generatedCode)}>
                     <Copy className="h-5 w-5" />
                   </Button>
                 </div>
@@ -166,34 +167,48 @@ export default function ATMWithdrawal() {
           )}
         </div>
 
-        <Card className="mt-6">
+        <Card className="mt-6 bg-white rounded-xl shadow-sm border-0">
           <CardHeader>
             <CardTitle>Withdrawal History</CardTitle>
           </CardHeader>
           <CardContent>
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground animate-pulse">Loading...</div>
+              <div className="space-y-3 py-2">
+                {Array.from({ length: 5 }).map((_, idx) => (
+                  <Skeleton key={idx} className="h-10 w-full" />
+                ))}
+              </div>
             ) : withdrawals.length === 0 ? (
-              <div className="text-center py-8 text-muted-foreground">No ATM withdrawals yet</div>
+              <div className="text-center py-10">
+                <Banknote className="h-12 w-12 mx-auto mb-3 text-[var(--bank-slate)]" />
+                <p className="text-lg font-semibold text-[#0A1628]">No withdrawal history</p>
+                <p className="text-muted-foreground text-sm">Your generated withdrawal codes will appear here.</p>
+              </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Amount</TableHead>
-                    <TableHead>Code</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Expires</TableHead>
+                  <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
+                    <TableHead className="text-white">Date</TableHead>
+                    <TableHead className="text-white">Amount</TableHead>
+                    <TableHead className="text-white">Code</TableHead>
+                    <TableHead className="text-white">Status</TableHead>
+                    <TableHead className="text-white">Expires</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {withdrawals.map(w => (
-                    <TableRow key={w.id}>
+                    <TableRow key={w.id} className="border-b border-[#E6EAF0] hover:bg-[#F0F4FA]">
                       <TableCell className="text-sm">{new Date(w.created_at).toLocaleString()}</TableCell>
                       <TableCell className="font-medium">${w.amount.toFixed(2)}</TableCell>
                       <TableCell className="font-mono">{w.withdrawal_code}</TableCell>
                       <TableCell>
-                        <Badge variant={w.status === "used" ? "default" : w.status === "expired" ? "secondary" : "outline"}>
+                        <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${
+                          w.status === "used"
+                            ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+                            : w.status === "expired"
+                            ? "bg-slate-100 text-slate-700 border border-slate-200"
+                            : "bg-amber-100 text-amber-700 border border-amber-200"
+                        }`}>
                           {w.status}
                         </Badge>
                       </TableCell>

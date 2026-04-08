@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -186,11 +187,21 @@ export default function TransactionHistory() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed": return "default";
-      case "pending": return "secondary";
-      case "failed": return "destructive";
-      default: return "outline";
+      case "completed": return "bg-emerald-100 text-emerald-700 border border-emerald-200";
+      case "pending": return "bg-amber-100 text-amber-700 border border-amber-200";
+      case "failed": return "bg-red-100 text-red-700 border border-red-200";
+      default: return "bg-slate-100 text-slate-700 border border-slate-200";
     }
+  };
+
+  const getTypePill = (type: string) => {
+    if (type.includes("deposit") || type === "loan_disbursement") {
+      return "bg-emerald-100 text-emerald-700 border border-emerald-200";
+    }
+    if (type.includes("fee")) {
+      return "bg-amber-100 text-amber-700 border border-amber-200";
+    }
+    return "bg-slate-100 text-slate-700 border border-slate-200";
   };
 
   const hasFilters = searchTerm || selectedType !== "all" || selectedAccount !== "all" || 
@@ -198,18 +209,18 @@ export default function TransactionHistory() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Transaction History</h1>
+            <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Transaction History</h1>
             <p className="text-muted-foreground">View and export your transactions</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportCSV}>
+            <Button variant="outline" className="border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportCSV}>
               <Download className="h-4 w-4 mr-2" />
               CSV
             </Button>
-            <Button variant="outline" onClick={exportPDF}>
+            <Button variant="outline" className="border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white" onClick={exportPDF}>
               <FileText className="h-4 w-4 mr-2" />
               Print/PDF
             </Button>
@@ -217,7 +228,7 @@ export default function TransactionHistory() {
         </div>
 
         {/* Filters */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white rounded-xl shadow-sm border-0">
           <CardHeader className="pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-lg flex items-center gap-2">
@@ -313,39 +324,43 @@ export default function TransactionHistory() {
         </Card>
 
         {/* Transactions Table */}
-        <Card className="print:shadow-none">
+        <Card className="bg-white rounded-xl shadow-sm border-0 print:shadow-none">
           <CardContent className="p-0">
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+              <div className="p-6 space-y-3">
+                {Array.from({ length: 8 }).map((_, idx) => (
+                  <Skeleton key={idx} className="h-12 w-full" />
+                ))}
               </div>
             ) : transactions.length === 0 ? (
               <div className="text-center py-12">
-                <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <FileText className="h-12 w-12 mx-auto text-[var(--bank-slate)] mb-4" />
                 <h3 className="text-lg font-semibold mb-2">No transactions found</h3>
-                <p className="text-muted-foreground">Try adjusting your filters</p>
+                <p className="text-muted-foreground">Try adjusting your filters or selecting a wider date range.</p>
               </div>
             ) : (
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Type</TableHead>
-                      <TableHead>Description</TableHead>
-                      <TableHead>Reference</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead>Status</TableHead>
+                    <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
+                      <TableHead className="text-white">Date</TableHead>
+                      <TableHead className="text-white">Type</TableHead>
+                      <TableHead className="text-white">Description</TableHead>
+                      <TableHead className="text-white">Reference</TableHead>
+                      <TableHead className="text-right text-white">Amount</TableHead>
+                      <TableHead className="text-white">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {transactions.map((tx) => (
-                      <TableRow key={tx.id}>
+                      <TableRow key={tx.id} className="border-b border-[#E6EAF0] hover:bg-[#F0F4FA]">
                         <TableCell className="whitespace-nowrap">
                           {format(new Date(tx.created_at), "MMM dd, yyyy HH:mm")}
                         </TableCell>
-                        <TableCell className="capitalize whitespace-nowrap">
-                          {tx.transaction_type.replace(/_/g, " ")}
+                        <TableCell className="whitespace-nowrap">
+                          <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${getTypePill(tx.transaction_type)}`}>
+                            {tx.transaction_type.replace(/_/g, " ")}
+                          </Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
                           {tx.description || "-"}
@@ -362,7 +377,7 @@ export default function TransactionHistory() {
                           ${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>
-                          <Badge variant={getStatusColor(tx.status)}>{tx.status}</Badge>
+                          <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${getStatusColor(tx.status)}`}>{tx.status}</Badge>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -389,7 +404,10 @@ export default function TransactionHistory() {
                               <PaginationLink
                                 onClick={() => setCurrentPage(page)}
                                 isActive={currentPage === page}
-                                className="cursor-pointer"
+                                className={cn(
+                                  "cursor-pointer",
+                                  currentPage === page && "bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)] hover:text-white"
+                                )}
                               >
                                 {page}
                               </PaginationLink>

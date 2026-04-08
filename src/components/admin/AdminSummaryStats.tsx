@@ -31,12 +31,22 @@ export default function AdminSummaryStats({
             key={metric.label}
             className="admin-premium-card border-l-4 rounded-lg border-l-[var(--bank-gold)] transition-transform duration-200 hover:-translate-y-0.5"
           >
-            <CardContent className="p-5">
+            <CardContent className="p-4">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium tracking-wide uppercase text-[var(--bank-muted)]">{metric.label}</p>
                   <div className="mt-2 flex items-end gap-2">
-                    <span className="admin-premium-heading text-3xl leading-none text-[var(--bank-navy)]">{metric.value}</span>
+                    <span
+                      style={{
+                        fontFamily: "'Playfair Display', serif",
+                        fontSize: "2rem",
+                        fontWeight: "700",
+                        color: "var(--bank-navy)",
+                        lineHeight: 1,
+                      }}
+                    >
+                      {metric.value}
+                    </span>
                     <span
                       className={`text-xs font-medium mb-0.5 ${
                         metric.trendUp ? "text-emerald-700" : "text-amber-700"
@@ -46,8 +56,18 @@ export default function AdminSummaryStats({
                     </span>
                   </div>
                 </div>
-                <div className="h-9 w-9 rounded-full bg-[var(--bank-navy)]/10 text-[var(--bank-navy)] flex items-center justify-center">
-                  <Icon className="h-4 w-4" />
+                <div
+                  style={{
+                    background: "var(--bank-navy)",
+                    borderRadius: "50%",
+                    width: "40px",
+                    height: "40px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon size={18} color="var(--bank-gold)" />
                 </div>
               </div>
             </CardContent>

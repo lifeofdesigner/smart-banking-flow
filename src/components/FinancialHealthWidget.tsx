@@ -36,9 +36,8 @@ export default function FinancialHealthWidget() {
 
     const totalBalance = accounts?.reduce((s, a) => s + (a.available_balance || 0), 0) ?? 0;
 
-    const startOfMonth = new Date();
-    startOfMonth.setDate(1);
-    startOfMonth.setHours(0, 0, 0, 0);
+    const last30Days = new Date();
+    last30Days.setDate(last30Days.getDate() - 30);
 
     const accountIds = accounts?.map((a) => a.id) ?? [];
     if (accountIds.length === 0) {
@@ -51,7 +50,7 @@ export default function FinancialHealthWidget() {
       .select("amount, transaction_type")
       .in("account_id", accountIds)
       .eq("status", "completed")
-      .gte("created_at", startOfMonth.toISOString());
+      .gte("created_at", last30Days.toISOString());
 
     let monthlyIncome = 0;
     let monthlySpending = 0;

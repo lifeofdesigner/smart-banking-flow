@@ -120,10 +120,10 @@ export default function HelpCenter() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Help Center</h1>
-          <p className="text-muted-foreground">Find answers and get support</p>
+          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Help Center</h1>
+          <p className="text-muted-foreground mt-1">Find answers and get support</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -154,10 +154,16 @@ export default function HelpCenter() {
         </div>
 
         <Tabs defaultValue="faq">
-          <TabsList className="mb-4">
-            <TabsTrigger value="faq"><HelpCircle className="h-4 w-4 mr-2" />FAQs</TabsTrigger>
-            <TabsTrigger value="contact"><MessageSquare className="h-4 w-4 mr-2" />Submit Ticket</TabsTrigger>
-            <TabsTrigger value="tickets"><Ticket className="h-4 w-4 mr-2" />My Tickets</TabsTrigger>
+          <TabsList className="mb-4 inline-flex h-auto flex-wrap rounded-xl bg-white p-1 shadow-sm border border-[#E6EAF0]">
+            <TabsTrigger value="faq" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
+              <HelpCircle className="h-4 w-4 mr-2" />FAQs
+            </TabsTrigger>
+            <TabsTrigger value="contact" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
+              <MessageSquare className="h-4 w-4 mr-2" />Submit Ticket
+            </TabsTrigger>
+            <TabsTrigger value="tickets" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
+              <Ticket className="h-4 w-4 mr-2" />My Tickets
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="faq">

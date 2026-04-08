@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, Loader2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -89,12 +91,24 @@ export default function InvestmentsPage() {
 
   const totalInvested = investments.reduce((s, i) => s + i.principal, 0);
   const totalValue = investments.reduce((s, i) => s + i.current_value, 0);
+  const totalReturns = totalValue - totalInvested;
 
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="min-h-screen bg-[#F4F5F7] p-6">
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-40" />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Array.from({ length: 3 }).map((_, idx) => (
+                <Card key={idx} className="bg-white rounded-xl shadow-sm border-0 p-4 space-y-3">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-8 w-32" />
+                </Card>
+              ))}
+            </div>
+            <Skeleton className="h-56 w-full" />
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -102,14 +116,14 @@ export default function InvestmentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="p-4 md:p-6 space-y-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6 space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-2xl font-bold">Investments</h2>
+          <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Investments</h2>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="h-4 w-4 mr-2" />New Investment</Button>
+              <Button className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]"><Plus className="h-4 w-4 mr-2" />New Investment</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-white rounded-xl shadow-sm border-0">
               <DialogHeader><DialogTitle>Create Investment</DialogTitle></DialogHeader>
               <div className="space-y-4 pt-2">
                 <Input placeholder="Investment name" value={form.name} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} />
@@ -146,47 +160,64 @@ export default function InvestmentsPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <Card className="p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
             <p className="text-xs text-muted-foreground">Total Invested</p>
-            <p className="text-xl font-bold">${totalInvested.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-[var(--bank-navy)]">${totalInvested.toLocaleString()}</p>
           </Card>
-          <Card className="p-4">
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
             <p className="text-xs text-muted-foreground">Current Value</p>
-            <p className="text-xl font-bold text-green-600">${totalValue.toLocaleString()}</p>
+            <p className="text-2xl font-bold text-[var(--bank-navy)]">${totalValue.toLocaleString()}</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-xs text-muted-foreground">Active</p>
-            <p className="text-xl font-bold">{investments.filter(i => i.status === "active").length}</p>
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
+            <p className="text-xs text-muted-foreground">Returns</p>
+            <p className={`text-2xl font-bold ${totalReturns >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+              {totalReturns >= 0 ? "+" : "-"}${Math.abs(totalReturns).toLocaleString()}
+            </p>
           </Card>
         </div>
 
         {/* List */}
         {investments.length === 0 ? (
-          <Card className="p-8 text-center">
-            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-            <p className="text-muted-foreground">No investments yet. Start growing your wealth!</p>
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-10 text-center">
+            <TrendingUp className="h-12 w-12 mx-auto mb-4 text-[var(--bank-slate)]" />
+            <p className="text-lg font-semibold text-[#0A1628]">No investments yet</p>
+            <p className="text-muted-foreground">Start growing your wealth with your first investment.</p>
           </Card>
         ) : (
-          <div className="grid md:grid-cols-2 gap-4">
-            {investments.map(inv => (
-              <Card key={inv.id} className="p-5 space-y-2">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-semibold">{inv.product_name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{inv.investment_type.replace(/_/g, " ")}</p>
-                  </div>
-                  <span className={`text-xs px-2 py-0.5 rounded-full ${inv.status === "active" ? "bg-green-500/10 text-green-600" : "bg-muted text-muted-foreground"}`}>{inv.status}</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-sm">
-                  <div><span className="text-muted-foreground">Principal:</span> ${inv.principal.toLocaleString()}</div>
-                  <div><span className="text-muted-foreground">Value:</span> ${inv.current_value.toLocaleString()}</div>
-                  <div><span className="text-muted-foreground">Rate:</span> {inv.interest_rate}%</div>
-                  <div><span className="text-muted-foreground">Maturity:</span> {inv.maturity_date ? new Date(inv.maturity_date).toLocaleDateString() : "—"}</div>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-0 overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
+                  <TableHead className="text-white">Product</TableHead>
+                  <TableHead className="text-white">Type</TableHead>
+                  <TableHead className="text-white text-right">Principal</TableHead>
+                  <TableHead className="text-white text-right">Current Value</TableHead>
+                  <TableHead className="text-white text-right">Returns</TableHead>
+                  <TableHead className="text-white">Rate</TableHead>
+                  <TableHead className="text-white">Maturity</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {investments.map((inv) => {
+                  const returns = inv.current_value - inv.principal;
+                  return (
+                    <TableRow key={inv.id} className="border-b border-[#E6EAF0] hover:bg-[#F0F4FA]">
+                      <TableCell className="font-semibold">{inv.product_name}</TableCell>
+                      <TableCell className="capitalize">{inv.investment_type.replace(/_/g, " ")}</TableCell>
+                      <TableCell className="text-right">${inv.principal.toLocaleString()}</TableCell>
+                      <TableCell className="text-right">${inv.current_value.toLocaleString()}</TableCell>
+                      <TableCell className={`text-right font-semibold ${returns >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                        {returns >= 0 ? "+" : "-"}${Math.abs(returns).toLocaleString()}
+                      </TableCell>
+                      <TableCell>{inv.interest_rate}%</TableCell>
+                      <TableCell>{inv.maturity_date ? new Date(inv.maturity_date).toLocaleDateString() : "—"}</TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
         )}
       </div>
     </DashboardLayout>

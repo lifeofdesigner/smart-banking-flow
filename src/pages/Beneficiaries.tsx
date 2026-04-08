@@ -41,6 +41,7 @@ import {
   Users,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface Beneficiary {
   id: string;
@@ -294,15 +295,22 @@ const Beneficiaries = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
+        <div className="max-w-4xl mx-auto space-y-4">
+          <Skeleton className="h-10 w-48" />
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-6 space-y-3">
+            {Array.from({ length: 5 }).map((_, idx) => (
+              <Skeleton key={idx} className="h-10 w-full" />
+            ))}
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-secondary/20">
-      <header className="bg-background border-b border-border">
+    <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <header className="bg-white rounded-xl shadow-sm border-0">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
@@ -313,11 +321,11 @@ const Beneficiaries = () => {
                 <Users className="w-5 h-5 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-xl font-bold">Beneficiaries</h1>
+                <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Beneficiaries</h1>
                 <p className="text-sm text-muted-foreground">Manage saved recipients</p>
               </div>
             </div>
-            <Button onClick={openAddDialog}>
+            <Button className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]" onClick={openAddDialog}>
               <Plus className="w-4 h-4 mr-2" />
               Add Beneficiary
             </Button>
@@ -326,31 +334,32 @@ const Beneficiaries = () => {
       </header>
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <Card>
+        <Card className="bg-white rounded-xl shadow-sm border-0">
           <CardHeader>
             <CardTitle>Saved Beneficiaries</CardTitle>
           </CardHeader>
           <CardContent>
             {beneficiaries.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
-                <Users className="h-12 w-12 mx-auto mb-4 opacity-40" />
-                <p>No beneficiaries yet. Add one to get started.</p>
+              <div className="text-center py-12">
+                <Users className="h-12 w-12 mx-auto mb-4 text-[var(--bank-slate)]" />
+                <p className="text-lg font-semibold text-[#0A1628]">No beneficiaries added yet</p>
+                <p className="text-muted-foreground">Add a beneficiary to speed up future transfers.</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
-                    <TableHead>Nickname</TableHead>
-                    <TableHead>Account Holder</TableHead>
-                    <TableHead>Account Number</TableHead>
-                    <TableHead>Bank</TableHead>
-                    <TableHead>Created</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
+                  <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
+                    <TableHead className="text-white">Nickname</TableHead>
+                    <TableHead className="text-white">Account Holder</TableHead>
+                    <TableHead className="text-white">Account Number</TableHead>
+                    <TableHead className="text-white">Bank</TableHead>
+                    <TableHead className="text-white">Created</TableHead>
+                    <TableHead className="text-right text-white">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {beneficiaries.map((b) => (
-                    <TableRow key={b.id}>
+                    <TableRow key={b.id} className="border-b border-[#E6EAF0] hover:bg-[#F0F4FA]">
                       <TableCell className="font-medium">{b.nickname}</TableCell>
                       <TableCell>{b.holder_name}</TableCell>
                       <TableCell className="font-mono">{b.account_number}</TableCell>
@@ -375,7 +384,7 @@ const Beneficiaries = () => {
 
       {/* Add/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent>
+        <DialogContent className="bg-white rounded-xl shadow-sm border-0">
           <DialogHeader>
             <DialogTitle>{editingId ? "Edit Beneficiary" : "Add Beneficiary"}</DialogTitle>
           </DialogHeader>
@@ -461,7 +470,7 @@ const Beneficiaries = () => {
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white rounded-xl shadow-sm border-0">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Beneficiary</AlertDialogTitle>
             <AlertDialogDescription>
@@ -470,7 +479,7 @@ const Beneficiaries = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-700 text-white" onClick={handleDelete}>Delete</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import type { BadgeProps } from "@/components/ui/badge";
 import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock } from "lucide-react";
 import { toast } from "sonner";
@@ -159,27 +160,59 @@ export default function Loans() {
 
   const statusColor = (s: string): BadgeVariant => {
     switch (s) {
-      case "active": case "completed": return "default";
-      case "pending": return "secondary";
-      case "rejected": case "defaulted": return "destructive";
-      default: return "secondary";
+      case "active": return "default";
+      case "completed": return "secondary";
+      case "pending": return "outline";
+      case "rejected":
+      case "defaulted":
+        return "destructive";
+      default:
+        return "secondary";
+    }
+  };
+
+  const statusBadgeClass = (status: string) => {
+    switch (status) {
+      case "pending":
+        return "bg-amber-100 text-amber-700 border border-amber-200";
+      case "active":
+        return "bg-emerald-100 text-emerald-700 border border-emerald-200";
+      case "completed":
+        return "bg-slate-100 text-slate-700 border border-slate-200";
+      case "rejected":
+      case "defaulted":
+        return "bg-red-100 text-red-700 border border-red-200";
+      default:
+        return "bg-slate-100 text-slate-700 border border-slate-200";
     }
   };
 
   if (loading) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="animate-pulse text-muted-foreground">Loading loans...</div>
+    <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="max-w-6xl mx-auto space-y-6">
+        <Skeleton className="h-10 w-48" />
+        <div className="grid md:grid-cols-2 gap-6">
+          {Array.from({ length: 3 }).map((_, idx) => (
+            <Card key={idx} className="bg-white rounded-xl shadow-sm border-0 p-5 space-y-3">
+              <Skeleton className="h-5 w-40" />
+              <Skeleton className="h-4 w-56" />
+              <Skeleton className="h-8 w-24" />
+              <Skeleton className="h-9 w-full" />
+            </Card>
+          ))}
+        </div>
+      </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="max-w-6xl mx-auto">
         <div className="flex items-center gap-4 mb-6">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" />Back
           </Button>
-          <h1 className="text-3xl font-bold">Loans</h1>
+          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Loan Services</h1>
         </div>
 
         <Tabs defaultValue="apply" className="space-y-4">
@@ -191,7 +224,7 @@ export default function Loans() {
           <TabsContent value="apply">
             <div className="grid md:grid-cols-2 gap-6">
               {/* Product selection */}
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Banknote className="h-5 w-5" />Select a Loan Product
@@ -201,7 +234,7 @@ export default function Loans() {
                   {products.map(p => (
                     <Card
                       key={p.id}
-                      className={`cursor-pointer transition-all ${selectedProduct === p.id ? "ring-2 ring-primary" : "hover:border-primary/50"}`}
+                      className={`cursor-pointer transition-all bg-white rounded-xl shadow-sm border-0 ${selectedProduct === p.id ? "ring-2 ring-[var(--bank-gold)]" : "hover:ring-1 hover:ring-[var(--bank-gold)]"}`}
                       onClick={() => setSelectedProduct(p.id)}
                     >
                       <CardContent className="p-4">
@@ -210,12 +243,26 @@ export default function Loans() {
                             <h4 className="font-semibold">{p.name}</h4>
                             <p className="text-sm text-muted-foreground">{p.description}</p>
                           </div>
-                          <Badge variant="secondary">{p.interest_rate}% p.a.</Badge>
+                          <div className="text-right">
+                            <p className="text-xl font-bold text-[var(--bank-navy)]">{p.interest_rate}%</p>
+                            <p className="text-xs text-muted-foreground">p.a.</p>
+                          </div>
                         </div>
                         <div className="flex gap-4 mt-2 text-sm text-muted-foreground">
                           <span>${p.min_amount.toLocaleString()} – ${p.max_amount.toLocaleString()}</span>
                           <span>{p.term_months} months</span>
                         </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          className="mt-4 bg-[var(--bank-gold)] text-[var(--bank-navy)] hover:bg-[#b9963d]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedProduct(p.id);
+                          }}
+                        >
+                          Apply
+                        </Button>
                       </CardContent>
                     </Card>
                   ))}
@@ -223,7 +270,7 @@ export default function Loans() {
               </Card>
 
               {/* Application form + calculator */}
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Calculator className="h-5 w-5" />Loan Calculator &amp; Application
@@ -256,7 +303,7 @@ export default function Loans() {
                   </div>
 
                   {product && parsedAmount > 0 && (
-                    <Card className="bg-secondary/50">
+                    <Card className="bg-white rounded-xl shadow-sm border-0">
                       <CardContent className="p-4 space-y-2 text-sm">
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Principal</span>
@@ -272,7 +319,7 @@ export default function Loans() {
                         </div>
                         <div className="flex justify-between border-t pt-2">
                           <span className="text-muted-foreground">Monthly Payment</span>
-                          <span className="font-bold text-primary text-base">${monthlyPayment.toFixed(2)}</span>
+                            <span className="font-bold text-[var(--bank-navy)] text-base">${monthlyPayment.toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between">
                           <span className="text-muted-foreground">Total Payable</span>
@@ -299,38 +346,42 @@ export default function Loans() {
           </TabsContent>
 
           <TabsContent value="my-loans">
-            <Card>
+            <Card className="bg-white rounded-xl shadow-sm border-0">
               <CardHeader>
                 <CardTitle>My Loans</CardTitle>
                 <CardDescription>Track your active and past loans</CardDescription>
               </CardHeader>
               <CardContent>
                 {loans.length === 0 ? (
-                  <p className="text-center text-muted-foreground py-8">No loans yet. Apply for one above!</p>
+                  <div className="text-center py-12">
+                    <Banknote className="h-12 w-12 mx-auto text-[var(--bank-slate)] mb-3" />
+                    <p className="text-lg font-semibold text-[#0A1628]">No active loans</p>
+                    <p className="text-muted-foreground">Apply for a loan product to get started.</p>
+                  </div>
                 ) : (
                   <Table>
                     <TableHeader>
-                      <TableRow>
-                        <TableHead>Product</TableHead>
-                        <TableHead>Principal</TableHead>
-                        <TableHead>Monthly</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead>Term</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Applied</TableHead>
-                        <TableHead>Actions</TableHead>
+                      <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
+                        <TableHead className="text-white">Product</TableHead>
+                        <TableHead className="text-white">Principal</TableHead>
+                        <TableHead className="text-white">Monthly</TableHead>
+                        <TableHead className="text-white">Total</TableHead>
+                        <TableHead className="text-white">Term</TableHead>
+                        <TableHead className="text-white">Status</TableHead>
+                        <TableHead className="text-white">Applied</TableHead>
+                        <TableHead className="text-white">Actions</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {loans.map(loan => (
-                        <TableRow key={loan.id}>
+                        <TableRow key={loan.id} className="border-b border-[#E6EAF0] hover:bg-[#F0F4FA]">
                           <TableCell>{loan.loan_products?.name}</TableCell>
                           <TableCell>${loan.principal.toFixed(2)}</TableCell>
                           <TableCell>${loan.monthly_payment.toFixed(2)}</TableCell>
                           <TableCell>${loan.total_payable.toFixed(2)}</TableCell>
                           <TableCell>{loan.term_months}mo</TableCell>
                           <TableCell>
-                            <Badge variant={statusColor(loan.status)}>{loan.status}</Badge>
+                            <Badge variant={statusColor(loan.status)} className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${statusBadgeClass(loan.status)}`}>{loan.status}</Badge>
                           </TableCell>
                           <TableCell>{new Date(loan.created_at).toLocaleDateString()}</TableCell>
                           <TableCell>
@@ -355,7 +406,7 @@ export default function Loans() {
 
         {/* Repayment Schedule Dialog */}
         <Dialog open={repaymentDialogOpen} onOpenChange={setRepaymentDialogOpen}>
-          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto bg-white rounded-xl shadow-sm border-0">
             <DialogHeader>
               <DialogTitle>Repayment Schedule</DialogTitle>
               <DialogDescription>Your amortized monthly repayment plan</DialogDescription>
@@ -377,9 +428,9 @@ export default function Loans() {
                   <TableRow key={r.id} className={r.status === "paid" ? "opacity-60" : ""}>
                     <TableCell>{r.installment_number}</TableCell>
                     <TableCell>{new Date(r.due_date).toLocaleDateString()}</TableCell>
-                    <TableCell>${r.principal_portion.toFixed(2)}</TableCell>
-                    <TableCell>${r.interest_portion.toFixed(2)}</TableCell>
-                    <TableCell className="font-semibold">${r.amount_due.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium text-[var(--bank-slate)]">${r.principal_portion.toFixed(2)}</TableCell>
+                    <TableCell className="font-medium text-[var(--bank-slate)]">${r.interest_portion.toFixed(2)}</TableCell>
+                    <TableCell className="font-semibold text-[var(--bank-navy)]">${r.amount_due.toFixed(2)}</TableCell>
                     <TableCell>
                       <Badge variant={r.status === "paid" ? "default" : "secondary"}>
                         {r.status === "paid"

@@ -58,18 +58,18 @@ export default function SecuritySettings() {
 
   const passwordStrength = getPasswordStrength(newPassword);
   const strengthLabels = ["Very Weak", "Weak", "Fair", "Strong", "Very Strong"];
-  const strengthColors = ["bg-red-500", "bg-orange-500", "bg-yellow-500", "bg-green-500", "bg-green-600"];
+  const strengthColors = ["bg-[#EF4444]", "bg-[#EF4444]", "bg-[#F59E0B]", "bg-[#10B981]", "bg-[var(--bank-navy)]"];
 
   return (
     <DashboardLayout>
-      <div className="p-6 max-w-3xl">
+      <div className="min-h-screen bg-[#F4F5F7] p-6 max-w-4xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-3xl font-bold">Security Settings</h1>
-          <p className="text-muted-foreground">Manage your account security and authentication</p>
+          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Security Settings</h1>
+          <p className="text-muted-foreground mt-1">Manage your account security and authentication</p>
         </div>
 
         {/* Change Password */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white rounded-xl shadow-sm border-0">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-primary/10">
@@ -134,7 +134,7 @@ export default function SecuritySettings() {
                 )}
               </div>
 
-              <Button type="submit" disabled={loading || !newPassword || newPassword !== confirmPassword}>
+              <Button type="submit" className="bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]" disabled={loading || !newPassword || newPassword !== confirmPassword}>
                 {loading ? "Updating..." : "Update Password"}
               </Button>
             </form>
@@ -166,7 +166,7 @@ export default function SecuritySettings() {
         </Card>
 
         {/* Two-Factor Authentication */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-amber-500">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-yellow-500/10">
@@ -179,7 +179,7 @@ export default function SecuritySettings() {
             </div>
           </CardHeader>
           <CardContent>
-            <Alert>
+            <Alert className="border-amber-200 bg-amber-50/70">
               <Info className="h-4 w-4" />
               <AlertTitle>Coming Soon</AlertTitle>
               <AlertDescription>
@@ -203,7 +203,7 @@ export default function SecuritySettings() {
         </Card>
 
         {/* Active Sessions */}
-        <Card className="mb-6">
+        <Card className="mb-6 bg-white rounded-xl shadow-sm border-0">
           <CardHeader>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-full bg-secondary">
@@ -216,33 +216,30 @@ export default function SecuritySettings() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 border border-[#E6EAF0] rounded-xl bg-[#F8FAFC]">
                 <div className="flex items-center gap-4">
-                  <Monitor className="h-8 w-8 text-muted-foreground" />
+                  <span className="h-10 w-10 rounded-full bg-[var(--bank-navy)]/10 text-[var(--bank-navy)] flex items-center justify-center">
+                    <Monitor className="h-5 w-5" />
+                  </span>
                   <div>
-                    <p className="font-medium">Current Session</p>
-                    <p className="text-sm text-muted-foreground">This device · Just now</p>
+                    <p className="font-medium text-[#0A1628]">Current Session</p>
+                    <p className="text-sm text-muted-foreground">This device • Lagos, Nigeria • Last active: Just now</p>
                   </div>
                 </div>
                 <Badge variant="secondary" className="bg-green-500/10 text-green-600">Active</Badge>
               </div>
-
-              <Alert variant="default">
-                <AlertTriangle className="h-4 w-4" />
-                <AlertTitle>Security Tip</AlertTitle>
-                <AlertDescription>
-                  If you notice any suspicious activity, change your password immediately and sign out of all other sessions.
-                </AlertDescription>
-              </Alert>
             </div>
           </CardContent>
         </Card>
 
         {/* Security Tips */}
-        <Card>
+        <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-navy)]">
           <CardHeader>
-            <CardTitle>Security Best Practices</CardTitle>
+            <CardTitle className="text-[var(--bank-navy)] flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5" />
+              Security Best Practices
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-3 text-sm">

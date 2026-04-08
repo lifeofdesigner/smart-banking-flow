@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ArrowLeft, User, Mail, Phone, MapPin, Shield } from "lucide-react";
 import { toast } from "sonner";
 
@@ -91,33 +92,72 @@ export default function UserProfile() {
     }
   };
 
+  const initials = (profile.full_name || profile.email || "U")
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading profile...</div>
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
+        <div className="max-w-3xl mx-auto space-y-6">
+          <Skeleton className="h-10 w-40 rounded-md" />
+          <Card className="bg-white rounded-xl shadow-sm border-0">
+            <CardContent className="p-6 space-y-6">
+              <div className="flex flex-col items-center gap-3">
+                <Skeleton className="h-24 w-24 rounded-full" />
+                <Skeleton className="h-6 w-48" />
+                <Skeleton className="h-4 w-56" />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {Array.from({ length: 4 }).map((_, idx) => (
+                  <div key={idx} className="space-y-2">
+                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                ))}
+              </div>
+              <Skeleton className="h-11 w-full sm:w-40" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="max-w-3xl mx-auto">
         <Button
           variant="ghost"
           onClick={() => navigate("/dashboard")}
-          className="mb-6"
+          className="mb-6 border border-[#E6EAF0] bg-white hover:bg-[#F0F4FA]"
         >
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
 
-        <div className="max-w-2xl mx-auto space-y-6">
-          <Card>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">My Profile</h1>
+            <p className="text-sm text-muted-foreground mt-1">Manage your personal information</p>
+          </div>
+
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="text-2xl">My Profile</CardTitle>
-                  <CardDescription>Manage your personal information</CardDescription>
+                <div className="flex items-center gap-4">
+                  <div className="h-20 w-20 rounded-full bg-[var(--bank-navy)] text-[var(--bank-gold)] flex items-center justify-center text-2xl font-bold">
+                    {initials}
+                  </div>
+                  <div>
+                    <CardTitle className="text-2xl text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
+                      {profile.full_name || "Unnamed User"}
+                    </CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground">{profile.email}</CardDescription>
+                  </div>
                 </div>
                 <Badge variant={getKycBadgeVariant(profile.kyc_status)}>
                   KYC: {profile.kyc_status}
@@ -126,69 +166,82 @@ export default function UserProfile() {
             </CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-6">
-                <div className="space-y-2">
-                  <Label htmlFor="full_name">
-                    <User className="inline mr-2 h-4 w-4" />
-                    Full Name
-                  </Label>
-                  <Input
-                    id="full_name"
-                    value={profile.full_name}
-                    onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
-                    required
-                  />
+                <div className="space-y-4">
+                  <h2 className="text-base font-semibold text-[var(--bank-navy)]">Personal Information</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="full_name">
+                        <User className="inline mr-2 h-4 w-4" />
+                        Full Name
+                      </Label>
+                      <Input
+                        id="full_name"
+                        value={profile.full_name}
+                        onChange={(e) => setProfile({ ...profile, full_name: e.target.value })}
+                        required
+                        className="bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="email">
+                        <Mail className="inline mr-2 h-4 w-4" />
+                        Email
+                      </Label>
+                      <Input
+                        id="email"
+                        type="email"
+                        value={profile.email}
+                        disabled
+                        className="bg-[#F8FAFC]"
+                      />
+                      <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="email">
-                    <Mail className="inline mr-2 h-4 w-4" />
-                    Email
-                  </Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={profile.email}
-                    disabled
-                    className="bg-muted"
-                  />
-                  <p className="text-xs text-muted-foreground">Email cannot be changed</p>
+                <div className="space-y-4">
+                  <h2 className="text-base font-semibold text-[var(--bank-navy)]">Contact Details</h2>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="phone">
+                        <Phone className="inline mr-2 h-4 w-4" />
+                        Phone Number
+                      </Label>
+                      <Input
+                        id="phone"
+                        type="tel"
+                        value={profile.phone || ""}
+                        onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                        className="bg-white"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="address">
+                        <MapPin className="inline mr-2 h-4 w-4" />
+                        Address
+                      </Label>
+                      <Input
+                        id="address"
+                        value={profile.address || ""}
+                        onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                        className="bg-white"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="phone">
-                    <Phone className="inline mr-2 h-4 w-4" />
-                    Phone Number
-                  </Label>
-                  <Input
-                    id="phone"
-                    type="tel"
-                    value={profile.phone || ""}
-                    onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">
-                    <MapPin className="inline mr-2 h-4 w-4" />
-                    Address
-                  </Label>
-                  <Input
-                    id="address"
-                    value={profile.address || ""}
-                    onChange={(e) => setProfile({ ...profile, address: e.target.value })}
-                  />
-                </div>
-
-                <Button type="submit" disabled={saving} className="w-full">
+                <Button type="submit" disabled={saving} className="w-full sm:w-auto bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]">
                   {saving ? "Saving..." : "Save Changes"}
                 </Button>
               </form>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardHeader>
-              <CardTitle className="flex items-center">
+              <CardTitle className="flex items-center text-[var(--bank-navy)]">
                 <Shield className="mr-2 h-5 w-5" />
                 Security
               </CardTitle>

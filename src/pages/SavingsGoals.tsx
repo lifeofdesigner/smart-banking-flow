@@ -19,6 +19,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { PiggyBank, Plus, CalendarIcon, Target, TrendingUp, Trash2, ArrowDownToLine } from "lucide-react";
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -207,20 +208,20 @@ export default function SavingsGoals() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Savings Goals</h1>
+            <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Savings Goals</h1>
             <p className="text-muted-foreground">Track your savings progress with real fund movement</p>
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button>
+              <Button className="bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]">
                 <Plus className="h-4 w-4 mr-2" />
                 New Goal
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="bg-white rounded-xl shadow-sm border-0">
               <DialogHeader>
                 <DialogTitle>Create Savings Goal</DialogTitle>
                 <DialogDescription>Set a new savings target to work towards.</DialogDescription>
@@ -265,7 +266,7 @@ export default function SavingsGoals() {
 
         {/* Stats */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10">
@@ -278,7 +279,7 @@ export default function SavingsGoals() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-secondary">
@@ -291,7 +292,7 @@ export default function SavingsGoals() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-yellow-500/10">
@@ -304,7 +305,7 @@ export default function SavingsGoals() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-green-500/10">
@@ -321,13 +322,20 @@ export default function SavingsGoals() {
 
         {/* Goals Grid */}
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Card key={idx} className="bg-white rounded-xl shadow-sm border-0 p-5 space-y-3">
+                <Skeleton className="h-5 w-1/2" />
+                <Skeleton className="h-10 w-3/4" />
+                <Skeleton className="h-3 w-full" />
+                <Skeleton className="h-9 w-full" />
+              </Card>
+            ))}
           </div>
         ) : goals.length === 0 ? (
-          <Card className="p-12 text-center">
-            <PiggyBank className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No savings goals yet</h3>
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-12 text-center">
+            <PiggyBank className="h-12 w-12 mx-auto text-[var(--bank-slate)] mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No savings goals yet — create your first goal</h3>
             <p className="text-muted-foreground mb-4">Start by creating your first savings goal.</p>
             <Button onClick={() => setCreateOpen(true)}>
               <Plus className="h-4 w-4 mr-2" />
@@ -340,7 +348,7 @@ export default function SavingsGoals() {
               const progress = getProgress(goal.current_amount, goal.target_amount);
               const daysLeft = getDaysRemaining(goal.deadline);
               return (
-                <Card key={goal.id} className="overflow-hidden">
+                <Card key={goal.id} className="bg-white rounded-xl shadow-sm border-0 overflow-hidden">
                   <div className="h-2" style={{ backgroundColor: goal.color }} />
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
@@ -350,19 +358,22 @@ export default function SavingsGoals() {
                           <CardDescription className="mt-1">{goal.description}</CardDescription>
                         )}
                       </div>
-                      <Badge variant={goal.status === "completed" ? "default" : "secondary"}>
+                      <Badge className="rounded-full bg-slate-100 text-slate-700 border border-slate-200 capitalize">
                         {goal.status}
                       </Badge>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
                     <div>
+                      <p className="text-2xl font-bold text-[var(--bank-navy)] mb-1" style={{ fontFamily: "'Playfair Display', serif" }}>${goal.target_amount.toLocaleString()}</p>
                       <div className="flex justify-between text-sm mb-2">
                         <span>${goal.current_amount.toLocaleString()} saved</span>
                         <span className="text-muted-foreground">${goal.target_amount.toLocaleString()}</span>
                       </div>
-                      <Progress value={progress} className="h-3" />
-                      <p className="text-sm text-muted-foreground mt-1">{progress}% complete</p>
+                      <Progress value={progress} className="h-3 [&>div]:bg-[var(--bank-gold)]" />
+                      <div className="mt-2">
+                        <Badge className="rounded-full bg-[var(--bank-gold)]/20 text-[#0A1628] border border-[var(--bank-gold)]/40">{progress}% complete</Badge>
+                      </div>
                     </div>
 
                     {goal.deadline && (
@@ -378,7 +389,8 @@ export default function SavingsGoals() {
                     <div className="flex gap-2 pt-2">
                       {goal.status === "active" && (
                         <Button
-                          className="flex-1"
+                          variant="outline"
+                          className="flex-1 border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white"
                           onClick={() => {
                             setSelectedGoal(goal);
                             setContributeOpen(true);
@@ -391,7 +403,7 @@ export default function SavingsGoals() {
                       {goal.current_amount > 0 && (
                         <Button
                           variant="outline"
-                          className="flex-1"
+                          className="flex-1 border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white"
                           onClick={() => {
                             setSelectedGoal(goal);
                             setWithdrawOpen(true);
@@ -419,7 +431,7 @@ export default function SavingsGoals() {
 
         {/* Contribute Dialog */}
         <Dialog open={contributeOpen} onOpenChange={setContributeOpen}>
-          <DialogContent>
+          <DialogContent className="bg-white rounded-xl shadow-sm border-0">
             <DialogHeader>
               <DialogTitle>Add Funds to Goal</DialogTitle>
               <DialogDescription>
@@ -476,7 +488,7 @@ export default function SavingsGoals() {
 
         {/* Withdraw Dialog */}
         <Dialog open={withdrawOpen} onOpenChange={setWithdrawOpen}>
-          <DialogContent>
+          <DialogContent className="bg-white rounded-xl shadow-sm border-0">
             <DialogHeader>
               <DialogTitle>Withdraw from Goal</DialogTitle>
               <DialogDescription>

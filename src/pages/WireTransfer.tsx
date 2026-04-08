@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle2, Circle, Globe } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
 import { z } from "zod";
 
 const wireTransferSchema = z.object({
@@ -82,40 +82,23 @@ const WireTransfer = () => {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !accountId) throw new Error("Not authenticated");
 
-      // Create wire transfer
-      const { data: wireTransfer, error } = await supabase
-        .from("wire_transfers")
-        .insert({
-          user_id: user.id,
-          account_id: accountId,
-          beneficiary_name: validated.beneficiaryName,
-          beneficiary_account: validated.beneficiaryAccount,
-          beneficiary_bank: validated.beneficiaryBank,
-          beneficiary_country: validated.beneficiaryCountry,
-          swift_code: validated.swiftCode,
-          amount: validated.amount,
-          purpose: validated.purpose || null,
-          status: "awaiting_cot",
-          current_stage: 1,
-        })
-        .select()
-        .single();
+      const { data: wireId, error } = await (supabase as any).rpc("initiate_wire_transfer", {
+        p_user_id: user.id,
+        p_account_id: accountId,
+        p_beneficiary_name: validated.beneficiaryName,
+        p_beneficiary_account: validated.beneficiaryAccount,
+        p_beneficiary_bank: validated.beneficiaryBank,
+        p_beneficiary_country: validated.beneficiaryCountry,
+        p_swift_code: validated.swiftCode,
+        p_amount: validated.amount,
+        p_currency: "USD",
+        p_purpose: validated.purpose || null,
+      });
 
       if (error) throw error;
 
-      if (wireTransfer) {
-        setWireTransferId(wireTransfer.id);
-        
-        // Generate security codes
-        for (const stage of securityStages) {
-          await supabase
-            .from("wire_transfer_codes")
-            .insert({
-              wire_transfer_id: wireTransfer.id,
-              code_type: stage.code,
-              code_value: `${stage.code}-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-            });
-        }
+      if (wireId) {
+        setWireTransferId(wireId);
 
         setCurrentStep(1);
         toast({
@@ -218,15 +201,15 @@ const WireTransfer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-secondary/20">
-      <header className="bg-background border-b border-border">
+    <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <header className="bg-white rounded-xl shadow-sm border-0">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="text-xl font-bold">Wire Transfer</h1>
+              <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Wire Transfer</h1>
               <p className="text-sm text-muted-foreground">International Money Transfer</p>
             </div>
           </div>
@@ -236,20 +219,26 @@ const WireTransfer = () => {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Progress Indicator */}
         {currentStep > 0 && (
-          <Card className="p-6 mb-8">
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
             <h3 className="font-bold mb-4">Security Verification Progress</h3>
             <div className="space-y-3">
               {securityStages.map((stage, index) => (
                 <div key={stage.code} className="flex items-center space-x-3">
                   {index < currentStep ? (
-                    <CheckCircle2 className="w-6 h-6 text-green-600 flex-shrink-0" />
+                    <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
+                      <Check className="w-4 h-4" />
+                    </span>
                   ) : index === currentStep ? (
-                    <Circle className="w-6 h-6 text-primary flex-shrink-0 animate-pulse" />
+                    <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                      {index + 1}
+                    </span>
                   ) : (
-                    <Circle className="w-6 h-6 text-muted-foreground flex-shrink-0" />
+                    <span className="w-7 h-7 rounded-full border border-[#D1D5DB] text-[#9CA3AF] inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                      {index + 1}
+                    </span>
                   )}
                   <div>
-                    <p className={`font-medium ${index === currentStep ? "text-primary" : ""}`}>
+                    <p className={`font-medium text-sm ${index === currentStep ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
                       {stage.name}
                     </p>
                     <p className="text-sm text-muted-foreground">{stage.description}</p>
@@ -359,7 +348,7 @@ const WireTransfer = () => {
             </form>
           </Card>
         ) : (
-          <Card className="p-8">
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-8">
             <div className="text-center mb-8">
               <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
                 <Globe className="w-8 h-8 text-primary" />
@@ -373,11 +362,11 @@ const WireTransfer = () => {
             </div>
 
             <div className="max-w-md mx-auto space-y-6">
-              <div className="p-4 bg-accent/10 border border-accent/20 rounded-lg">
-                <p className="text-sm font-medium text-accent mb-2">Important</p>
+              <div className="p-4 bg-white border border-amber-200 border-l-4 border-l-amber-400 rounded-lg">
+                <p className="text-sm font-medium text-amber-700 mb-2">Important</p>
                 <p className="text-sm">
                   Please contact our support team to receive your {securityStages[currentStep - 1].code} code. 
-                  For security reasons, codes are sent separately via email or SMS.
+                  For security reasons.
                 </p>
               </div>
 
@@ -389,14 +378,14 @@ const WireTransfer = () => {
                   value={securityCodeInput}
                   onChange={(e) => setSecurityCodeInput(e.target.value)}
                   placeholder={`${securityStages[currentStep - 1].code}-XXXXXXXX`}
-                  className="h-12 text-center text-lg font-mono"
+                  className="h-14 text-center text-lg font-mono"
                 />
               </div>
 
               <Button 
                 onClick={handleVerifyCode} 
                 size="lg" 
-                className="w-full h-12" 
+                className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]" 
                 disabled={loading || !securityCodeInput.trim()}
               >
                 {loading ? "Verifying..." : "Verify Code"}

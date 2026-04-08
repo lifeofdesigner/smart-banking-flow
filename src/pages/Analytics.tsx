@@ -2,7 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, PieChart, Pie, Cell, Legend } from "recharts";
 import { TrendingUp, TrendingDown, DollarSign, ArrowUpRight } from "lucide-react";
 import { format, startOfMonth, subMonths } from "date-fns";
@@ -26,7 +27,7 @@ interface MonthlyData {
   expenses: number;
 }
 
-const COLORS = ["hsl(var(--primary))", "hsl(var(--destructive))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))", "hsl(var(--muted))"];
+const COLORS = ["var(--bank-slate)", "var(--bank-gold)", "#7B8BAE", "#D8BD70", "#2E3C5E", "#A0AEC0"];
 
 export default function Analytics() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -115,33 +116,47 @@ export default function Analytics() {
 
   return (
     <DashboardLayout>
-      <div className="p-6">
+      <div className="min-h-screen bg-[#F4F5F7] p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
-            <h1 className="text-3xl font-bold">Analytics</h1>
+            <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Analytics</h1>
             <p className="text-muted-foreground">Track your spending patterns and trends</p>
           </div>
-          <Select value={period} onValueChange={setPeriod}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="3">Last 3 months</SelectItem>
-              <SelectItem value="6">Last 6 months</SelectItem>
-              <SelectItem value="12">Last 12 months</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="inline-flex rounded-full bg-white shadow-sm p-1 border border-[#E6EAF0]">
+            {[
+              { value: "3", label: "3M" },
+              { value: "6", label: "6M" },
+              { value: "12", label: "12M" },
+            ].map((p) => (
+              <Button
+                key={p.value}
+                type="button"
+                size="sm"
+                variant="ghost"
+                className={period === p.value ? "rounded-full bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]" : "rounded-full text-muted-foreground"}
+                onClick={() => setPeriod(p.value)}
+              >
+                {p.label}
+              </Button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-24 w-full" />)}
+            </div>
+            <div className="grid lg:grid-cols-2 gap-6">
+              <Skeleton className="h-[320px] w-full" />
+              <Skeleton className="h-[320px] w-full" />
+            </div>
           </div>
         ) : (
           <>
             {/* Summary Cards */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-gold)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-green-500/10">
@@ -156,7 +171,7 @@ export default function Analytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-gold)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-red-500/10">
@@ -171,7 +186,7 @@ export default function Analytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-gold)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
                     <div className={`p-2 rounded-full ${netFlow >= 0 ? "bg-green-500/10" : "bg-red-500/10"}`}>
@@ -186,7 +201,7 @@ export default function Analytics() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-gold)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-full bg-primary/10">
@@ -205,7 +220,7 @@ export default function Analytics() {
 
             <div className="grid lg:grid-cols-2 gap-6 mb-6">
               {/* Monthly Trends */}
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0">
                 <CardHeader>
                   <CardTitle>Monthly Overview</CardTitle>
                   <CardDescription>Income vs Expenses over time</CardDescription>
@@ -226,8 +241,8 @@ export default function Analytics() {
                           formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
                         />
                         <Legend />
-                        <Line type="monotone" dataKey="income" stroke="hsl(142 76% 36%)" strokeWidth={2} name="Income" />
-                        <Line type="monotone" dataKey="expenses" stroke="hsl(var(--destructive))" strokeWidth={2} name="Expenses" />
+                        <Line type="monotone" dataKey="income" stroke="var(--bank-slate)" strokeWidth={2} name="Income" />
+                        <Line type="monotone" dataKey="expenses" stroke="var(--bank-gold)" strokeWidth={2} name="Expenses" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -235,7 +250,7 @@ export default function Analytics() {
               </Card>
 
               {/* Category Pie Chart */}
-              <Card>
+              <Card className="bg-white rounded-xl shadow-sm border-0">
                 <CardHeader>
                   <CardTitle>Spending by Category</CardTitle>
                   <CardDescription>Distribution of your transactions</CardDescription>
@@ -277,12 +292,23 @@ export default function Analytics() {
                       </ResponsiveContainer>
                     )}
                   </div>
+                  <div className="mt-4 space-y-2">
+                    {categoryData.slice(0, 5).map((c, idx) => (
+                      <div key={c.name} className="flex items-center justify-between text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }} />
+                          <span>{c.name}</span>
+                        </div>
+                        <span className="font-semibold">${c.amount.toLocaleString()}</span>
+                      </div>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             </div>
 
             {/* Category Bar Chart */}
-            <Card>
+            <Card className="bg-white rounded-xl shadow-sm border-0">
               <CardHeader>
                 <CardTitle>Transaction Categories</CardTitle>
                 <CardDescription>Total amount by transaction type</CardDescription>
