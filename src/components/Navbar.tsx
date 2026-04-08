@@ -1,8 +1,10 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Navbar = () => {
+  const siteSettings = useSiteSettings();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -36,7 +38,7 @@ const Navbar = () => {
             <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
               <span className="text-primary-foreground font-bold text-xl">M</span>
             </div>
-            <span className="text-xl font-bold text-foreground">MicroFinance Bank</span>
+            <span className="text-xl font-bold text-foreground">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
           </div>
 
           <div className="hidden md:flex items-center space-x-8">

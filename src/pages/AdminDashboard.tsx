@@ -38,8 +38,10 @@ import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 import AdminBeneficiariesTab from "@/components/admin/AdminBeneficiariesTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function AdminDashboard() {
+  const siteSettings = useSiteSettings();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -243,7 +245,7 @@ export default function AdminDashboard() {
               Back
               </Button>
               <div>
-                <h1 className="admin-premium-heading text-3xl leading-tight text-[var(--bank-navy)]">MicroFinance Bank</h1>
+                <h1 className="admin-premium-heading text-3xl leading-tight text-[var(--bank-navy)]">{siteSettings["site_name"] || "MicroFinance Bank"}</h1>
                 <p className="text-sm font-medium tracking-wide text-[var(--bank-gold)]">Administration Portal</p>
               </div>
             </div>

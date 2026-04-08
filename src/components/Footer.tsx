@@ -1,6 +1,9 @@
 import { Facebook, Twitter, Instagram, Linkedin } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Footer = () => {
+  const siteSettings = useSiteSettings();
+
   return (
     <footer className="bg-primary text-primary-foreground py-16">
       <div className="container mx-auto px-4">
@@ -10,7 +13,7 @@ const Footer = () => {
               <div className="w-10 h-10 rounded-lg bg-accent flex items-center justify-center">
                 <span className="text-accent-foreground font-bold text-xl">M</span>
               </div>
-              <span className="text-xl font-bold">MicroFinance Bank</span>
+              <span className="text-xl font-bold">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
             </div>
             <p className="text-primary-foreground/80 leading-relaxed">
               Empowering communities through accessible financial services since 2010.
@@ -65,7 +68,7 @@ const Footer = () => {
         <div className="border-t border-primary-foreground/20 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
             <p className="text-primary-foreground/80 text-sm">
-              © 2024 MicroFinance Bank. All rights reserved. Licensed by the Central Bank.
+              © {new Date().getFullYear()} {siteSettings["site_name"] || "MicroFinance Bank"}. All rights reserved.
             </p>
             <p className="text-primary-foreground/80 text-sm">
               Member of Deposit Insurance Corporation

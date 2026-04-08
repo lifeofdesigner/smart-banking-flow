@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Copy, Share2, Gift, Users, DollarSign, CheckCircle, Clock } from "lucide-react";
 import { format } from "date-fns";
 
@@ -23,6 +24,8 @@ interface Referral {
 const db = supabase as any;
 
 export default function ReferralProgram() {
+  const siteSettings = useSiteSettings();
+  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);
@@ -50,8 +53,8 @@ export default function ReferralProgram() {
   };
   const shareCode = () => {
     if (referralCode) {
-      const text = `Join MicroFinance Bank with my referral code: ${referralCode}`;
-      if (navigator.share) navigator.share({ title: "Join MicroFinance Bank", text });
+      const text = `Join ${siteName} with my referral code: ${referralCode}`;
+      if (navigator.share) navigator.share({ title: `Join ${siteName}`, text });
       else { navigator.clipboard.writeText(text); toast({ title: "Copied!", description: "Share text copied" }); }
     }
   };

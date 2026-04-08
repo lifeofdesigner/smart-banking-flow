@@ -1,28 +1,31 @@
 import { Card } from "@/components/ui/card";
 import { Star } from "lucide-react";
-
-const testimonials = [
-  {
-    name: "Sarah Johnson",
-    role: "Small Business Owner",
-    content: "The business loan from MicroFinance Bank helped me expand my grocery store. The process was quick, and the team was incredibly supportive throughout.",
-    rating: 5,
-  },
-  {
-    name: "Michael Chen",
-    role: "Entrepreneur",
-    content: "Best decision I made was opening a savings account here. The interest rates are competitive, and the mobile banking app makes everything so convenient.",
-    rating: 5,
-  },
-  {
-    name: "Aisha Mohammed",
-    role: "Fashion Designer",
-    content: "I started with a small loan for my fashion business. Now I have multiple products with them. They truly care about their customers' success.",
-    rating: 5,
-  },
-];
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Testimonials = () => {
+  const siteSettings = useSiteSettings();
+
+  const testimonials = [
+    {
+      name: "Sarah Johnson",
+      role: "Small Business Owner",
+      content: `The business loan from ${siteSettings["site_name"] || "MicroFinance Bank"} helped me expand my grocery store. The process was quick, and the team was incredibly supportive throughout.`,
+      rating: 5,
+    },
+    {
+      name: "Michael Chen",
+      role: "Entrepreneur",
+      content: "Best decision I made was opening a savings account here. The interest rates are competitive, and the mobile banking app makes everything so convenient.",
+      rating: 5,
+    },
+    {
+      name: "Aisha Mohammed",
+      role: "Fashion Designer",
+      content: "I started with a small loan for my fashion business. Now I have multiple products with them. They truly care about their customers' success.",
+      rating: 5,
+    },
+  ];
+
   return (
     <section className="py-24 bg-background">
       <div className="container mx-auto px-4">

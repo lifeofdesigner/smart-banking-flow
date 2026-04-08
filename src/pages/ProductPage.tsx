@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/accordion";
 import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface ProductPage {
   id: string;
@@ -56,6 +57,7 @@ function parseJsonArray(content: string | null): string[] {
 export default function ProductPageView() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
+  const siteSettings = useSiteSettings();
   const [product, setProduct] = useState<ProductPage | null>(null);
   const [sections, setSections] = useState<ProductSection[]>([]);
   const [faqs, setFaqs] = useState<FAQ[]>([]);
@@ -67,11 +69,11 @@ export default function ProductPageView() {
 
   useEffect(() => {
     if (product) {
-      document.title = `${product.product_name} | MicroFinance Bank`;
+      document.title = `${product.product_name} | ${siteSettings["site_name"] || "MicroFinance Bank"}`;
       const metaDesc = document.querySelector('meta[name="description"]');
       if (metaDesc) metaDesc.setAttribute("content", product.meta_description || product.short_description || "");
     }
-  }, [product]);
+  }, [product, siteSettings]);
 
   const fetchProduct = async () => {
     setLoading(true);
@@ -265,7 +267,7 @@ export default function ProductPageView() {
           <div className="max-w-2xl mx-auto space-y-6">
             <h2 className="text-3xl lg:text-4xl font-bold">Ready to Get Started?</h2>
             <p className="text-lg text-muted-foreground">
-              Open your account today and experience {product.product_name} with MicroFinance Bank.
+              Open your account today and experience {product.product_name} with {siteSettings["site_name"] || "MicroFinance Bank"}.
             </p>
             <Button size="lg" className="h-14 px-10 text-lg" onClick={() => navigate("/auth")}>
               Open Account <ArrowRight className="ml-2 w-5 h-5" />

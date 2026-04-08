@@ -12,6 +12,7 @@ import { CalendarIcon, Download, FileText, Printer } from "lucide-react";
 import { format, startOfMonth, endOfMonth } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface Account {
   id: string;
@@ -39,6 +40,7 @@ interface Profile {
 
 export default function Statements() {
   const { toast } = useToast();
+  const siteSettings = useSiteSettings();
   const printRef = useRef<HTMLDivElement>(null);
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -245,7 +247,7 @@ export default function Statements() {
                         <span className="text-primary-foreground font-bold">M</span>
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold">MicroFinance Bank</h2>
+                        <h2 className="text-xl font-bold">{siteSettings["site_name"] || "MicroFinance Bank"}</h2>
                         <p className="text-sm text-muted-foreground">Account Statement</p>
                       </div>
                     </div>

@@ -1,12 +1,15 @@
 import { Card } from "@/components/ui/card";
 import { Target, Eye, Award, Users } from "lucide-react";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const About = () => {
+  const siteSettings = useSiteSettings();
+
   return (
     <section id="about" className="py-24 bg-secondary/30">
       <div className="container mx-auto px-4">
         <div className="max-w-4xl mx-auto text-center mb-16 animate-fade-in">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6">About MicroFinance Bank</h2>
+          <h2 className="text-4xl lg:text-5xl font-bold mb-6">About {siteSettings["site_name"] || "MicroFinance Bank"}</h2>
           <p className="text-xl text-muted-foreground leading-relaxed">
             Since 2010, we've been committed to providing accessible financial services to individuals 
             and small businesses. As a fully licensed microfinance institution, we operate under strict 

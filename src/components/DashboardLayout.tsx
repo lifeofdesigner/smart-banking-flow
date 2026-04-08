@@ -21,6 +21,7 @@ import NotificationToaster from "@/components/NotificationToaster";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   LayoutDashboard,
   CreditCard,
@@ -91,6 +92,7 @@ const accountNavItems = [
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
+  const siteSettings = useSiteSettings();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -167,7 +169,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <span className="text-primary-foreground font-bold text-sm">M</span>
               </div>
               <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-                <span className="font-semibold text-sm truncate">MicroFinance Bank</span>
+                <span className="font-semibold text-sm truncate">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
                 <span className="text-xs text-muted-foreground">Internet Banking</span>
               </div>
             </div>
@@ -216,7 +218,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         <div className="flex-1 flex flex-col min-w-0">
           <header className="h-14 border-b border-border bg-background flex items-center justify-between px-4 sticky top-0 z-10">
             <SidebarTrigger className="-ml-1 hidden md:flex" />
-            <span className="font-semibold text-sm md:hidden">MicroFinance Bank</span>
+            <span className="font-semibold text-sm md:hidden">{siteSettings["site_name"] || "MicroFinance Bank"}</span>
             <div className="flex items-center gap-2">
               <NotificationBell />
               <Button variant="ghost" size="icon" className="hidden md:inline-flex" onClick={() => navigate("/profile")}>

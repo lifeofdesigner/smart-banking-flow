@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import { z } from "zod";
 
@@ -23,6 +24,7 @@ const loginSchema = z.object({
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const siteSettings = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   
@@ -79,7 +81,7 @@ const Auth = () => {
       if (data.user) {
         toast({
           title: "Account created successfully!",
-          description: "Welcome to MicroFinance Bank. Redirecting to your dashboard...",
+          description: `Welcome to ${siteSettings["site_name"] || "MicroFinance Bank"}. Redirecting to your dashboard...`,
         });
       }
     } catch (error: any) {
