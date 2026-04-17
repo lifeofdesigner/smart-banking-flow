@@ -35,6 +35,8 @@ type RoleRow = {
   role: string;
 };
 
+const privilegedRoles = ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"] as const;
+
 type AuthUserLite = {
   id: string;
   email?: string | null;
@@ -102,11 +104,12 @@ Deno.serve(async (req: Request) => {
       .from("user_roles")
       .select("id")
       .eq("user_id", caller.id)
-      .eq("role", "admin")
+      .in("role", [...privilegedRoles])
+      .limit(1)
       .maybeSingle();
 
     if (adminRoleError || !adminRole) {
-      return json({ error: "Forbidden" }, 403);
+      return json({ error: "Forbidden: elevated admin role required" }, 403);
     }
 
     const payload = (await req.json()) as Payload;

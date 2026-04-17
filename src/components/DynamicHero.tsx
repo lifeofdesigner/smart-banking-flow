@@ -16,8 +16,10 @@ export default function DynamicHero() {
       .from("homepage_sections")
       .select("title, subtitle, image")
       .eq("section_type", "hero")
-      .eq("status", "active")
-      .single()
+      .eq("is_active", true)
+      .order("display_order", { ascending: true })
+      .limit(1)
+      .maybeSingle()
       .then(({ data }) => {
         if (data?.title) setTitle(data.title);
         if (data?.subtitle) setSubtitle(data.subtitle);

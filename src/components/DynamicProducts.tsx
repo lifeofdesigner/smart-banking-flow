@@ -37,8 +37,10 @@ export default function DynamicProducts() {
         .from("homepage_sections")
         .select("title, subtitle")
         .eq("section_type", "products")
-        .eq("status", "active")
-        .single(),
+        .eq("is_active", true)
+        .order("display_order", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
     ]);
 
     if (prodRes.error) {

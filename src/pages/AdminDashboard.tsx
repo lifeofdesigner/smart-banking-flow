@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, UserPlus } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
@@ -45,6 +45,7 @@ export default function AdminDashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [canManageUsers, setCanManageUsers] = useState(false);
   const [adminId, setAdminId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -77,6 +78,7 @@ export default function AdminDashboard() {
         .eq("user_id", user.id);
 
       const hasAdminRole = roles?.some(r => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
+      const hasDirectUserManagementAccess = roles?.some(r => r.role === "admin") || false;
       
       if (!hasAdminRole) {
         toast.error("Access denied: Admin privileges required");
@@ -84,6 +86,7 @@ export default function AdminDashboard() {
         return;
       }
 
+      setCanManageUsers(hasDirectUserManagementAccess);
       setAdminId(user.id);
       setIsAdmin(true);
       await fetchData();
@@ -250,8 +253,21 @@ export default function AdminDashboard() {
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs uppercase tracking-wide text-[var(--bank-muted)]">Current Date & Time</p>
-              <p className="text-sm font-medium text-[var(--bank-navy)]">{now.toLocaleString()}</p>
+              <div className="flex flex-col items-end gap-2">
+                <div>
+                  <p className="text-xs uppercase tracking-wide text-[var(--bank-muted)]">Current Date & Time</p>
+                  <p className="text-sm font-medium text-[var(--bank-navy)]">{now.toLocaleString()}</p>
+                </div>
+                {canManageUsers ? (
+                  <Button
+                    className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]"
+                    onClick={() => navigate("/admin-users")}
+                  >
+                    <UserPlus className="mr-2 h-4 w-4" />
+                    Manage Users
+                  </Button>
+                ) : null}
+              </div>
             </div>
           </div>
         </div>

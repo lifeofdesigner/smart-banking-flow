@@ -15,6 +15,7 @@ import { toast } from "sonner";
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from "@supabase/supabase-js";
 
 type Role = "user" | "admin";
+type PrivilegedRole = "admin" | "super_admin" | "finance_admin" | "support_admin" | "content_manager";
 
 interface ManagedUser {
   id: string;
@@ -38,6 +39,7 @@ export default function AdminUsersManagement() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const privilegedRoles: PrivilegedRole[] = ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"];
   const [form, setForm] = useState({
     full_name: "",
     email: "",
@@ -45,16 +47,53 @@ export default function AdminUsersManagement() {
     role: "user" as Role,
   });
 
+  const extractFunctionPayloadError = (value: unknown) => {
+    if (!value || typeof value !== "object") return null;
+
+    if ("error" in value && typeof value.error === "string" && value.error.trim()) {
+      return value.error;
+    }
+
+    if ("message" in value && typeof value.message === "string" && value.message.trim()) {
+      return value.message;
+    }
+
+    return null;
+  };
+
   const getSafeFunctionErrorMessage = async (error: unknown, fallback: string) => {
     if (error instanceof FunctionsHttpError) {
+      const response = error.context;
+      const jsonResponse = response.clone();
+      const textResponse = response.clone();
+
       try {
-        const body = await error.context.json();
-        if (body && typeof body === "object" && "error" in body && typeof body.error === "string") {
-          return body.error;
+        const body = await jsonResponse.json();
+        const bodyMessage = extractFunctionPayloadError(body);
+        if (bodyMessage) {
+          return bodyMessage;
         }
       } catch {
-        // ignore parse errors and fall back
+        // ignore parse errors and fall back to text/status
       }
+
+      try {
+        const rawText = await textResponse.text();
+        if (rawText.trim()) {
+          return rawText.trim();
+        }
+      } catch {
+        // ignore read errors and fall back
+      }
+
+      if (response.status === 403) {
+        return "Forbidden: elevated admin role required";
+      }
+
+      if (response.status) {
+        return `Request failed (${response.status}${response.statusText ? ` ${response.statusText}` : ""})`;
+      }
+
       return fallback;
     }
 
@@ -89,11 +128,12 @@ export default function AdminUsersManagement() {
         .from("user_roles")
         .select("id")
         .eq("user_id", user.id)
-        .eq("role", "admin")
+        .in("role", privilegedRoles)
+        .limit(1)
         .maybeSingle();
 
       if (!roleRow) {
-        toast.error("Access denied: Admin privileges required");
+        toast.error("Access denied: elevated admin privileges required");
         navigate("/dashboard");
         return;
       }
@@ -120,6 +160,8 @@ export default function AdminUsersManagement() {
       });
 
       if (error) throw error;
+      const payloadError = extractFunctionPayloadError(data);
+      if (payloadError) throw new Error(payloadError);
       setUsers((data?.data || []) as ManagedUser[]);
     } catch (error) {
       toast.error(await getSafeFunctionErrorMessage(error, "Failed to load users"));
@@ -172,7 +214,8 @@ export default function AdminUsersManagement() {
       });
 
       if (error) throw error;
-      if ((data as any)?.error) throw new Error((data as any).error);
+      const payloadError = extractFunctionPayloadError(data);
+      if (payloadError) throw new Error(payloadError);
 
       toast.success(form.role === "admin" ? "Admin created successfully" : "User created successfully");
       setForm({ full_name: "", email: "", password: "", role: "user" });

@@ -98,29 +98,65 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
+  const privilegedRoles = ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"];
 
   useEffect(() => {
-    checkAuth();
-  }, []);
+    let isMounted = true;
 
-  const checkAuth = async () => {
-    const { data: { user }, error } = await supabase.auth.getUser();
-    if (error || !user) { navigate("/auth"); return; }
+    const syncAuthState = async () => {
+      if (!isMounted) return;
+      setLoading(true);
 
-    const { data: profileData } = await supabase
-      .from("profiles")
-      .select("full_name, email")
-      .eq("id", user.id)
-      .single();
-    if (profileData) setProfile(profileData);
+      const {
+        data: { user },
+        error,
+      } = await supabase.auth.getUser();
 
-    const { data: roles } = await supabase
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", user.id);
-    setIsAdmin(roles?.some((r) => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role)) || false);
-    setLoading(false);
-  };
+      if (!isMounted) return;
+
+      if (error || !user) {
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        navigate("/auth");
+        return;
+      }
+
+      const [{ data: profileData }, { data: roles }] = await Promise.all([
+        supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
+        supabase.from("user_roles").select("role").eq("user_id", user.id),
+      ]);
+
+      if (!isMounted) return;
+
+      setProfile(profileData ?? null);
+      setIsAdmin((roles ?? []).some((roleRow) => privilegedRoles.includes(roleRow.role)));
+      setLoading(false);
+    };
+
+    void syncAuthState();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (!isMounted) return;
+
+      if (!session?.user) {
+        setProfile(null);
+        setIsAdmin(false);
+        setLoading(false);
+        navigate("/auth");
+        return;
+      }
+
+      void syncAuthState();
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [navigate]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
