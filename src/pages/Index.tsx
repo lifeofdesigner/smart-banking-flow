@@ -51,7 +51,10 @@ function MobileLandingBottomNav() {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E5E7EB] bg-[#ffffff] px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.08)] md:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-[#E5E7EB] bg-[#ffffff] px-2 pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.08)] md:hidden"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
+    >
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {landingSections.map((section) => {
           const Icon = section.icon;
@@ -116,7 +119,7 @@ const Index = () => {
   }, [activeLanding]);
 
   return (
-    <div className="overflow-x-hidden pb-[70px] md:pb-0">
+    <div className="overflow-x-hidden pb-[84px] md:pb-0">
       {landingContent}
       <MobileLandingBottomNav />
       <LiveChatWidget variant="landing" />

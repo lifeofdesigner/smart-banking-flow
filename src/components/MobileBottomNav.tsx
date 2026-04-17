@@ -46,7 +46,10 @@ export default function MobileBottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#F0F0F0] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-50 w-full border-t border-[#F0F0F0] bg-white shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden"
+      style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0px)" }}
+    >
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map(({ label, icon: Icon, path, match }) => {
           const active = path === "more"
