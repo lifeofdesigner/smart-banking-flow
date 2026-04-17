@@ -103,7 +103,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [waitingConversationCount, setWaitingConversationCount] = useState(0);
+  const [liveChatNotificationCount, setLiveChatNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
   const canViewLiveChatSupport = canAccessLiveChatSupport(userRoles);
@@ -119,7 +119,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setCurrentUserId(null);
       setUserRoles([]);
       setIsAdmin(false);
-      setWaitingConversationCount(0);
+      setLiveChatNotificationCount(0);
       setLoading(false);
     };
 
@@ -187,24 +187,25 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     if (!currentUserId || !canViewLiveChatSupport) {
-      setWaitingConversationCount(0);
+      setLiveChatNotificationCount(0);
       return;
     }
 
     let isMounted = true;
 
-    const loadWaitingConversationCount = async () => {
+    const loadLiveChatNotificationCount = async () => {
       const { count, error } = await chatSupabase
-        .from("chat_conversations")
+        .from("chat_messages")
         .select("id", { count: "exact", head: true })
-        .eq("status", "waiting");
+        .eq("sender_type", "customer")
+        .eq("is_read", false);
 
       if (!error && isMounted) {
-        setWaitingConversationCount(count ?? 0);
+        setLiveChatNotificationCount(count ?? 0);
       }
     };
 
-    void loadWaitingConversationCount();
+    void loadLiveChatNotificationCount();
 
     const waitingChannel = chatSupabase
       .channel(`dashboard-live-chat-count-${currentUserId}`)
@@ -216,7 +217,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           table: "chat_conversations",
         },
         () => {
-          void loadWaitingConversationCount();
+          void loadLiveChatNotificationCount();
+        },
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_messages",
+        },
+        () => {
+          void loadLiveChatNotificationCount();
         },
       )
       .subscribe();
@@ -326,9 +338,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                             <span>Live Chat Support</span>
                           </NavLink>
                         </SidebarMenuButton>
-                        {waitingConversationCount > 0 ? (
+                        {liveChatNotificationCount > 0 ? (
                           <SidebarMenuBadge className="rounded-full bg-red-500 px-1.5 text-white">
-                            {waitingConversationCount}
+                            {liveChatNotificationCount}
                           </SidebarMenuBadge>
                         ) : null}
                       </SidebarMenuItem>

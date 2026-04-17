@@ -16,6 +16,7 @@ export const SUPPORT_ROLES = ["admin", "super_admin", "support_admin"] as const;
 
 export type ChatStatus = "waiting" | "active" | "resolved";
 export type ChatSenderType = "customer" | "agent" | "system";
+export type ChatConnectionState = "idle" | "connecting" | "connected" | "reconnecting";
 
 export interface ChatConversationRow {
   id: string;
@@ -26,6 +27,9 @@ export interface ChatConversationRow {
   created_at: string;
   updated_at: string;
   last_message_at: string | null;
+  tags: string[];
+  assigned_agent_name: string | null;
+  unread_count: number;
 }
 
 export interface ChatMessageRow {
@@ -36,6 +40,8 @@ export interface ChatMessageRow {
   message: string;
   is_read: boolean;
   created_at: string;
+  is_internal_note: boolean;
+  read_at: string | null;
 }
 
 export interface ChatAgentStatusRow {
@@ -48,6 +54,7 @@ export interface ChatProfileSummary {
   id: string;
   full_name: string | null;
   email: string | null;
+  kyc_status?: string | null;
   created_at?: string | null;
 }
 
@@ -70,6 +77,27 @@ export interface ChatTransactionSummary {
   created_at: string | null;
 }
 
+export interface ChatTransferLimitSummary {
+  account_id: string;
+  daily_limit: number;
+  per_transaction_limit: number;
+  currency: string | null;
+}
+
+export interface ChatTypingRow {
+  conversation_id: string;
+  user_id: string | null;
+  is_typing: boolean;
+  updated_at: string | null;
+}
+
+export interface SupportAgentOption {
+  id: string;
+  name: string;
+  email: string | null;
+  is_online: boolean;
+}
+
 export interface ConversationListItem extends ChatConversationRow {
   customer_name: string;
   customer_email: string;
@@ -89,6 +117,52 @@ export interface GuestConversationSubject {
 
 export const CHAT_SCHEMA_UNAVAILABLE_MESSAGE =
   "Live chat is not available until the chat tables are deployed to this Supabase project.";
+export const WIDGET_QUICK_REPLIES = [
+  "Check my balance",
+  "Transfer status",
+  "Speak to an agent",
+] as const;
+export const SUPPORT_CANNED_REPLIES = [
+  "Thank you for contacting Halverix Bank support.",
+  "I can see your account details. Let me help you with that.",
+  "Your request has been processed successfully.",
+  "Please allow 24-48 hours for this to reflect.",
+  "Is there anything else I can help you with today?",
+  "For security reasons, please verify your identity.",
+] as const;
+export const SUPPORT_RESOLUTION_TAGS = [
+  "Loan Query",
+  "Transfer Issue",
+  "Account Access",
+  "General",
+  "Complaint",
+] as const;
+
+export const normalizeChatConversation = (value: any): ChatConversationRow => ({
+  id: value.id,
+  customer_id: value.customer_id ?? null,
+  agent_id: value.agent_id ?? null,
+  status: value.status,
+  subject: value.subject ?? null,
+  created_at: value.created_at,
+  updated_at: value.updated_at,
+  last_message_at: value.last_message_at ?? null,
+  tags: Array.isArray(value.tags) ? value.tags.filter((tag): tag is string => typeof tag === "string") : [],
+  assigned_agent_name: value.assigned_agent_name ?? null,
+  unread_count: typeof value.unread_count === "number" ? value.unread_count : 0,
+});
+
+export const normalizeChatMessage = (value: any): ChatMessageRow => ({
+  id: value.id,
+  conversation_id: value.conversation_id,
+  sender_id: value.sender_id ?? null,
+  sender_type: value.sender_type,
+  message: value.message,
+  is_read: Boolean(value.is_read),
+  created_at: value.created_at,
+  is_internal_note: Boolean(value.is_internal_note),
+  read_at: value.read_at ?? null,
+});
 
 export const isPrivilegedRole = (role: string) =>
   PRIVILEGED_ROLES.includes(role as (typeof PRIVILEGED_ROLES)[number]);
@@ -153,6 +227,44 @@ export const getConversationStatusBadgeClass = (status: ChatStatus) => {
   return "border-0 bg-slate-200 text-slate-700";
 };
 
+export const getConversationSortOrder = (status: ChatStatus) => {
+  if (status === "waiting") return 0;
+  if (status === "active") return 1;
+  return 2;
+};
+
+export const sortSupportConversations = <T extends ChatConversationRow>(conversations: T[]) =>
+  [...conversations].sort((left, right) => {
+    const statusDelta = getConversationSortOrder(left.status) - getConversationSortOrder(right.status);
+    if (statusDelta !== 0) {
+      return statusDelta;
+    }
+
+    const leftDate = new Date(left.last_message_at || left.created_at).getTime();
+    const rightDate = new Date(right.last_message_at || right.created_at).getTime();
+    return rightDate - leftDate;
+  });
+
+export const getReadReceiptLabel = (message: ChatMessageRow) =>
+  message.is_read || Boolean(message.read_at) ? "✓✓ Read" : "✓ Sent";
+
+export const getKycBadgeClass = (status?: string | null) => {
+  const normalizedStatus = status?.toLowerCase();
+
+  if (normalizedStatus === "verified" || normalizedStatus === "approved") {
+    return "border-0 bg-emerald-100 text-emerald-700";
+  }
+
+  if (normalizedStatus === "rejected") {
+    return "border-0 bg-red-100 text-red-700";
+  }
+
+  return "border-0 bg-amber-100 text-amber-700";
+};
+
+export const getConversationSubjectLabel = (conversation: Pick<ChatConversationRow, "subject">) =>
+  parseGuestConversationSubject(conversation.subject)?.subject || conversation.subject || "General Support";
+
 export const buildGuestConversationSubject = (payload: GuestConversationSubject) =>
   JSON.stringify(payload);
 
@@ -196,6 +308,7 @@ export const isMissingChatSchemaError = (error: unknown) => {
         message.includes("public.chat_conversations")
         || message.includes("public.chat_messages")
         || message.includes("public.chat_agent_status")
+        || message.includes("public.chat_typing")
       )
     );
 };

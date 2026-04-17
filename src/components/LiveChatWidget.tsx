@@ -1,21 +1,28 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Loader2, MessageCircle, Send, X } from "lucide-react";
+import { Check, CheckCheck, Loader2, Lock, MessageCircle, Send, X } from "lucide-react";
 import {
   CHAT_SCHEMA_UNAVAILABLE_MESSAGE,
+  ChatConnectionState,
   buildGuestConversationSubject,
   chatSupabase,
   ChatConversationRow,
   ChatMessageRow,
   formatChatTimestamp,
   formatRelativeTime,
+  getInitials,
   isMissingChatSchemaError,
+  normalizeChatConversation,
+  normalizeChatMessage,
   parseGuestConversationSubject,
   upsertMessage,
+  WIDGET_QUICK_REPLIES,
 } from "@/lib/live-chat";
 
 interface LiveChatWidgetProps {
@@ -48,27 +55,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
   return fallback;
 };
-
-const normalizeConversation = (value: any): ChatConversationRow => ({
-  id: value.id,
-  customer_id: value.customer_id,
-  agent_id: value.agent_id ?? null,
-  status: value.status,
-  subject: value.subject ?? null,
-  created_at: value.created_at,
-  updated_at: value.updated_at,
-  last_message_at: value.last_message_at ?? null,
-});
-
-const normalizeMessage = (value: any): ChatMessageRow => ({
-  id: value.id,
-  conversation_id: value.conversation_id,
-  sender_id: value.sender_id ?? null,
-  sender_type: value.sender_type,
-  message: value.message,
-  is_read: Boolean(value.is_read),
-  created_at: value.created_at,
-});
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
 
@@ -118,6 +104,8 @@ const persistGuestSession = (session: GuestChatSession | null) => {
 
 export default function LiveChatWidget({ customerId, customerName, customerEmail }: LiveChatWidgetProps) {
   const initialGuestSessionRef = useRef<GuestChatSession | null>(readGuestSession());
+  const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastTypingValueRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [identityReady, setIdentityReady] = useState(Boolean(customerId));
   const [loading, setLoading] = useState(true);
@@ -139,9 +127,11 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
   const [messageText, setMessageText] = useState("");
   const [agentName, setAgentName] = useState<string | null>(null);
   const [agentOnline, setAgentOnline] = useState(false);
+  const [agentTyping, setAgentTyping] = useState(false);
   const [hasOnlineAgents, setHasOnlineAgents] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
   const [loadingMessages, setLoadingMessages] = useState(false);
+  const [connectionState, setConnectionState] = useState<ChatConnectionState>("idle");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const isAuthenticated = Boolean(resolvedIdentity.customerId) && resolvedIdentity.isAuthenticated;
   const guestConversationMeta = useMemo(
@@ -154,14 +144,15 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
   const widgetScope = resolvedIdentity.customerId || guestSession?.guestSessionId || "guest";
   const showGuestPreChat = identityReady && !loading && !conversation && !isAuthenticated;
   const conversationSubjectLabel = guestConversationMeta?.subject || subject || DEFAULT_GUEST_SUBJECT;
-
-  const headerSubtitle = useMemo(() => {
-    if (conversation?.agent_id) {
-      return agentName ? `Connected to ${agentName}` : "Agent assigned";
-    }
-
-    return hasOnlineAgents ? "Support agents are online" : "Leave a message, we'll get back to you";
-  }, [agentName, conversation?.agent_id, hasOnlineAgents]);
+  const composerValue = showGuestPreChat ? guestMessage : messageText;
+  const composerLength = composerValue.length;
+  const showCharacterCount = composerLength > 200;
+  const resolvedAgentName = agentName || (conversation?.agent_id ? "Support Agent" : "Support Team");
+  const connectionLabel = loading
+    ? "Connecting..."
+    : connectionState === "reconnecting"
+      ? "Reconnecting..."
+      : null;
 
   useEffect(() => {
     persistGuestSession(guestSession);
@@ -274,7 +265,9 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
 
     const online = (data || []).length > 0;
     setHasOnlineAgents(online);
-    setAgentOnline(online);
+    if (!conversation?.agent_id) {
+      setAgentOnline(online);
+    }
     return online;
   };
 
@@ -310,13 +303,46 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
       return;
     }
 
-    setMessages((data || []).map(normalizeMessage));
+    setMessages(
+      (data || [])
+        .map(normalizeChatMessage)
+        .filter((message) => !message.is_internal_note),
+    );
+  };
+
+  const syncTypingState = async (isTyping: boolean) => {
+    if (!conversation?.id || !resolvedIdentity.customerId || !isAuthenticated) {
+      return;
+    }
+
+    if (lastTypingValueRef.current === isTyping) {
+      return;
+    }
+
+    lastTypingValueRef.current = isTyping;
+
+    const { error } = await chatSupabase
+      .from("chat_typing")
+      .upsert(
+        {
+          conversation_id: conversation.id,
+          user_id: resolvedIdentity.customerId,
+          is_typing: isTyping,
+          updated_at: new Date().toISOString(),
+        },
+        { onConflict: "conversation_id,user_id" },
+      );
+
+    if (error && !isMissingChatSchemaError(error)) {
+      console.error("Failed to sync typing state", error);
+    }
   };
 
   const markMessagesAsRead = async (conversationId: string) => {
+    const readAt = new Date().toISOString();
     const { error } = await chatSupabase
       .from("chat_messages")
-      .update({ is_read: true })
+      .update({ is_read: true, read_at: readAt })
       .eq("conversation_id", conversationId)
       .eq("sender_type", "agent")
       .eq("is_read", false);
@@ -324,8 +350,10 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
     if (!error) {
       setMessages((current) =>
         current.map((message) =>
-          message.sender_type === "agent" ? { ...message, is_read: true } : message
-        )
+          message.sender_type === "agent"
+            ? { ...message, is_read: true, read_at: message.read_at ?? readAt }
+            : message,
+        ),
       );
       setUnreadCount(0);
     }
@@ -338,6 +366,8 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
 
     setLoading(true);
     setChatUnavailable(false);
+    setConnectionState("connecting");
+    setAgentTyping(false);
 
     try {
       const onlineAgentsAvailable = await loadAgentAvailability();
@@ -372,20 +402,21 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
         setUnreadCount(0);
         setAgentName(null);
         setAgentOnline(onlineAgentsAvailable);
+        setConnectionState("idle");
         if (!isAuthenticated && guestSession?.conversationId) {
           setGuestSession((current) =>
-            current ? { ...current, conversationId: null } : current
+            current ? { ...current, conversationId: null } : current,
           );
         }
         return;
       }
 
-      const nextConversation = normalizeConversation(data);
+      const nextConversation = normalizeChatConversation(data);
       setConversation(nextConversation);
       setSubject(
         isAuthenticated
           ? nextConversation.subject ?? ""
-          : parseGuestConversationSubject(nextConversation.subject)?.subject ?? DEFAULT_GUEST_SUBJECT
+          : parseGuestConversationSubject(nextConversation.subject)?.subject ?? DEFAULT_GUEST_SUBJECT,
       );
       await Promise.all([
         loadMessages(nextConversation.id),
@@ -398,6 +429,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
         return;
       }
 
+      setConnectionState("reconnecting");
       toast.error(getErrorMessage(error, "Failed to load live chat"));
     } finally {
       setLoading(false);
@@ -422,10 +454,37 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
     if (!open) return;
 
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, open]);
+  }, [agentTyping, messages, open]);
+
+  useEffect(() => {
+    if (!conversation?.id || !isAuthenticated || !resolvedIdentity.customerId || showGuestPreChat) {
+      return;
+    }
+
+    const nextTypingValue = Boolean(messageText.trim());
+    void syncTypingState(nextTypingValue);
+
+    if (typingStopTimeoutRef.current) {
+      clearTimeout(typingStopTimeoutRef.current);
+    }
+
+    if (nextTypingValue) {
+      typingStopTimeoutRef.current = setTimeout(() => {
+        void syncTypingState(false);
+      }, 1500);
+    }
+
+    return () => {
+      if (typingStopTimeoutRef.current) {
+        clearTimeout(typingStopTimeoutRef.current);
+      }
+    };
+  }, [conversation?.id, isAuthenticated, messageText, resolvedIdentity.customerId, showGuestPreChat]);
 
   useEffect(() => {
     if (!conversation?.id) return;
+
+    setConnectionState("connecting");
 
     const messageChannel = chatSupabase
       .channel(`customer-chat-messages-${widgetScope}-${conversation.id}`)
@@ -438,7 +497,11 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
           filter: `conversation_id=eq.${conversation.id}`,
         },
         (payload) => {
-          const nextMessage = normalizeMessage(payload.new);
+          const nextMessage = normalizeChatMessage(payload.new);
+          if (nextMessage.is_internal_note) {
+            return;
+          }
+
           setMessages((current) => upsertMessage(current, nextMessage));
 
           if (nextMessage.sender_type === "agent") {
@@ -459,10 +522,24 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
           filter: `conversation_id=eq.${conversation.id}`,
         },
         (payload) => {
-          setMessages((current) => upsertMessage(current, normalizeMessage(payload.new)));
+          const nextMessage = normalizeChatMessage(payload.new);
+          if (nextMessage.is_internal_note) {
+            return;
+          }
+
+          setMessages((current) => upsertMessage(current, nextMessage));
         },
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") {
+          setConnectionState("connected");
+          return;
+        }
+
+        if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") {
+          setConnectionState("reconnecting");
+        }
+      });
 
     const conversationChannel = chatSupabase
       .channel(`customer-chat-conversation-${widgetScope}-${conversation.id}`)
@@ -475,7 +552,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
           filter: `id=eq.${conversation.id}`,
         },
         (payload) => {
-          const nextConversation = normalizeConversation(payload.new);
+          const nextConversation = normalizeChatConversation(payload.new);
 
           if (nextConversation.status === "resolved") {
             setConversation(null);
@@ -483,10 +560,12 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
             setSubject("");
             setAgentName(null);
             setAgentOnline(false);
+            setAgentTyping(false);
             setUnreadCount(0);
+            setConnectionState("idle");
             if (!isAuthenticated) {
               setGuestSession((current) =>
-                current ? { ...current, conversationId: null } : current
+                current ? { ...current, conversationId: null } : current,
               );
             }
             toast.success("This chat was resolved. You can start a new conversation anytime.");
@@ -499,11 +578,40 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
       )
       .subscribe();
 
+    const typingChannel = chatSupabase
+      .channel(`customer-chat-typing-${widgetScope}-${conversation.id}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_typing",
+          filter: `conversation_id=eq.${conversation.id}`,
+        },
+        (payload) => {
+          const nextRow = payload.new as { user_id?: string | null; is_typing?: boolean } | null;
+          const previousRow = payload.old as { user_id?: string | null; is_typing?: boolean } | null;
+          const actorId = (payload.eventType === "DELETE" ? previousRow : nextRow)?.user_id;
+
+          if (!actorId || actorId === resolvedIdentity.customerId) {
+            return;
+          }
+
+          if (conversation.agent_id && actorId !== conversation.agent_id) {
+            return;
+          }
+
+          setAgentTyping(Boolean(nextRow?.is_typing));
+        },
+      )
+      .subscribe();
+
     return () => {
       void chatSupabase.removeChannel(messageChannel);
       void chatSupabase.removeChannel(conversationChannel);
+      void chatSupabase.removeChannel(typingChannel);
     };
-  }, [conversation?.id, isAuthenticated, open, widgetScope]);
+  }, [conversation?.agent_id, conversation?.id, isAuthenticated, open, resolvedIdentity.customerId, widgetScope]);
 
   useEffect(() => {
     if (!conversation?.agent_id) return;
@@ -554,8 +662,8 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
     };
   }, [conversation?.agent_id, widgetScope]);
 
-  const handleSendMessage = async () => {
-    const trimmedMessage = showGuestPreChat ? guestMessage.trim() : messageText.trim();
+  const handleSendMessage = async (overrideMessage?: string) => {
+    const trimmedMessage = (overrideMessage ?? (showGuestPreChat ? guestMessage : messageText)).trim();
     if (!trimmedMessage) {
       return;
     }
@@ -601,7 +709,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
             throw error;
           }
 
-          activeConversation = normalizeConversation(data);
+          activeConversation = normalizeChatConversation(data);
           setConversation(activeConversation);
           setSubject(activeConversation.subject ?? "");
         } else {
@@ -635,7 +743,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
             throw error;
           }
 
-          activeConversation = normalizeConversation(data);
+          activeConversation = normalizeChatConversation(data);
           nextGuestSession = {
             ...nextGuestSession,
             conversationId: activeConversation.id,
@@ -686,11 +794,12 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
       setConversation((current) =>
         current
           ? { ...current, status: nextStatus, last_message_at: sentAt }
-          : { ...activeConversation, status: nextStatus, last_message_at: sentAt }
+          : { ...activeConversation, status: nextStatus, last_message_at: sentAt },
       );
-      setMessages((current) => upsertMessage(current, normalizeMessage(insertedMessage)));
+      setMessages((current) => upsertMessage(current, normalizeChatMessage(insertedMessage)));
       setMessageText("");
       setGuestMessage("");
+      void syncTypingState(false);
 
       if (nextGuestSession && !isAuthenticated) {
         setGuestSession(nextGuestSession);
@@ -708,7 +817,27 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleQuickReply = async (reply: string) => {
+    if (sending) {
+      return;
+    }
+
+    if (showGuestPreChat && (!guestName.trim() || !guestEmail.trim())) {
+      setGuestMessage(reply);
+      toast.error("Enter your name and email, then tap Start Chat to send this message.");
+      return;
+    }
+
+    if (showGuestPreChat) {
+      setGuestMessage(reply);
+    } else {
+      setMessageText(reply);
+    }
+
+    await handleSendMessage(reply);
+  };
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
       void handleSendMessage();
@@ -744,31 +873,56 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
           </button>
         </div>
       ) : (
-        <div className="flex h-[min(500px,calc(100vh-110px))] w-[min(350px,calc(100vw-40px))] flex-col overflow-hidden rounded-2xl border border-[var(--bank-navy)]/10 bg-white shadow-2xl">
-          <div className="flex items-center justify-between bg-[var(--bank-navy)] px-4 py-3 text-white">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold">Halverix Bank Support</p>
-              <div className="mt-1 flex items-center gap-2 text-xs text-white/80">
-                <span className={`h-2.5 w-2.5 rounded-full ${agentOnline ? "bg-emerald-400" : "bg-slate-400"}`} />
-                <span className="truncate">{headerSubtitle}</span>
+        <div className="flex h-[min(540px,calc(100vh-110px))] w-[min(370px,calc(100vw-40px))] flex-col overflow-hidden rounded-3xl border border-[var(--bank-navy)]/10 bg-white shadow-2xl">
+          <div className="bg-[var(--bank-navy)] px-4 py-4 text-white">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex min-w-0 items-start gap-3">
+                <Avatar className="h-11 w-11 border border-white/10 bg-white/10">
+                  <AvatarFallback className="bg-white/10 text-sm font-semibold text-white">
+                    {getInitials(resolvedAgentName)}
+                  </AvatarFallback>
+                </Avatar>
+
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold">Halverix Bank Support</p>
+                  <div className="mt-1 flex items-center gap-2 text-xs text-white/80">
+                    <span className={cn("h-2.5 w-2.5 rounded-full", agentOnline ? "bg-emerald-400" : "bg-slate-400")} />
+                    <span className="truncate">
+                      {resolvedAgentName} • {agentOnline ? "Online" : "Offline"}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-[11px] text-white/70">Typical reply time: under 2 min</p>
+                </div>
               </div>
+
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                className="rounded-full p-1 text-white/80 transition hover:bg-white/10 hover:text-white"
+                aria-label="Close live chat"
+              >
+                <X className="h-4 w-4" />
+              </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              className="rounded-full p-1 text-white/80 transition hover:bg-white/10 hover:text-white"
-              aria-label="Close live chat"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="mt-3 flex flex-wrap items-center gap-2 text-[11px]">
+              <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white/90">
+                <Lock className="h-3.5 w-3.5" />
+                End-to-end encrypted
+              </span>
+              {connectionLabel ? (
+                <span className="inline-flex rounded-full border border-white/15 bg-white/10 px-2.5 py-1 text-white/80">
+                  {connectionLabel}
+                </span>
+              ) : null}
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto bg-white px-4 py-4">
             {loading ? (
               <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Loading chat...
+                Connecting...
               </div>
             ) : conversation ? (
               loadingMessages ? (
@@ -776,20 +930,20 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   Loading messages...
                 </div>
-              ) : messages.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">
-                  Your conversation is ready. Send a message to start.
-                </div>
               ) : (
                 <div className="space-y-3">
-                  {messages.map((message) => {
+                  {messages.length === 0 ? (
+                    <div className="flex min-h-[220px] items-center justify-center text-center text-sm text-muted-foreground">
+                      Your conversation is ready. Send a message to start.
+                    </div>
+                  ) : messages.map((message) => {
                     const isCustomer = message.sender_type === "customer";
                     const isSystem = message.sender_type === "system";
                     const senderLabel = isSystem
                       ? "System"
                       : isCustomer
                         ? displayCustomerName
-                        : agentName || "Support Agent";
+                        : resolvedAgentName;
 
                     if (isSystem) {
                       return (
@@ -801,24 +955,67 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
                     }
 
                     return (
-                      <div key={message.id} className={`flex ${isCustomer ? "justify-end" : "justify-start"}`}>
-                        <div className={`max-w-[82%] ${isCustomer ? "items-end" : "items-start"} flex flex-col`}>
-                          <div
-                            className={`rounded-2xl px-3 py-2 text-sm shadow-sm ${
-                              isCustomer
-                                ? "rounded-br-md bg-[var(--bank-navy)] text-white"
-                                : "rounded-bl-md bg-slate-100 text-slate-900"
-                            }`}
-                          >
-                            {message.message}
+                      <div key={message.id} className={cn("flex", isCustomer ? "justify-end" : "justify-start")}>
+                        <div className={cn("flex max-w-[88%] gap-2", isCustomer ? "flex-row-reverse" : "items-end")}>
+                          {!isCustomer ? (
+                            <Avatar className="h-8 w-8 flex-shrink-0">
+                              <AvatarFallback className="bg-slate-200 text-[11px] font-semibold text-[var(--bank-navy)]">
+                                {getInitials(resolvedAgentName)}
+                              </AvatarFallback>
+                            </Avatar>
+                          ) : null}
+
+                          <div className={cn("flex flex-col", isCustomer ? "items-end text-right" : "items-start")}>
+                            <div
+                              className={cn(
+                                "rounded-2xl px-3.5 py-2.5 text-sm shadow-sm",
+                                isCustomer
+                                  ? "rounded-br-md bg-[var(--bank-navy)] text-white"
+                                  : "rounded-bl-md bg-slate-100 text-slate-900",
+                              )}
+                            >
+                              {message.message}
+                            </div>
+                            <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px] text-muted-foreground">
+                              <span>{senderLabel}</span>
+                              <span>•</span>
+                              <span>{formatChatTimestamp(message.created_at)}</span>
+                              {isCustomer ? (
+                                <>
+                                  <span>•</span>
+                                  <span className="inline-flex items-center gap-1">
+                                    {message.is_read || message.read_at ? (
+                                      <CheckCheck className="h-3.5 w-3.5 text-[var(--bank-gold)]" />
+                                    ) : (
+                                      <Check className="h-3.5 w-3.5" />
+                                    )}
+                                    <span>{message.is_read || message.read_at ? "Read" : "Sent"}</span>
+                                  </span>
+                                </>
+                              ) : null}
+                            </div>
                           </div>
-                          <p className="mt-1 text-[11px] text-muted-foreground">
-                            {senderLabel} - {formatChatTimestamp(message.created_at)}
-                          </p>
                         </div>
                       </div>
                     );
                   })}
+                  {agentTyping ? (
+                    <div className="flex items-end gap-2">
+                      <Avatar className="h-8 w-8 flex-shrink-0">
+                        <AvatarFallback className="bg-slate-200 text-[11px] font-semibold text-[var(--bank-navy)]">
+                          {getInitials(resolvedAgentName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <div className="flex items-center gap-1 rounded-2xl rounded-bl-md bg-slate-100 px-3 py-2 shadow-sm">
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.2s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400 [animation-delay:-0.1s]" />
+                          <span className="h-2 w-2 animate-bounce rounded-full bg-slate-400" />
+                        </div>
+                        <p className="mt-1 text-[11px] text-muted-foreground">{resolvedAgentName} is typing...</p>
+                      </div>
+                    </div>
+                  ) : null}
                   <div ref={messagesEndRef} />
                 </div>
               )
@@ -859,6 +1056,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
                   <Textarea
                     value={guestMessage}
                     onChange={(event) => setGuestMessage(event.target.value)}
+                    onKeyDown={handleKeyDown}
                     placeholder="Tell us how we can help"
                     rows={5}
                     className="resize-none bg-white"
@@ -909,29 +1107,55 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
             ) : null}
 
             {showGuestPreChat ? (
-              <Button
-                type="button"
-                onClick={() => void handleSendMessage()}
-                disabled={sending || !guestName.trim() || !guestEmail.trim() || !guestMessage.trim()}
-                className="w-full bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]"
-              >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Chat"}
-              </Button>
+              <div className="space-y-3">
+                {showCharacterCount ? (
+                  <p className="text-right text-[11px] text-muted-foreground">{composerLength} characters</p>
+                ) : null}
+                <Button
+                  type="button"
+                  onClick={() => void handleSendMessage()}
+                  disabled={sending || !guestName.trim() || !guestEmail.trim() || !guestMessage.trim()}
+                  className="w-full bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Chat"}
+                </Button>
+              </div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-3">
+                <div className="flex flex-wrap gap-2">
+                  {WIDGET_QUICK_REPLIES.map((reply) => (
+                    <button
+                      key={reply}
+                      type="button"
+                      onClick={() => void handleQuickReply(reply)}
+                      disabled={sending}
+                      className="rounded-full border border-[var(--bank-navy)]/15 bg-[var(--bank-bg)] px-3 py-1.5 text-xs font-medium text-[var(--bank-navy)] transition hover:border-[var(--bank-gold)]/50 hover:bg-[var(--bank-gold)]/10"
+                    >
+                      {reply}
+                    </button>
+                  ))}
+                </div>
                 {!conversation ? (
                   <p className="text-[11px] text-muted-foreground">
                     Subject: {conversationSubjectLabel}
                   </p>
                 ) : null}
-                <div className="flex items-center gap-2">
-                  <Input
-                    value={messageText}
-                    onChange={(event) => setMessageText(event.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder={conversation ? "Type your message..." : "Write your first message..."}
-                    className="bg-white"
-                  />
+
+                <Textarea
+                  value={messageText}
+                  onChange={(event) => setMessageText(event.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={conversation ? "Type your message..." : "Write your first message..."}
+                  rows={2}
+                  className="resize-none bg-white"
+                />
+
+                <div className="flex items-center justify-between gap-3">
+                  {showCharacterCount ? (
+                    <p className="text-[11px] text-muted-foreground">{composerLength} characters</p>
+                  ) : (
+                    <span />
+                  )}
                   <Button
                     type="button"
                     onClick={() => void handleSendMessage()}
