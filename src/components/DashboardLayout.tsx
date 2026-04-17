@@ -205,6 +205,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton asChild isActive={location.pathname === "/admin/users"}>
+                        <NavLink to="/admin/users" className="flex items-center gap-3">
+                          <Users className="h-4 w-4" />
+                          <span>User Management</span>
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>

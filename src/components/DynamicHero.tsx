@@ -15,7 +15,7 @@ export default function DynamicHero() {
     supabase
       .from("homepage_sections")
       .select("title, subtitle, image")
-      .eq("section_name", "hero")
+      .eq("section_type", "hero")
       .eq("status", "active")
       .single()
       .then(({ data }) => {

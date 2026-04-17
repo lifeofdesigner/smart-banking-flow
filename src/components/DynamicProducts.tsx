@@ -36,7 +36,7 @@ export default function DynamicProducts() {
       supabase
         .from("homepage_sections")
         .select("title, subtitle")
-        .eq("section_name", "products")
+        .eq("section_type", "products")
         .eq("status", "active")
         .single(),
     ]);

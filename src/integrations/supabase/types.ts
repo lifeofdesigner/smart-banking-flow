@@ -659,7 +659,7 @@ export type Database = {
           display_order: number
           id: string
           image: string | null
-          section_name: string
+          section_type: string
           status: string
           subtitle: string | null
           title: string | null
@@ -670,7 +670,7 @@ export type Database = {
           display_order?: number
           id?: string
           image?: string | null
-          section_name: string
+          section_type: string
           status?: string
           subtitle?: string | null
           title?: string | null
@@ -681,7 +681,7 @@ export type Database = {
           display_order?: number
           id?: string
           image?: string | null
-          section_name?: string
+          section_type?: string
           status?: string
           subtitle?: string | null
           title?: string | null

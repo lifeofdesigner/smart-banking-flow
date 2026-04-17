@@ -47,7 +47,7 @@ interface FAQ {
 
 interface HomepageSection {
   id: string;
-  section_name: string;
+  section_type: string;
   title: string | null;
   subtitle: string | null;
   content: string | null;
@@ -84,7 +84,7 @@ export default function ContentManagement() {
   const [productForm, setProductForm] = useState({ product_name: "", slug: "", short_description: "", full_description: "", meta_description: "", status: "active" });
   const [sectionForm, setSectionForm] = useState({ section_type: "features", section_title: "", section_content: "", display_order: 0 });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", display_order: 0 });
-  const [homepageForm, setHomepageForm] = useState({ section_name: "", title: "", subtitle: "", content: "", status: "active" });
+  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", status: "active" });
 
   useEffect(() => {
     fetchAll();
@@ -438,7 +438,7 @@ export default function ContentManagement() {
               <CardTitle>Homepage Sections</CardTitle>
               <Button size="sm" onClick={() => {
                 setEditingHomepage(null);
-                setHomepageForm({ section_name: "", title: "", subtitle: "", content: "", status: "active" });
+                setHomepageForm({ section_type: "", title: "", subtitle: "", content: "", status: "active" });
                 setHomepageDialogOpen(true);
               }}>
                 <Plus className="w-4 h-4 mr-1" /> Add Section
@@ -457,14 +457,14 @@ export default function ContentManagement() {
                 <TableBody>
                   {homepageSections.map((sec) => (
                     <TableRow key={sec.id}>
-                      <TableCell className="font-medium">{sec.section_name}</TableCell>
+                      <TableCell className="font-medium">{sec.section_type}</TableCell>
                       <TableCell>{sec.title}</TableCell>
                       <TableCell><Badge variant={sec.status === "active" ? "default" : "secondary"}>{sec.status}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             setEditingHomepage(sec);
-                            setHomepageForm({ section_name: sec.section_name, title: sec.title || "", subtitle: sec.subtitle || "", content: sec.content || "", status: sec.status });
+                            setHomepageForm({ section_type: sec.section_type, title: sec.title || "", subtitle: sec.subtitle || "", content: sec.content || "", status: sec.status });
                             setHomepageDialogOpen(true);
                           }}><Pencil className="w-3 h-3" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteHomepageSection(sec.id)}><Trash2 className="w-3 h-3" /></Button>
@@ -600,7 +600,7 @@ export default function ContentManagement() {
             <DialogTitle>{editingHomepage ? "Edit Homepage Section" : "Add Homepage Section"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div><Label>Section Name</Label><Input value={homepageForm.section_name} onChange={(e) => setHomepageForm({ ...homepageForm, section_name: e.target.value })} /></div>
+            <div><Label>Section Name</Label><Input value={homepageForm.section_type} onChange={(e) => setHomepageForm({ ...homepageForm, section_type: e.target.value })} /></div>
             <div><Label>Title</Label><Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} /></div>
             <div><Label>Subtitle</Label><Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} /></div>
             <div><Label>Content</Label><Textarea value={homepageForm.content} onChange={(e) => setHomepageForm({ ...homepageForm, content: e.target.value })} rows={4} /></div>

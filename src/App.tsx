@@ -14,6 +14,7 @@ const TransferFunds = lazy(() => import("./pages/TransferFunds"));
 const Beneficiaries = lazy(() => import("./pages/Beneficiaries"));
 const UserProfile = lazy(() => import("./pages/UserProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
+const AdminUsersManagement = lazy(() => import("./pages/AdminUsersManagement"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const KYCVerification = lazy(() => import("./pages/KYCVerification"));
 const Loans = lazy(() => import("./pages/Loans"));
@@ -69,6 +70,7 @@ const App = () => (
             <Route path="/beneficiaries" element={<Beneficiaries />} />
             <Route path="/profile" element={<UserProfile />} />
             <Route path="/admin" element={<AdminDashboard />} />
+            <Route path="/admin/users" element={<AdminUsersManagement />} />
             <Route path="/kyc" element={<KYCVerification />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/referral" element={<ReferralProgram />} />
