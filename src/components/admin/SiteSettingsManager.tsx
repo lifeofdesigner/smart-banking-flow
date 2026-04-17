@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
 import { Upload, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -28,6 +29,7 @@ const DEFAULTS: SiteSettingsMap = {
   site_canonical_url: "",
   active_theme: "navy-gold",
   active_landing: "classic",
+  signup_enabled: "true",
 };
 
 const LANDING_THEMES = [
@@ -89,6 +91,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingKey, setUploadingKey] = useState<string | null>(null);
+  const [togglingRegistration, setTogglingRegistration] = useState(false);
 
   useEffect(() => {
     fetchSettings();
@@ -117,6 +120,8 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
   const setSetting = (key: keyof SiteSettingsMap, value: string) => {
     setSettings((prev) => ({ ...prev, [key]: value }));
   };
+
+  const registrationOpen = settings.signup_enabled !== "false";
 
   const saveKeys = async (keys: string[]) => {
     setSaving(true);
@@ -158,6 +163,33 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
     setSettings((prev) => ({ ...prev, [key]: value }));
     toast.success(successMessage);
+  };
+
+  const toggleRegistration = async (checked: boolean) => {
+    const previousValue = settings.signup_enabled ?? "true";
+    const nextValue = checked ? "true" : "false";
+
+    setTogglingRegistration(true);
+    setSetting("signup_enabled", nextValue);
+
+    const { error } = await supabase.from("site_settings").upsert(
+      {
+        key: "signup_enabled",
+        value: nextValue,
+        updated_by: adminId ?? null,
+      },
+      { onConflict: "key" }
+    );
+
+    setTogglingRegistration(false);
+
+    if (error) {
+      setSetting("signup_enabled", previousValue);
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(checked ? "Registration is now open" : "Registration is now closed");
   };
 
   const uploadBrandingAsset = async (key: "site_logo_url" | "site_favicon_url" | "site_og_image_url", file?: File | null) => {
@@ -380,6 +412,41 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                     value={settings.site_tagline}
                     onChange={(e) => setSetting("site_tagline", e.target.value)}
                   />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-[var(--bank-navy)]">Registration Settings</p>
+                    <p className="text-sm text-[var(--bank-muted)]">
+                      Allow or pause new self-service account registrations from the public auth page.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-medium text-[var(--bank-muted)]">Current status:</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          registrationOpen
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {registrationOpen ? "Open" : "Closed"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="signup-enabled" className="text-sm font-medium text-[var(--bank-navy)]">
+                      Allow New Registrations
+                    </Label>
+                    <Switch
+                      id="signup-enabled"
+                      checked={registrationOpen}
+                      disabled={togglingRegistration}
+                      onCheckedChange={toggleRegistration}
+                    />
+                  </div>
                 </div>
               </div>
 

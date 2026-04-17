@@ -27,6 +27,8 @@ const Auth = () => {
   const siteSettings = useSiteSettings();
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [signupEnabled, setSignupEnabled] = useState(true);
+  const [registrationReady, setRegistrationReady] = useState(false);
   
   // Signup state
   const [signupData, setSignupData] = useState({
@@ -40,6 +42,39 @@ const Auth = () => {
     email: "",
     password: "",
   });
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadRegistrationStatus = async () => {
+      try {
+        const { data, error } = await supabase
+          .from("site_settings")
+          .select("value")
+          .eq("key", "signup_enabled")
+          .maybeSingle();
+
+        if (!isMounted) return;
+
+        if (error) {
+          setSignupEnabled(true);
+          return;
+        }
+
+        setSignupEnabled(data?.value !== "false");
+      } finally {
+        if (isMounted) {
+          setRegistrationReady(true);
+        }
+      }
+    };
+
+    void loadRegistrationStatus();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     // Check if user is already logged in
@@ -152,6 +187,8 @@ const Auth = () => {
     }
   };
 
+  const showSignup = registrationReady && signupEnabled;
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md p-8 shadow-2xl">
@@ -164,9 +201,9 @@ const Auth = () => {
         </div>
 
         <Tabs defaultValue="login" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className={`grid w-full mb-8 ${showSignup ? "grid-cols-2" : "grid-cols-1"}`}>
             <TabsTrigger value="login">Login</TabsTrigger>
-            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+            {showSignup ? <TabsTrigger value="signup">Sign Up</TabsTrigger> : null}
           </TabsList>
 
           <TabsContent value="login">
@@ -245,61 +282,76 @@ const Auth = () => {
                   Forgot Password?
                 </button>
               </div>
-            </form>
-          </TabsContent>
 
-          <TabsContent value="signup">
-            <form onSubmit={handleSignup} className="space-y-6">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Full Name</label>
-                <Input
-                  type="text"
-                  placeholder="John Doe"
-                  value={signupData.fullName}
-                  onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
-                  required
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
-                <Input
-                  type="email"
-                  placeholder="your@email.com"
-                  value={signupData.email}
-                  onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
-                  required
-                  className="h-12"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Password</label>
-                <div className="relative">
-                  <Input
-                    type={showPassword ? "text" : "password"}
-                    placeholder="Min. 8 characters"
-                    value={signupData.password}
-                    onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
-                    required
-                    className="h-12 pr-10"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              {registrationReady && !signupEnabled ? (
+                <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                  <p className="font-medium">Account registration is currently closed.</p>
+                  <p className="mt-1">Please contact support.</p>
+                  <a
+                    href="mailto:support@halverixbank.com?subject=Account%20Registration%20Inquiry"
+                    className="mt-2 inline-flex text-sm font-medium text-[var(--bank-navy)] underline underline-offset-4"
                   >
-                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                  </button>
+                    Contact support
+                  </a>
                 </div>
-              </div>
-
-              <Button type="submit" className="w-full h-12" disabled={loading}>
-                {loading ? "Creating account..." : "Create Account"}
-              </Button>
+              ) : null}
             </form>
           </TabsContent>
+
+          {showSignup ? (
+            <TabsContent value="signup">
+              <form onSubmit={handleSignup} className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Full Name</label>
+                  <Input
+                    type="text"
+                    placeholder="John Doe"
+                    value={signupData.fullName}
+                    onChange={(e) => setSignupData({ ...signupData, fullName: e.target.value })}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    type="email"
+                    placeholder="your@email.com"
+                    value={signupData.email}
+                    onChange={(e) => setSignupData({ ...signupData, email: e.target.value })}
+                    required
+                    className="h-12"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Password</label>
+                  <div className="relative">
+                    <Input
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Min. 8 characters"
+                      value={signupData.password}
+                      onChange={(e) => setSignupData({ ...signupData, password: e.target.value })}
+                      required
+                      className="h-12 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
+                </div>
+
+                <Button type="submit" className="w-full h-12" disabled={loading}>
+                  {loading ? "Creating account..." : "Create Account"}
+                </Button>
+              </form>
+            </TabsContent>
+          ) : null}
         </Tabs>
 
         <div className="mt-8 pt-6 border-t border-border text-center">
