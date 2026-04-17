@@ -84,35 +84,57 @@ export default function FinancialHealthWidget() {
     { label: "Savings Rate", value: `${data.savingsRate}%`, icon: PiggyBank },
   ];
 
+  const scoreColor = data.score > 70 ? "#10B981" : data.score >= 40 ? "#F59E0B" : "#EF4444";
+
   return (
-    <Card className="card-banking">
-      <CardContent className="pt-6">
-        <div className="flex flex-col sm:flex-row items-center gap-6">
+    <Card className="card-banking rounded-2xl border-0 shadow-sm">
+      <CardContent className="p-4 md:pt-6">
+        <div className="flex items-start gap-4 md:flex-col md:items-center md:gap-6 lg:flex-row lg:items-center">
           <div className="relative flex-shrink-0">
-            <svg width="100" height="100" className="-rotate-90">
-              <circle cx="50" cy="50" r="40" stroke="hsl(var(--muted))" strokeWidth="8" fill="none" />
+            <svg width="88" height="88" className="-rotate-90 md:h-[100px] md:w-[100px]">
+              <circle cx="44" cy="44" r="34" stroke="hsl(var(--muted))" strokeWidth="8" fill="none" className="md:hidden" />
               <circle
-                cx="50" cy="50" r="40" stroke="hsl(var(--primary))" strokeWidth="8" fill="none"
-                strokeLinecap="round" strokeDasharray={circumference} strokeDashoffset={offset}
-                className="transition-all duration-1000"
+                cx="44"
+                cy="44"
+                r="34"
+                stroke={scoreColor}
+                strokeWidth="8"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={2 * Math.PI * 34}
+                strokeDashoffset={(2 * Math.PI * 34) - (data.score / 100) * (2 * Math.PI * 34)}
+                className="transition-all duration-1000 md:hidden"
+              />
+              <circle cx="50" cy="50" r="40" stroke="hsl(var(--muted))" strokeWidth="8" fill="none" className="hidden md:block" />
+              <circle
+                cx="50"
+                cy="50"
+                r="40"
+                stroke={scoreColor}
+                strokeWidth="8"
+                fill="none"
+                strokeLinecap="round"
+                strokeDasharray={circumference}
+                strokeDashoffset={offset}
+                className="hidden transition-all duration-1000 md:block"
               />
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-bold">{data.score}</span>
+              <span className="text-xl font-bold text-[#0A1628] md:text-2xl">{data.score}</span>
               <span className={`text-[10px] font-semibold ${label.color}`}>{label.text}</span>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 flex-1 w-full">
+          <div className="grid flex-1 grid-cols-2 gap-3 md:w-full md:gap-4">
             {stats.map((s) => (
-              <div key={s.label} className="flex items-center gap-2">
-                <div className="p-2 rounded-lg bg-secondary">
-                  <s.icon className="h-4 w-4 text-muted-foreground" />
+              <div key={s.label} className="rounded-2xl bg-[#F8FAFC] p-3">
+                <div className="mb-2 flex items-center gap-2">
+                  <div className="rounded-xl bg-white p-2 shadow-sm">
+                    <s.icon className="h-4 w-4 text-[#0A1628]" />
+                  </div>
+                  <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-[#6B7280]">{s.label}</p>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground">{s.label}</p>
-                  <p className="text-sm font-semibold">{s.value}</p>
-                </div>
+                <p className="text-sm font-semibold text-[#0A1628]">{s.value}</p>
               </div>
             ))}
           </div>

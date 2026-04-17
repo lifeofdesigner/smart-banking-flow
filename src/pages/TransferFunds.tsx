@@ -34,6 +34,7 @@ import {
 import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import DashboardLayout from "@/components/DashboardLayout";
 
 const transferSchema = z.object({
   fromAccountId: z.string().uuid("Please select a source account"),
@@ -441,18 +442,21 @@ const TransferFunds = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="h-12 w-12 animate-spin text-primary mx-auto mb-4" />
-          <p className="text-muted-foreground">Loading...</p>
+      <DashboardLayout>
+        <div className="flex min-h-[calc(100vh-3.5rem)] items-center justify-center">
+          <div className="text-center">
+            <Loader2 className="mx-auto mb-4 h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
         </div>
-      </div>
+      </DashboardLayout>
     );
   }
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
-      <header className="bg-white rounded-xl shadow-sm border-0">
+      <header className="hidden rounded-xl border-0 bg-white shadow-sm md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-3">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
@@ -913,6 +917,7 @@ const TransferFunds = () => {
         </div>
       )}
     </div>
+    </DashboardLayout>
   );
 };
 

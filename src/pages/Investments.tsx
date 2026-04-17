@@ -116,7 +116,7 @@ export default function InvestmentsPage() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6 space-y-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6 md:space-y-6">
         <div className="flex items-center justify-between">
           <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Investments</h2>
           <Dialog open={open} onOpenChange={setOpen}>
@@ -160,18 +160,18 @@ export default function InvestmentsPage() {
         </div>
 
         {/* Summary */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-3 gap-3 md:grid-cols-3 md:gap-4">
           <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
-            <p className="text-xs text-muted-foreground">Total Invested</p>
-            <p className="text-2xl font-bold text-[var(--bank-navy)]">${totalInvested.toLocaleString()}</p>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Invested</p>
+            <p className="text-lg font-bold text-[var(--bank-navy)] md:text-2xl">${totalInvested.toLocaleString()}</p>
           </Card>
           <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
-            <p className="text-xs text-muted-foreground">Current Value</p>
-            <p className="text-2xl font-bold text-[var(--bank-navy)]">${totalValue.toLocaleString()}</p>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Value</p>
+            <p className="text-lg font-bold text-[var(--bank-navy)] md:text-2xl">${totalValue.toLocaleString()}</p>
           </Card>
           <Card className="bg-white rounded-xl shadow-sm border-0 p-4 border-l-4 border-l-[var(--bank-gold)]">
-            <p className="text-xs text-muted-foreground">Returns</p>
-            <p className={`text-2xl font-bold ${totalReturns >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+            <p className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">Returns</p>
+            <p className={`text-lg font-bold md:text-2xl ${totalReturns >= 0 ? "text-emerald-600" : "text-red-600"}`}>
               {totalReturns >= 0 ? "+" : "-"}${Math.abs(totalReturns).toLocaleString()}
             </p>
           </Card>
@@ -185,8 +185,41 @@ export default function InvestmentsPage() {
             <p className="text-muted-foreground">Start growing your wealth with your first investment.</p>
           </Card>
         ) : (
-          <Card className="bg-white rounded-xl shadow-sm border-0 p-0 overflow-hidden">
-            <Table>
+          <Card className="overflow-hidden rounded-xl border-0 bg-white p-0 shadow-sm">
+            <div className="space-y-3 p-4 md:hidden">
+              {investments.map((investment) => {
+                const returns = investment.current_value - investment.principal;
+                return (
+                  <div key={`mobile-${investment.id}`} className="rounded-2xl bg-[#F8FAFC] p-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <p className="text-sm font-semibold text-[#0A1628]">{investment.product_name}</p>
+                        <p className="mt-1 text-[11px] capitalize text-muted-foreground">
+                          {investment.investment_type.replace(/_/g, " ")}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#EAF0FA] px-2.5 py-1 text-[10px] font-medium text-[#0A1628]">
+                        {investment.status}
+                      </span>
+                    </div>
+                    <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Amount</p>
+                        <p className="font-semibold text-[#0A1628]">${investment.principal.toLocaleString()}</p>
+                      </div>
+                      <div>
+                        <p className="text-[11px] text-muted-foreground">Current Value</p>
+                        <p className="font-semibold text-[#0A1628]">${investment.current_value.toLocaleString()}</p>
+                      </div>
+                    </div>
+                    <p className={`mt-3 text-sm font-semibold ${returns >= 0 ? "text-emerald-600" : "text-red-600"}`}>
+                      Return {returns >= 0 ? "+" : "-"}${Math.abs(returns).toLocaleString()}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+            <Table className="hidden md:table">
               <TableHeader>
                 <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
                   <TableHead className="text-white">Product</TableHead>

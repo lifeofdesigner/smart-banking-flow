@@ -12,8 +12,6 @@ import {
   FileText,
   Gift,
   HelpCircle,
-  User,
-  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -35,14 +33,12 @@ const navItems = [
 const moreItems = [
   { label: "Loans", icon: Landmark, path: "/loans" },
   { label: "Bills", icon: Receipt, path: "/bills" },
-  { label: "Investments", icon: LineChart, path: "/investments" },
   { label: "Savings", icon: PiggyBank, path: "/savings-goals" },
+  { label: "Investments", icon: LineChart, path: "/investments" },
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
   { label: "Statements", icon: FileText, path: "/statements" },
   { label: "Referral", icon: Gift, path: "/referral" },
   { label: "Help", icon: HelpCircle, path: "/help" },
-  { label: "Profile", icon: User, path: "/profile" },
-  { label: "Security", icon: Shield, path: "/security" },
 ];
 
 export default function MobileBottomNav() {
@@ -50,7 +46,7 @@ export default function MobileBottomNav() {
   const navigate = useNavigate();
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#E5E7EB] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_12px_rgba(0,0,0,0.08)] md:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-50 border-t border-[#F0F0F0] bg-white pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.08)] md:hidden">
       <div className="flex h-16 items-center justify-around px-2">
         {navItems.map(({ label, icon: Icon, path, match }) => {
           const active = path === "more"
@@ -63,29 +59,38 @@ export default function MobileBottomNav() {
                 <SheetTrigger asChild>
                   <button
                     className={cn(
-                      "relative flex h-full w-full items-center justify-center transition-colors",
-                      active ? "text-[#0A1628]" : "text-[#9CA3AF]"
+                      "relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors",
+                      active ? "text-[#0A1628]" : "text-[#B0B8C4]",
                     )}
                     aria-label={label}
                   >
-                    <span className={cn("absolute left-2 right-2 top-0 h-[3px] rounded-b-full", active ? "bg-[#C9A84C]" : "bg-transparent")} />
+                    <span
+                      className={cn(
+                        "absolute left-3 right-3 top-0 h-[3px] rounded-b-full",
+                        active ? "bg-[#C9A84C]" : "bg-transparent",
+                      )}
+                    />
                     <Icon className="h-5 w-5" />
+                    <span className={cn("text-[10px] font-medium", active ? "opacity-100" : "opacity-0")}>
+                      {label}
+                    </span>
                   </button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="h-[78vh] rounded-t-2xl border-0 bg-white p-0 shadow-2xl">
-                  <SheetHeader className="border-b border-[#E5E7EB] px-4 py-3">
+                <SheetContent side="bottom" className="rounded-t-[28px] border-0 bg-white p-0 shadow-2xl">
+                  <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-[#D7DDE6]" />
+                  <SheetHeader className="px-5 py-4">
                     <SheetTitle className="text-base font-semibold text-[#0A1628]">More</SheetTitle>
                   </SheetHeader>
 
-                  <div className="max-h-[calc(78vh-64px)] overflow-y-auto px-4 py-2">
+                  <div className="grid grid-cols-2 gap-3 px-4 pb-8">
                     {moreItems.map(({ label: moreLabel, icon: MoreIcon, path: morePath }) => (
                       <SheetTrigger asChild key={morePath}>
                         <button
                           onClick={() => navigate(morePath)}
-                          className="flex min-h-[52px] w-full items-center gap-3 rounded-xl px-3 text-left text-[#0A1628] active:bg-[#F4F5F7]"
+                          className="flex min-h-[104px] flex-col items-center justify-center gap-3 rounded-2xl border border-[#EEF2F6] bg-[#FBFCFD] px-4 text-center text-[#0A1628] transition-transform active:scale-[0.98]"
                         >
-                          <span className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-[#F4F5F7] text-[#0A1628]">
-                            <MoreIcon className="h-4 w-4" />
+                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F6FA] text-[#0A1628] shadow-sm">
+                            <MoreIcon className="h-5 w-5" />
                           </span>
                           <span className="text-sm font-medium">{moreLabel}</span>
                         </button>
@@ -102,13 +107,21 @@ export default function MobileBottomNav() {
               key={path}
               onClick={() => navigate(path)}
               className={cn(
-                "relative flex h-full w-full items-center justify-center transition-colors",
-                active ? "text-[#0A1628]" : "text-[#9CA3AF]"
+                "relative flex h-full w-full flex-col items-center justify-center gap-1 transition-colors",
+                active ? "text-[#0A1628]" : "text-[#B0B8C4]",
               )}
               aria-label={label}
             >
-              <span className={cn("absolute left-2 right-2 top-0 h-[3px] rounded-b-full", active ? "bg-[#C9A84C]" : "bg-transparent")} />
+              <span
+                className={cn(
+                  "absolute left-3 right-3 top-0 h-[3px] rounded-b-full",
+                  active ? "bg-[#C9A84C]" : "bg-transparent",
+                )}
+              />
               <Icon className="h-5 w-5" />
+              <span className={cn("text-[10px] font-medium", active ? "opacity-100" : "opacity-0")}>
+                {label}
+              </span>
             </button>
           );
         })}

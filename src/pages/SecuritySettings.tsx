@@ -62,7 +62,7 @@ export default function SecuritySettings() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6 max-w-4xl mx-auto">
+      <div className="mx-auto min-h-screen max-w-4xl bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="mb-6">
           <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Security Settings</h1>
           <p className="text-muted-foreground mt-1">Manage your account security and authentication</p>

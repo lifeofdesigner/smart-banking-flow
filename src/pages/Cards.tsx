@@ -110,6 +110,24 @@ export default function CardsPage() {
 
                 {/* Card Actions */}
                 <Card className="mt-3 rounded-2xl border-0 bg-white p-4 shadow-sm md:rounded-xl">
+                  <div className="mb-4 grid grid-cols-4 gap-2 md:hidden">
+                    {[
+                      { label: card.status === "frozen" ? "Unfreeze" : "Freeze", action: () => toggleFreeze(card) },
+                      { label: "Details", action: () => undefined },
+                      { label: "Limits", action: () => undefined },
+                      { label: "Status", action: () => undefined },
+                    ].map((item) => (
+                      <button
+                        key={item.label}
+                        type="button"
+                        onClick={item.action}
+                        className="min-h-[44px] rounded-full bg-[#F8FAFC] px-3 text-[11px] font-medium text-[#0A1628] shadow-sm"
+                      >
+                        {item.label}
+                      </button>
+                    ))}
+                  </div>
+
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Status</span>
                     <span className={`font-medium capitalize ${card.status === "active" ? "text-green-600" : "text-yellow-600"}`}>{card.status}</span>

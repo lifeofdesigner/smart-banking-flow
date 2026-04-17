@@ -208,7 +208,7 @@ export default function SavingsGoals() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Savings Goals</h1>
@@ -216,7 +216,7 @@ export default function SavingsGoals() {
           </div>
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]">
+              <Button className="hidden bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)] md:inline-flex">
                 <Plus className="h-4 w-4 mr-2" />
                 New Goal
               </Button>
@@ -535,6 +535,15 @@ export default function SavingsGoals() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="fixed bottom-24 right-4 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#C9A84C] text-[#0A1628] shadow-lg md:hidden"
+          aria-label="Add savings goal"
+        >
+          <Plus className="h-6 w-6" />
+        </button>
       </div>
     </DashboardLayout>
   );

@@ -245,10 +245,10 @@ export default function TransactionHistory() {
           <div className="flex min-w-max items-center gap-2">
             {[
               { label: "All", value: "all" },
-              { label: "Transfer", value: "transfer" },
-              { label: "Deposit", value: "deposit" },
-              { label: "Withdrawal", value: "withdrawal" },
-              { label: "Fees", value: "fee" },
+              { label: "Deposits", value: "deposit" },
+              { label: "Withdrawals", value: "withdrawal" },
+              { label: "Transfers", value: "transfer" },
+              { label: "Bills", value: "fee" },
             ].map((chip) => (
               <button
                 key={chip.value}
@@ -259,10 +259,10 @@ export default function TransactionHistory() {
                   setMobileTransactions([]);
                 }}
                 className={cn(
-                  "min-h-[44px] rounded-full px-4 text-sm font-medium",
+                  "min-h-[44px] rounded-full border px-4 text-sm font-medium",
                   selectedType === chip.value
-                    ? "bg-[#0A1628] text-white"
-                    : "bg-white text-[#0A1628]"
+                    ? "border-[#0A1628] bg-[#0A1628] text-white"
+                    : "border-[#E5E7EB] bg-white text-[#6B7280]"
                 )}
               >
                 {chip.label}
@@ -384,19 +384,19 @@ export default function TransactionHistory() {
               </div>
             ) : (
               <>
-                <div className="md:hidden space-y-3 p-3">
+                <div className="space-y-3 p-3 md:hidden">
                   {displayedTransactions.map((tx) => {
                     const credit = tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement";
                     return (
                       <div key={tx.id} className="rounded-2xl bg-white p-3 shadow-sm">
                         <div className="flex min-h-[56px] items-center justify-between gap-3">
                           <div className="flex items-center gap-3">
-                            <span className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full", credit ? "bg-emerald-100" : "bg-red-100")}>
+                            <span className={cn("inline-flex h-11 w-11 items-center justify-center rounded-full", credit ? "bg-emerald-100" : "bg-red-100")}>
                               {credit ? <ArrowDownRight className="h-4 w-4 text-emerald-700" /> : <ArrowUpRight className="h-4 w-4 text-red-700" />}
                             </span>
                             <div>
-                              <p className="text-sm font-medium capitalize">{tx.transaction_type.replace(/_/g, " ")}</p>
-                              <p className="text-xs text-muted-foreground">{format(new Date(tx.created_at), "MMM dd, yyyy")}</p>
+                              <p className="text-[13px] font-semibold text-[#0A1628]">{tx.description || tx.transaction_type.replace(/_/g, " ")}</p>
+                              <p className="text-[11px] text-muted-foreground">{format(new Date(tx.created_at), "MMM dd, yyyy")}</p>
                             </div>
                           </div>
                           <div className="text-right">

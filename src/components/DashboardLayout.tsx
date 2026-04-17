@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -23,6 +23,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import LiveChatWidget from "@/components/LiveChatWidget";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { canAccessLiveChatSupport, chatSupabase, isPrivilegedRole } from "@/lib/live-chat";
 import {
@@ -107,6 +108,41 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
   const canViewLiveChatSupport = canAccessLiveChatSupport(userRoles);
+  const pageTitle = useMemo(() => {
+    const pageMap: Record<string, string> = {
+      "/dashboard": "Home",
+      "/accounts": "Accounts",
+      "/transactions": "Transactions",
+      "/transfer": "Transfer",
+      "/wire-transfer": "Wire Transfer",
+      "/atm-withdrawal": "ATM Withdrawal",
+      "/beneficiaries": "Beneficiaries",
+      "/savings-goals": "Savings Goals",
+      "/loans": "Loans",
+      "/bills": "Pay Bills",
+      "/cards": "Cards",
+      "/investments": "Investments",
+      "/analytics": "Analytics",
+      "/spending-insights": "Insights",
+      "/budgets": "Budgets",
+      "/statements": "Statements",
+      "/referral": "Referral Program",
+      "/profile": "My Profile",
+      "/security": "Security Settings",
+      "/help": "Help Center",
+      "/kyc": "KYC Verification",
+      "/admin": "Admin Dashboard",
+      "/admin/users": "User Management",
+      "/admin-users": "User Management",
+      "/live-chat-support": "Live Chat",
+    };
+
+    const matchedPath = Object.keys(pageMap)
+      .sort((a, b) => b.length - a.length)
+      .find((path) => location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+    return matchedPath ? pageMap[matchedPath] : "Dashboard";
+  }, [location.pathname]);
 
   useEffect(() => {
     let isMounted = true;
@@ -247,6 +283,14 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const getInitials = (name: string) =>
     name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
+  const profileMenuItems = [
+    { label: "My Profile", icon: User, path: "/profile" },
+    { label: "Security Settings", icon: Shield, path: "/security" },
+    { label: "Help Center", icon: HelpCircle, path: "/help" },
+    { label: "KYC Verification", icon: CheckSquare, path: "/kyc" },
+    { label: "Referral Program", icon: Gift, path: "/referral" },
+  ];
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
@@ -381,32 +425,86 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
 
-            <div className="flex h-14 items-center justify-between bg-[#0A1628] px-4 md:hidden">
-              <div className="flex min-w-0 max-w-[42%] items-center">
+            <div className="flex h-[60px] items-center justify-between bg-[#0A1628] px-4 md:hidden">
+              <div className="flex min-w-0 flex-1 items-center gap-3">
                 {logoUrl ? (
                   <img
                     src={logoUrl}
                     alt={siteName}
-                    style={{ height: "32px", width: "auto", objectFit: "contain" }}
-                    className="max-w-[150px]"
+                    style={{ height: "32px", width: "32px", objectFit: "contain" }}
+                    className="h-8 w-8 rounded-full bg-white/5 p-1"
                   />
                 ) : (
-                  <p className="truncate text-[14px] font-semibold text-[#C9A84C]">{siteName}</p>
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C9A84C] text-sm font-semibold text-[#0A1628]">
+                    H
+                  </div>
                 )}
+                <div className="min-w-0">
+                  <p className="truncate text-[11px] font-medium uppercase tracking-[0.24em] text-white/45">
+                    Halverix Bank
+                  </p>
+                  <p className="truncate text-[14px] font-medium text-white">{pageTitle}</p>
+                </div>
               </div>
-              <div className="flex max-w-[33%] items-center gap-2">
-                <NotificationBell />
-                <button
-                  type="button"
-                  onClick={() => navigate("/profile")}
-                  className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#1E3A5F] text-[11px] font-semibold text-[#C9A84C]"
-                >
-                  {profile?.full_name ? getInitials(profile.full_name) : "U"}
-                </button>
+
+              <div className="ml-3 flex items-center gap-2">
+                <NotificationBell variant="mobile" />
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <button
+                      type="button"
+                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#C9A84C] text-[12px] font-semibold text-[#0A1628] shadow-sm"
+                      aria-label="Open profile menu"
+                    >
+                      {profile?.full_name ? getInitials(profile.full_name) : "U"}
+                    </button>
+                  </SheetTrigger>
+                  <SheetContent
+                    side="bottom"
+                    className="rounded-t-[28px] border-0 bg-white px-0 pb-6 pt-3 shadow-2xl md:hidden"
+                  >
+                    <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-[#D8DEE8]" />
+                    <SheetHeader className="px-5 pb-4 text-left">
+                      <SheetTitle className="text-base font-semibold text-[#0A1628]">
+                        {profile?.full_name || "User"}
+                      </SheetTitle>
+                      <p className="text-sm text-[#6B7280]">{profile?.email || "No email available"}</p>
+                    </SheetHeader>
+
+                    <div className="space-y-1 px-3">
+                      {profileMenuItems.map((item) => (
+                        <SheetTrigger asChild key={item.path}>
+                          <button
+                            type="button"
+                            onClick={() => navigate(item.path)}
+                            className="flex min-h-[48px] w-full items-center gap-3 rounded-2xl px-4 text-left text-[#0A1628] transition-colors active:bg-[#F5F7FA]"
+                          >
+                            <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#F5F7FA] text-[#0A1628]">
+                              <item.icon className="h-4 w-4" />
+                            </span>
+                            <span className="text-sm font-medium">{item.label}</span>
+                          </button>
+                        </SheetTrigger>
+                      ))}
+                    </div>
+
+                    <div className="px-5 pt-5">
+                      <SheetTrigger asChild>
+                        <button
+                          type="button"
+                          onClick={handleLogout}
+                          className="flex min-h-[48px] w-full items-center justify-center rounded-2xl bg-[#FFF4F4] px-4 text-sm font-semibold text-[#DC2626]"
+                        >
+                          Logout
+                        </button>
+                      </SheetTrigger>
+                    </div>
+                  </SheetContent>
+                </Sheet>
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F5F7] pb-20 md:bg-transparent md:pb-0">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F5F7] pb-24 md:bg-transparent md:pb-0">
             {children}
           </main>
         </div>

@@ -154,11 +154,13 @@ export default function HelpCenter() {
         </div>
 
         <Tabs defaultValue="faq">
-          <TabsList className="mb-4 inline-flex h-auto flex-wrap rounded-xl bg-white p-1 shadow-sm border border-[#E6EAF0]">
+          <TabsList className="mb-4 grid h-auto w-full grid-cols-2 rounded-xl border border-[#E6EAF0] bg-white p-1 shadow-sm md:inline-flex md:w-auto md:flex-wrap">
             <TabsTrigger value="faq" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
-              <HelpCircle className="h-4 w-4 mr-2" />FAQs
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span className="md:hidden">Help</span>
+              <span className="hidden md:inline">FAQs</span>
             </TabsTrigger>
-            <TabsTrigger value="contact" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
+            <TabsTrigger value="contact" className="hidden rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white md:inline-flex">
               <MessageSquare className="h-4 w-4 mr-2" />Submit Ticket
             </TabsTrigger>
             <TabsTrigger value="tickets" className="rounded-lg px-4 py-2 data-[state=active]:bg-[var(--bank-navy)] data-[state=active]:text-white">
@@ -195,6 +197,23 @@ export default function HelpCenter() {
                     ))}
                   </div>
                 )}
+
+                <div className="mt-6 space-y-4 rounded-2xl border border-[#E6EAF0] bg-[#F8FAFC] p-4 md:hidden">
+                  <div className="flex items-center gap-2 text-[#0A1628]">
+                    <MessageSquare className="h-4 w-4" />
+                    <p className="text-sm font-semibold">Need more help?</p>
+                  </div>
+                  <Button
+                    type="button"
+                    className="h-11 w-full bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
+                    onClick={() => {
+                      const trigger = document.querySelector('[data-value="contact"]') as HTMLButtonElement | null;
+                      trigger?.click();
+                    }}
+                  >
+                    Submit Support Ticket
+                  </Button>
+                </div>
               </CardContent>
             </Card>
           </TabsContent>

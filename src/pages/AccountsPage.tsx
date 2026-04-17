@@ -24,6 +24,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { toast } from "sonner";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface Account {
   id: string;
@@ -46,6 +47,7 @@ interface Transaction {
 }
 
 export default function AccountsPage() {
+  const isMobile = useIsMobile();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccount, setSelectedAccount] = useState<Account | null>(null);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
@@ -125,8 +127,8 @@ export default function AccountsPage() {
     <DashboardLayout>
       <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="mb-6">
-          <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">My Accounts</h1>
-          <p className="text-muted-foreground mt-2">Manage your bank accounts</p>
+          <h1 className="border-l-4 border-[#C9A84C] pl-3 text-2xl font-semibold text-[#0A1628]">My Accounts</h1>
+          <p className="mt-2 text-sm text-muted-foreground">Manage your bank accounts</p>
         </div>
 
         {loading ? (
@@ -154,48 +156,58 @@ export default function AccountsPage() {
                 <div key={account.id}>
                   <button
                     onClick={() => handleViewAccount(account)}
-                    className="w-full rounded-2xl bg-white p-4 text-left shadow-sm transition-all"
+                    className="w-full overflow-hidden rounded-[24px] bg-white text-left shadow-sm transition-all"
                   >
-                    <div className="mb-4 flex items-center justify-between gap-2">
-                      <Badge className="rounded-full bg-[var(--bank-navy)] px-3 py-1 text-xs capitalize text-white border-0">
+                    <div className="flex items-center justify-between bg-[#0A1628] px-4 py-3">
+                      <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white">
                         {account.account_type}
-                      </Badge>
-                      <Badge className="rounded-full bg-[#EAF0FA] px-3 py-1 text-xs capitalize text-[var(--bank-navy)] border-0">
+                      </p>
+                      <Badge className="rounded-full border-0 bg-white/12 px-3 py-1 text-[10px] capitalize text-white">
                         {account.status || "active"}
                       </Badge>
                     </div>
 
-                    <p className="mb-2 text-sm font-mono text-[var(--bank-slate)]">{account.account_number}</p>
-                    <p className="text-[11px] text-muted-foreground">Available Balance</p>
-                    <p
-                      className="text-3xl font-bold tracking-tight text-[var(--bank-navy)]"
-                      style={{ fontFamily: "'Playfair Display', serif" }}
-                    >
-                      {account.currency || "USD"} {account.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                    </p>
+                    <div className="space-y-3 p-4">
+                      <p className="text-base font-mono tracking-[0.2em] text-[var(--bank-navy)]">
+                        {account.account_number}
+                      </p>
+                      <div>
+                        <p className="text-[11px] uppercase tracking-[0.18em] text-muted-foreground">Available Balance</p>
+                        <p
+                          className="text-[22px] font-bold tracking-tight text-[var(--bank-navy)]"
+                          style={{ fontFamily: "'Playfair Display', serif" }}
+                        >
+                          {account.currency || "USD"} {account.available_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Ledger balance: {account.currency || "USD"} {account.ledger_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        </p>
+                      </div>
 
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        className="min-h-[44px] rounded-xl"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewAccount(account);
-                        }}
-                      >
-                        View Transactions
-                      </Button>
-                      <Button
-                        type="button"
-                        className="min-h-[44px] rounded-xl bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleViewAccount(account);
-                        }}
-                      >
-                        Details
-                      </Button>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="min-h-[44px] rounded-xl border-[var(--bank-navy)] text-[var(--bank-navy)]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAccount(account);
+                          }}
+                        >
+                          Transactions
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="min-h-[44px] rounded-xl border-[var(--bank-navy)] text-[var(--bank-navy)]"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleViewAccount(account);
+                          }}
+                        >
+                          Details
+                        </Button>
+                      </div>
                     </div>
                   </button>
                 </div>
@@ -226,7 +238,7 @@ export default function AccountsPage() {
         )}
 
         <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-          <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+          <SheetContent side={isMobile ? "bottom" : "right"} className="w-full overflow-y-auto rounded-t-[28px] sm:max-w-lg">
             <SheetHeader>
               <SheetTitle className="capitalize">
                 {selectedAccount?.account_type} Account Details

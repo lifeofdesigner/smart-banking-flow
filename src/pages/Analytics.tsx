@@ -33,6 +33,7 @@ export default function Analytics() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState("6");
+  const periodWindow = period === "7d" ? 1 : parseInt(period, 10);
 
   useEffect(() => {
     loadTransactions();
@@ -50,7 +51,7 @@ export default function Analytics() {
 
     if (accounts && accounts.length > 0) {
       const accountIds = accounts.map(a => a.id);
-      const startDate = subMonths(new Date(), parseInt(period));
+      const startDate = subMonths(new Date(), periodWindow);
 
       const { data } = await supabase
         .from("transactions")
@@ -81,7 +82,7 @@ export default function Analytics() {
 
   // Calculate monthly trends
   const monthlyData: MonthlyData[] = [];
-  for (let i = parseInt(period) - 1; i >= 0; i--) {
+  for (let i = periodWindow - 1; i >= 0; i--) {
     const monthStart = startOfMonth(subMonths(new Date(), i));
     const monthEnd = startOfMonth(subMonths(new Date(), i - 1));
     const monthLabel = format(monthStart, "MMM yyyy");
@@ -112,24 +113,26 @@ export default function Analytics() {
     .reduce((sum, tx) => sum + tx.amount, 0);
 
   const netFlow = totalIncome - totalExpenses;
-  const avgMonthlySpending = totalExpenses / parseInt(period);
+  const avgMonthlySpending = totalExpenses / periodWindow;
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
           <div>
             <h1 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Analytics</h1>
             <p className="text-muted-foreground">Track your spending patterns and trends</p>
           </div>
-          <div className="inline-flex rounded-full bg-white shadow-sm p-1 border border-[#E6EAF0]">
+          <div className="inline-flex rounded-full border border-[#E6EAF0] bg-white p-1 shadow-sm">
             {[
+              { value: "7d", label: "7D" },
+              { value: "1", label: "1M" },
               { value: "3", label: "3M" },
               { value: "6", label: "6M" },
-              { value: "12", label: "12M" },
+              { value: "12", label: "1Y" },
             ].map((p) => (
               <Button
-                key={p.value}
+                key={`${p.value}-${p.label}`}
                 type="button"
                 size="sm"
                 variant="ghost"
@@ -155,7 +158,7 @@ export default function Analytics() {
         ) : (
           <>
             {/* Summary Cards */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+            <div className="mb-6 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
               <Card className="bg-white rounded-xl shadow-sm border-0 border-l-4 border-l-[var(--bank-gold)]">
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-3">
@@ -226,7 +229,7 @@ export default function Analytics() {
                   <CardDescription>Income vs Expenses over time</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px]">
+                  <div className="h-[220px] md:h-[300px]">
                     <ResponsiveContainer width="100%" height="100%">
                       <LineChart data={monthlyData}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-border" />
@@ -256,7 +259,7 @@ export default function Analytics() {
                   <CardDescription>Distribution of your transactions</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[300px]">
+                  <div className="h-[220px] md:h-[300px]">
                     {categoryData.length === 0 ? (
                       <div className="flex items-center justify-center h-full text-muted-foreground">
                         No transaction data available
@@ -314,7 +317,7 @@ export default function Analytics() {
                 <CardDescription>Total amount by transaction type</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="h-[300px]">
+                <div className="h-[220px] md:h-[300px]">
                   {categoryData.length === 0 ? (
                     <div className="flex items-center justify-center h-full text-muted-foreground">
                       No transaction data available

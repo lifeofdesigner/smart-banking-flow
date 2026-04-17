@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
 import { z } from "zod";
+import DashboardLayout from "@/components/DashboardLayout";
 
 const wireTransferSchema = z.object({
   beneficiaryName: z.string().min(2, "Name must be at least 2 characters"),
@@ -201,8 +202,9 @@ const WireTransfer = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#F4F5F7] p-6">
-      <header className="bg-white rounded-xl shadow-sm border-0">
+    <DashboardLayout>
+    <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
+      <header className="hidden rounded-xl border-0 bg-white shadow-sm md:block">
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center space-x-4">
             <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
@@ -216,7 +218,7 @@ const WireTransfer = () => {
         </div>
       </header>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto max-w-4xl px-0 py-4 md:px-4 md:py-8">
         {/* Progress Indicator */}
         {currentStep > 0 && (
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
@@ -395,6 +397,7 @@ const WireTransfer = () => {
         )}
       </div>
     </div>
+    </DashboardLayout>
   );
 };
 

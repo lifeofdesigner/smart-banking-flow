@@ -16,6 +16,7 @@ const CATEGORIES = [
   { value: "school_fees", label: "School Fees", icon: GraduationCap },
   { value: "insurance", label: "Insurance", icon: Shield },
   { value: "mobile_recharge", label: "Mobile Recharge", icon: Smartphone },
+  { value: "general", label: "General", icon: Receipt },
 ];
 
 interface BillPayment {
@@ -110,7 +111,7 @@ export default function BillPayments() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-[#F4F5F7] p-6 space-y-6">
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6 md:space-y-6">
         <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Bill Payments</h2>
 
         <div className="grid lg:grid-cols-3 gap-6">
@@ -150,16 +151,16 @@ export default function BillPayments() {
 
           {/* Category cards */}
           <div className="lg:col-span-2 space-y-4">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               {CATEGORIES.map(c => {
                 const Icon = c.icon;
                 return (
                   <button key={c.value} onClick={() => setCategory(c.value)}
-                    className={`p-4 rounded-xl bg-white border text-left transition-all shadow-sm ${category === c.value ? "border-2 border-[#C9A84C]" : "border-[#E6EAF0] hover:border-2 hover:border-[#C9A84C]"}`}>
-                    <span className="inline-flex items-center justify-center h-9 w-9 rounded-full bg-[var(--bank-navy)]/10 mb-2">
-                      <Icon className="h-5 w-5 text-[var(--bank-navy)]" />
+                    className={`rounded-xl border bg-white p-3 text-center transition-all shadow-sm ${category === c.value ? "border-2 border-[#C9A84C]" : "border-[#E6EAF0] hover:border-2 hover:border-[#C9A84C]"}`}>
+                    <span className="mx-auto mb-2 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[var(--bank-navy)]/10">
+                      <Icon className="h-4 w-4 text-[var(--bank-navy)]" />
                     </span>
-                    <p className="text-sm font-medium">{c.label}</p>
+                    <p className="text-[11px] font-medium text-[#0A1628]">{c.label}</p>
                   </button>
                 );
               })}
@@ -175,7 +176,28 @@ export default function BillPayments() {
                   <p className="text-muted-foreground text-sm">Your recent bill payments will appear here.</p>
                 </div>
               ) : (
-                <Table>
+                <>
+                <div className="space-y-3 md:hidden">
+                  {payments.map((payment) => (
+                    <div key={payment.id} className="rounded-2xl bg-[#F8FAFC] p-4">
+                      <div className="flex items-start justify-between gap-3">
+                        <div>
+                          <p className="text-sm font-semibold text-[#0A1628]">{payment.provider}</p>
+                          <p className="mt-1 text-xs text-muted-foreground capitalize">
+                            {payment.category.replace(/_/g, " ")} • {new Date(payment.created_at).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <span className={`inline-flex rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${statusPill(payment.status)}`}>
+                          {payment.status}
+                        </span>
+                      </div>
+                      <p className="mt-3 text-sm font-semibold text-red-600">
+                        -${payment.amount.toLocaleString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <Table className="hidden md:table">
                   <TableHeader>
                     <TableRow className="bg-[#0A1628] hover:bg-[#0A1628]">
                       <TableHead className="text-white">Date</TableHead>
@@ -201,6 +223,7 @@ export default function BillPayments() {
                     ))}
                   </TableBody>
                 </Table>
+                </>
               )}
             </Card>
           </div>

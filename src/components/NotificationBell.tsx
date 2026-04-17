@@ -16,7 +16,11 @@ interface Notification {
   created_at: string;
 }
 
-export default function NotificationBell() {
+interface NotificationBellProps {
+  variant?: "default" | "mobile";
+}
+
+export default function NotificationBell({ variant = "default" }: NotificationBellProps) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [open, setOpen] = useState(false);
@@ -94,10 +98,18 @@ export default function NotificationBell() {
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <Button variant="outline" size="icon" className="relative">
+        <Button
+          variant={variant === "mobile" ? "ghost" : "outline"}
+          size="icon"
+          className={
+            variant === "mobile"
+              ? "relative h-10 w-10 rounded-full border border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
+              : "relative"
+          }
+        >
           <Bell className="w-5 h-5" />
           {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center font-medium">
+            <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-medium text-white">
               {unreadCount > 9 ? "9+" : unreadCount}
             </span>
           )}

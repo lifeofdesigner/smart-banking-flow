@@ -15,6 +15,7 @@ import { ArrowLeft, Banknote, Calculator, CheckCircle, Clock } from "lucide-reac
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { useIsMobile } from "@/hooks/use-mobile";
+import DashboardLayout from "@/components/DashboardLayout";
 
 interface LoanProduct {
   id: string;
@@ -191,27 +192,30 @@ export default function Loans() {
   };
 
   if (loading) return (
-    <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
-      <div className="max-w-6xl mx-auto space-y-6">
-        <Skeleton className="h-10 w-48" />
-        <div className="grid md:grid-cols-2 gap-6">
-          {Array.from({ length: 3 }).map((_, idx) => (
-            <Card key={idx} className="bg-white rounded-xl shadow-sm border-0 p-5 space-y-3">
-              <Skeleton className="h-5 w-40" />
-              <Skeleton className="h-4 w-56" />
-              <Skeleton className="h-8 w-24" />
-              <Skeleton className="h-9 w-full" />
-            </Card>
-          ))}
+    <DashboardLayout>
+      <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
+        <div className="mx-auto max-w-6xl space-y-6">
+          <Skeleton className="h-10 w-48" />
+          <div className="grid gap-6 md:grid-cols-2">
+            {Array.from({ length: 3 }).map((_, idx) => (
+              <Card key={idx} className="space-y-3 rounded-xl border-0 bg-white p-5 shadow-sm">
+                <Skeleton className="h-5 w-40" />
+                <Skeleton className="h-4 w-56" />
+                <Skeleton className="h-8 w-24" />
+                <Skeleton className="h-9 w-full" />
+              </Card>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 
   return (
+    <DashboardLayout>
     <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center gap-4 mb-6">
+        <div className="mb-6 hidden items-center gap-4 md:flex">
           <Button variant="ghost" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="mr-2 h-4 w-4" />Back
           </Button>
@@ -526,5 +530,6 @@ export default function Loans() {
         </Dialog>
       </div>
     </div>
+    </DashboardLayout>
   );
 }
