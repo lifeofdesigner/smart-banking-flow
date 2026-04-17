@@ -280,7 +280,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-secondary/20">
+      <div className="min-h-screen flex w-full overflow-x-hidden bg-secondary/20">
         <Sidebar collapsible="icon" className="hidden md:flex">
           <SidebarHeader className="border-b border-border p-4">
             <div className="flex items-center gap-3">
@@ -366,7 +366,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </SidebarFooter>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex min-w-0 flex-col overflow-x-hidden">
           <header className="sticky top-0 z-50">
             <div className="hidden h-14 items-center justify-between border-b border-border bg-background px-4 md:flex">
               <SidebarTrigger className="-ml-1" />
@@ -406,7 +406,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               </div>
             </div>
           </header>
-          <main className="flex-1 overflow-auto bg-[#F4F5F7] pb-24 md:bg-transparent md:pb-0">
+          <main className="flex-1 overflow-x-hidden overflow-y-auto bg-[#F4F5F7] pb-20 md:bg-transparent md:pb-0">
             {children}
           </main>
         </div>

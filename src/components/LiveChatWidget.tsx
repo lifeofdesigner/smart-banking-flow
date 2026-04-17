@@ -849,7 +849,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
   }
 
   return (
-    <div className="fixed bottom-5 right-5 z-50">
+    <div className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6">
       {!open ? (
         <div className="flex items-center gap-3">
           {!isAuthenticated ? (
@@ -873,7 +873,7 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
           </button>
         </div>
       ) : (
-        <div className="flex h-[min(540px,calc(100vh-110px))] w-[min(370px,calc(100vw-40px))] flex-col overflow-hidden rounded-3xl border border-[var(--bank-navy)]/10 bg-white shadow-2xl">
+        <div className="flex h-[70vh] max-h-[70vh] w-[calc(100vw-2rem)] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-3xl border border-[var(--bank-navy)]/10 bg-white shadow-2xl md:h-[500px] md:max-h-[500px] md:w-[350px] md:max-w-[350px]">
           <div className="bg-[var(--bank-navy)] px-4 py-4 text-white">
             <div className="flex items-start justify-between gap-3">
               <div className="flex min-w-0 items-start gap-3">
