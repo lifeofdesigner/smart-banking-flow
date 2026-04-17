@@ -6,13 +6,12 @@ export const chatSupabase = supabase as typeof supabase & {
 
 export const PRIVILEGED_ROLES = [
   "admin",
-  "super_admin",
   "finance_admin",
   "support_admin",
   "content_manager",
 ] as const;
 
-export const SUPPORT_ROLES = ["admin", "super_admin", "support_admin"] as const;
+export const SUPPORT_ROLES = ["admin", "support_admin"] as const;
 
 export type ChatStatus = "waiting" | "active" | "resolved";
 export type ChatSenderType = "customer" | "agent" | "system";

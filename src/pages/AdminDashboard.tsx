@@ -79,7 +79,7 @@ export default function AdminDashboard() {
         .select("role")
         .eq("user_id", user.id);
 
-      const hasAdminRole = roles?.some(r => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
+      const hasAdminRole = roles?.some(r => ["admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
       const hasDirectUserManagementAccess = roles?.some(r => r.role === "admin") || false;
       const canAccessChatSupport = canAccessLiveChatSupport((roles || []).map((roleRow) => roleRow.role));
       

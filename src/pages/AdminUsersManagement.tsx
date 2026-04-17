@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from "@supabase/supabase-js";
 
 type Role = "user" | "admin";
-type PrivilegedRole = "admin" | "super_admin" | "finance_admin" | "support_admin" | "content_manager";
+type PrivilegedRole = "admin" | "finance_admin" | "support_admin" | "content_manager";
 
 interface ManagedUser {
   id: string;
@@ -39,7 +39,7 @@ export default function AdminUsersManagement() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const privilegedRoles: PrivilegedRole[] = ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"];
+  const privilegedRoles: PrivilegedRole[] = ["admin", "finance_admin", "support_admin", "content_manager"];
   const [form, setForm] = useState({
     full_name: "",
     email: "",
