@@ -51,7 +51,7 @@ function MobileLandingBottomNav() {
   };
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.08)] md:hidden">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-[#E5E7EB] bg-[#ffffff] px-2 pb-[env(safe-area-inset-bottom)] pt-2 shadow-[0_-6px_20px_rgba(15,23,42,0.08)] md:hidden">
       <div className="mx-auto grid max-w-md grid-cols-5 gap-1">
         {landingSections.map((section) => {
           const Icon = section.icon;
@@ -66,13 +66,13 @@ function MobileLandingBottomNav() {
               <Icon
                 className={cn(
                   "h-[18px] w-[18px] transition-colors",
-                  activeSection === section.id ? "text-[var(--bank-navy)]" : "text-slate-400",
+                  activeSection === section.id ? "text-[#0A1628]" : "text-[#9CA3AF]",
                 )}
               />
               <span
                 className={cn(
                   "text-[10px] font-medium",
-                  activeSection === section.id ? "text-[var(--bank-navy)]" : "text-slate-400",
+                  activeSection === section.id ? "text-[#0A1628]" : "text-[#9CA3AF]",
                 )}
               >
                 {section.label}
@@ -116,7 +116,7 @@ const Index = () => {
   }, [activeLanding]);
 
   return (
-    <div className="overflow-x-hidden">
+    <div className="overflow-x-hidden pb-[70px] md:pb-0">
       {landingContent}
       <MobileLandingBottomNav />
       <LiveChatWidget variant="landing" />
