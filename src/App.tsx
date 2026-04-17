@@ -16,6 +16,7 @@ const UserProfile = lazy(() => import("./pages/UserProfile"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminCreateUser = lazy(() => import("./pages/AdminCreateUser"));
 const AdminUsersManagement = lazy(() => import("./pages/AdminUsersManagement"));
+const LiveChatSupport = lazy(() => import("./pages/LiveChatSupport"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const KYCVerification = lazy(() => import("./pages/KYCVerification"));
 const Loans = lazy(() => import("./pages/Loans"));
@@ -73,6 +74,7 @@ const App = () => (
             <Route path="/admin" element={<AdminDashboard />} />
             <Route path="/admin-users" element={<AdminCreateUser />} />
             <Route path="/admin/users" element={<AdminUsersManagement />} />
+            <Route path="/live-chat-support" element={<LiveChatSupport />} />
             <Route path="/kyc" element={<KYCVerification />} />
             <Route path="/loans" element={<Loans />} />
             <Route path="/referral" element={<ReferralProgram />} />

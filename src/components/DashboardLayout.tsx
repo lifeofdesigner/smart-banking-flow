@@ -1,4 +1,4 @@
-import { useState, useEffect, ReactNode } from "react";
+import { useState, useEffect, useRef, ReactNode } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -11,6 +11,7 @@ import {
   SidebarGroupContent,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarMenuBadge,
   SidebarMenuButton,
   SidebarHeader,
   SidebarFooter,
@@ -19,9 +20,11 @@ import { NavLink } from "@/components/NavLink";
 import NotificationBell from "@/components/NotificationBell";
 import NotificationToaster from "@/components/NotificationToaster";
 import MobileBottomNav from "@/components/MobileBottomNav";
+import LiveChatWidget from "@/components/LiveChatWidget";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { canAccessLiveChatSupport, chatSupabase, isPrivilegedRole } from "@/lib/live-chat";
 import {
   LayoutDashboard,
   CreditCard,
@@ -45,6 +48,7 @@ import {
   Receipt,
   CreditCard as CardIcon,
   LineChart,
+  MessageSquareText,
 } from "lucide-react";
 
 interface DashboardLayoutProps {
@@ -96,16 +100,35 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const siteName = siteSettings["site_name"] || "MicroFinance Bank";
   const logoUrl = siteSettings["site_logo_url"];
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [waitingConversationCount, setWaitingConversationCount] = useState(0);
   const [loading, setLoading] = useState(true);
-  const privilegedRoles = ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"];
+  const syncedUserIdRef = useRef<string | null>(null);
+  const canViewLiveChatSupport = canAccessLiveChatSupport(userRoles);
 
   useEffect(() => {
     let isMounted = true;
 
-    const syncAuthState = async () => {
+    const resetAuthState = () => {
       if (!isMounted) return;
-      setLoading(true);
+
+      syncedUserIdRef.current = null;
+      setProfile(null);
+      setCurrentUserId(null);
+      setUserRoles([]);
+      setIsAdmin(false);
+      setWaitingConversationCount(0);
+      setLoading(false);
+    };
+
+    const syncAuthState = async (showLoading = false) => {
+      if (!isMounted) return;
+
+      if (showLoading) {
+        setLoading(true);
+      }
 
       const {
         data: { user },
@@ -115,9 +138,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       if (!isMounted) return;
 
       if (error || !user) {
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
+        resetAuthState();
         navigate("/auth");
         return;
       }
@@ -129,27 +150,33 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       if (!isMounted) return;
 
+      syncedUserIdRef.current = user.id;
+      const resolvedRoles = (roles ?? []).map((roleRow) => roleRow.role);
       setProfile(profileData ?? null);
-      setIsAdmin((roles ?? []).some((roleRow) => privilegedRoles.includes(roleRow.role)));
+      setCurrentUserId(user.id);
+      setUserRoles(resolvedRoles);
+      setIsAdmin(resolvedRoles.some((role) => isPrivilegedRole(role)));
       setLoading(false);
     };
 
-    void syncAuthState();
+    void syncAuthState(true);
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
-      if (!session?.user) {
-        setProfile(null);
-        setIsAdmin(false);
-        setLoading(false);
+      if (event === "SIGNED_OUT" || !session?.user) {
+        resetAuthState();
         navigate("/auth");
         return;
       }
 
-      void syncAuthState();
+      const userChanged = session.user.id !== syncedUserIdRef.current;
+
+      if ((event === "SIGNED_IN" && userChanged) || event === "USER_UPDATED") {
+        void syncAuthState();
+      }
     });
 
     return () => {
@@ -157,6 +184,48 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       subscription.unsubscribe();
     };
   }, [navigate]);
+
+  useEffect(() => {
+    if (!currentUserId || !canViewLiveChatSupport) {
+      setWaitingConversationCount(0);
+      return;
+    }
+
+    let isMounted = true;
+
+    const loadWaitingConversationCount = async () => {
+      const { count, error } = await chatSupabase
+        .from("chat_conversations")
+        .select("id", { count: "exact", head: true })
+        .eq("status", "waiting");
+
+      if (!error && isMounted) {
+        setWaitingConversationCount(count ?? 0);
+      }
+    };
+
+    void loadWaitingConversationCount();
+
+    const waitingChannel = chatSupabase
+      .channel(`dashboard-live-chat-count-${currentUserId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "chat_conversations",
+        },
+        () => {
+          void loadWaitingConversationCount();
+        },
+      )
+      .subscribe();
+
+    return () => {
+      isMounted = false;
+      void chatSupabase.removeChannel(waitingChannel);
+    };
+  }, [canViewLiveChatSupport, currentUserId]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -249,6 +318,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                         </NavLink>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
+                    {canViewLiveChatSupport ? (
+                      <SidebarMenuItem>
+                        <SidebarMenuButton asChild isActive={location.pathname === "/live-chat-support"}>
+                          <NavLink to="/live-chat-support" className="flex items-center gap-3">
+                            <MessageSquareText className="h-4 w-4" />
+                            <span>Live Chat Support</span>
+                          </NavLink>
+                        </SidebarMenuButton>
+                        {waitingConversationCount > 0 ? (
+                          <SidebarMenuBadge className="rounded-full bg-red-500 px-1.5 text-white">
+                            {waitingConversationCount}
+                          </SidebarMenuBadge>
+                        ) : null}
+                      </SidebarMenuItem>
+                    ) : null}
                   </SidebarMenu>
                 </SidebarGroupContent>
               </SidebarGroup>
@@ -317,6 +401,13 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
         <MobileBottomNav />
         <NotificationToaster />
+        {currentUserId && !isAdmin ? (
+          <LiveChatWidget
+            customerId={currentUserId}
+            customerName={profile?.full_name}
+            customerEmail={profile?.email}
+          />
+        ) : null}
       </div>
     </SidebarProvider>
   );

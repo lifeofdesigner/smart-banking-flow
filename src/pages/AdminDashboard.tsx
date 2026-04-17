@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, UserPlus } from "lucide-react";
+import { ArrowLeft, MessageSquareText, UserPlus } from "lucide-react";
 import LedgerExplorer from "@/components/admin/LedgerExplorer";
 import TransferLimitsManager from "@/components/admin/TransferLimitsManager";
 import KYCReviews from "@/components/admin/KYCReviews";
@@ -37,6 +37,7 @@ import AdminWiresTab from "@/components/admin/AdminWiresTab";
 import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 import AdminBeneficiariesTab from "@/components/admin/AdminBeneficiariesTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
+import { canAccessLiveChatSupport } from "@/lib/live-chat";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -46,6 +47,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canManageUsers, setCanManageUsers] = useState(false);
+  const [canOpenLiveChat, setCanOpenLiveChat] = useState(false);
   const [adminId, setAdminId] = useState("");
   const [users, setUsers] = useState<any[]>([]);
   const [accounts, setAccounts] = useState<any[]>([]);
@@ -79,6 +81,7 @@ export default function AdminDashboard() {
 
       const hasAdminRole = roles?.some(r => ["admin", "super_admin", "finance_admin", "support_admin", "content_manager"].includes(r.role));
       const hasDirectUserManagementAccess = roles?.some(r => r.role === "admin") || false;
+      const canAccessChatSupport = canAccessLiveChatSupport((roles || []).map((roleRow) => roleRow.role));
       
       if (!hasAdminRole) {
         toast.error("Access denied: Admin privileges required");
@@ -87,6 +90,7 @@ export default function AdminDashboard() {
       }
 
       setCanManageUsers(hasDirectUserManagementAccess);
+      setCanOpenLiveChat(canAccessChatSupport);
       setAdminId(user.id);
       setIsAdmin(true);
       await fetchData();
@@ -265,6 +269,16 @@ export default function AdminDashboard() {
                   >
                     <UserPlus className="mr-2 h-4 w-4" />
                     Manage Users
+                  </Button>
+                ) : null}
+                {canOpenLiveChat ? (
+                  <Button
+                    variant="outline"
+                    className="border-[var(--bank-navy)]/20 text-[var(--bank-navy)] hover:bg-[var(--bank-navy)]/5"
+                    onClick={() => navigate("/live-chat-support")}
+                  >
+                    <MessageSquareText className="mr-2 h-4 w-4" />
+                    Live Chat
                   </Button>
                 ) : null}
               </div>

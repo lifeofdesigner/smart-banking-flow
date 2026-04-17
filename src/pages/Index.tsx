@@ -1,4 +1,5 @@
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import LiveChatWidget from "@/components/LiveChatWidget";
 import LandingNavyGold from "@/components/landing/LandingNavyGold";
 import LandingSplitScreen from "@/components/landing/LandingSplitScreen";
 import LandingMagazine from "@/components/landing/LandingMagazine";
@@ -11,23 +12,39 @@ const Index = () => {
   const siteSettings = useSiteSettings();
   const activeLanding = siteSettings["active_landing"] || "classic";
 
+  let landingContent = <LandingNavyGold />;
+
   switch (activeLanding) {
     case "split-screen":
-      return <LandingSplitScreen />;
+      landingContent = <LandingSplitScreen />;
+      break;
     case "magazine":
-      return <LandingMagazine />;
+      landingContent = <LandingMagazine />;
+      break;
     case "soft-modern":
-      return <LandingSoftModern />;
+      landingContent = <LandingSoftModern />;
+      break;
     case "cinematic":
-      return <LandingCinematic />;
+      landingContent = <LandingCinematic />;
+      break;
     case "dashboard-app":
-      return <LandingDashboardApp />;
+      landingContent = <LandingDashboardApp />;
+      break;
     case "geometric":
-      return <LandingGeometric />;
+      landingContent = <LandingGeometric />;
+      break;
     case "classic":
     default:
-      return <LandingNavyGold />;
+      landingContent = <LandingNavyGold />;
+      break;
   }
+
+  return (
+    <>
+      {landingContent}
+      <LiveChatWidget />
+    </>
+  );
 };
 
 export default Index;
