@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 
 export default function LandingGeometric() {
   return (
-    <div className="theme-geometric min-h-screen bg-background text-foreground">
+    <div className="theme-geometric min-h-screen overflow-x-hidden bg-background pb-20 text-foreground md:pb-0">
       <Navbar />
       <DynamicHero />
       <Services />

@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 
 export default function LandingCinematic() {
   return (
-    <div className="theme-cinematic min-h-screen bg-background text-foreground">
+    <div className="theme-cinematic min-h-screen overflow-x-hidden bg-background pb-20 text-foreground md:pb-0">
       <Navbar />
       <DynamicHero />
       <Services />

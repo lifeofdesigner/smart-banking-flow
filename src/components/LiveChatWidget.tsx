@@ -29,6 +29,7 @@ interface LiveChatWidgetProps {
   customerId?: string | null;
   customerName?: string | null;
   customerEmail?: string | null;
+  variant?: "default" | "landing";
 }
 
 interface ResolvedChatIdentity {
@@ -102,11 +103,17 @@ const persistGuestSession = (session: GuestChatSession | null) => {
   window.localStorage.setItem(GUEST_STORAGE_KEY, JSON.stringify(session));
 };
 
-export default function LiveChatWidget({ customerId, customerName, customerEmail }: LiveChatWidgetProps) {
+export default function LiveChatWidget({
+  customerId,
+  customerName,
+  customerEmail,
+  variant = "default",
+}: LiveChatWidgetProps) {
   const initialGuestSessionRef = useRef<GuestChatSession | null>(readGuestSession());
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingValueRef = useRef(false);
   const [open, setOpen] = useState(false);
+  const [showIntroLabel, setShowIntroLabel] = useState(variant === "landing");
   const [identityReady, setIdentityReady] = useState(Boolean(customerId));
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -148,11 +155,28 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
   const composerLength = composerValue.length;
   const showCharacterCount = composerLength > 200;
   const resolvedAgentName = agentName || (conversation?.agent_id ? "Support Agent" : "Support Team");
+  const isLandingVariant = variant === "landing";
   const connectionLabel = loading
     ? "Connecting..."
     : connectionState === "reconnecting"
       ? "Reconnecting..."
       : null;
+
+  useEffect(() => {
+    if (!isLandingVariant) {
+      setShowIntroLabel(false);
+      return;
+    }
+
+    setShowIntroLabel(true);
+    const timeout = window.setTimeout(() => {
+      setShowIntroLabel(false);
+    }, 3000);
+
+    return () => {
+      window.clearTimeout(timeout);
+    };
+  }, [isLandingVariant]);
 
   useEffect(() => {
     persistGuestSession(guestSession);
@@ -849,10 +873,14 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
   }
 
   return (
-    <div className="fixed bottom-20 right-4 z-50 md:bottom-6 md:right-6">
+    <div className={cn("fixed right-4 z-50 md:bottom-6 md:right-6", isLandingVariant ? "bottom-[76px]" : "bottom-20")}>
       {!open ? (
         <div className="flex items-center gap-3">
-          {!isAuthenticated ? (
+          {showIntroLabel ? (
+            <div className="rounded-full border border-[var(--bank-gold)]/30 bg-white/95 px-4 py-2 text-sm font-medium text-[var(--bank-navy)] shadow-lg transition-opacity duration-500 md:hidden">
+              Chat with us
+            </div>
+          ) : !isAuthenticated && !isLandingVariant ? (
             <div className="hidden rounded-full border border-[var(--bank-gold)]/20 bg-white/95 px-4 py-2 text-sm font-medium text-[var(--bank-navy)] shadow-lg sm:inline-flex">
               Chat with us
             </div>
@@ -869,6 +897,8 @@ export default function LiveChatWidget({ customerId, customerName, customerEmail
               <span className="absolute -right-1 -top-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-semibold text-white">
                 {unreadCount > 99 ? "99+" : unreadCount}
               </span>
+            ) : isLandingVariant && agentOnline ? (
+              <span className="absolute right-0 top-0 h-3.5 w-3.5 rounded-full border-2 border-white bg-red-500" />
             ) : null}
           </button>
         </div>

@@ -10,9 +10,9 @@ import Footer from "@/components/Footer";
 
 export default function LandingMagazine() {
   return (
-    <div className="theme-magazine min-h-screen bg-background text-foreground">
+    <div className="theme-magazine min-h-screen overflow-x-hidden bg-background pb-20 text-foreground md:pb-0">
       <Navbar />
-      <div className="theme-magazine-hero">
+      <div className="md:border-b-4 md:border-t-4 md:border-[hsl(var(--primary))]">
         <DynamicHero />
       </div>
       <Services />

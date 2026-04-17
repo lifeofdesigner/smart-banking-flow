@@ -10,7 +10,7 @@ import Footer from "@/components/Footer";
 
 export default function LandingSoftModern() {
   return (
-    <div className="theme-soft-modern min-h-screen bg-background text-foreground">
+    <div className="theme-soft-modern min-h-screen overflow-x-hidden bg-background pb-20 text-foreground md:pb-0">
       <Navbar />
       <DynamicHero />
       <Services />

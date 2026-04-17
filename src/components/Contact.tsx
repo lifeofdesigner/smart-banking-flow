@@ -4,18 +4,90 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
 
+const contactItems = [
+  {
+    icon: MapPin,
+    title: "Visit Us",
+    details: ["123 Financial District, Downtown", "City Center, State 12345"],
+  },
+  {
+    icon: Phone,
+    title: "Call Us",
+    details: ["+1 (555) 123-4567", "+1 (555) 765-4321"],
+  },
+  {
+    icon: Mail,
+    title: "Email Us",
+    details: ["info@microfinancebank.com", "support@microfinancebank.com"],
+  },
+  {
+    icon: Clock,
+    title: "Business Hours",
+    details: ["Monday - Friday: 8:00 AM - 6:00 PM", "Saturday: 9:00 AM - 2:00 PM"],
+  },
+];
+
 const Contact = () => {
   return (
-    <section id="contact" className="py-24 bg-background">
+    <section id="contact" className="scroll-mt-20 bg-[var(--bank-navy)] py-12 text-white md:bg-background md:py-24 md:text-foreground">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6">Get In Touch</h2>
-          <p className="text-xl text-muted-foreground">
+        <div className="mb-8 max-w-2xl md:mx-auto md:mb-16 md:max-w-3xl md:text-center animate-fade-in">
+          <h2 className="text-[18px] font-bold text-white md:text-4xl lg:text-5xl md:text-foreground">Get In Touch</h2>
+          <p className="mt-2 text-[11px] leading-5 text-white/65 md:mt-6 md:text-xl md:text-muted-foreground">
             Have questions? We're here to help. Reach out to our team today.
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
+        <div className="space-y-4 md:hidden">
+          {contactItems.map((item) => (
+            <div key={item.title} className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+              <div className="flex h-11 w-11 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--bank-gold)] text-[var(--bank-navy)]">
+                <item.icon className="h-5 w-5" />
+              </div>
+              <div>
+                <h3 className="text-sm font-semibold text-white">{item.title}</h3>
+                {item.details.map((detail) => (
+                  <p key={detail} className="mt-1 text-[11px] leading-5 text-white/65">
+                    {detail}
+                  </p>
+                ))}
+              </div>
+            </div>
+          ))}
+
+          <Card className="rounded-3xl border border-white/10 bg-white p-5 text-[var(--bank-navy)] shadow-sm">
+            <form className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--bank-muted)]">Full Name</label>
+                <Input placeholder="John Doe" className="h-12 rounded-lg border-slate-200 bg-white" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--bank-muted)]">Email Address</label>
+                <Input type="email" placeholder="john@example.com" className="h-12 rounded-lg border-slate-200 bg-white" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--bank-muted)]">Phone Number</label>
+                <Input type="tel" placeholder="+1 (555) 123-4567" className="h-12 rounded-lg border-slate-200 bg-white" />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--bank-muted)]">Message</label>
+                <Textarea
+                  placeholder="How can we help you today?"
+                  className="min-h-[140px] rounded-lg border-slate-200 bg-white"
+                />
+              </div>
+
+              <Button className="h-12 w-full rounded-lg bg-[var(--bank-gold)] text-[var(--bank-navy)] hover:bg-[#d7b663]">
+                Send Message
+              </Button>
+            </form>
+          </Card>
+        </div>
+
+        <div className="hidden md:grid lg:grid-cols-2 gap-12 max-w-6xl mx-auto">
           <div className="space-y-8 animate-slide-up">
             <Card className="p-6 flex items-start space-x-4 hover:shadow-lg transition-all">
               <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
@@ -76,25 +148,25 @@ const Contact = () => {
                 <label className="text-sm font-medium">Full Name</label>
                 <Input placeholder="John Doe" className="h-12" />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email Address</label>
                 <Input type="email" placeholder="john@example.com" className="h-12" />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Phone Number</label>
                 <Input type="tel" placeholder="+1 (555) 123-4567" className="h-12" />
               </div>
-              
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Message</label>
-                <Textarea 
+                <Textarea
                   placeholder="How can we help you today?"
                   className="min-h-[150px]"
                 />
               </div>
-              
+
               <Button size="lg" className="w-full h-12">
                 Send Message
               </Button>

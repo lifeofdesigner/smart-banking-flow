@@ -36,18 +36,36 @@ const services = [
 
 const Services = () => {
   return (
-    <section id="services" className="py-24 bg-secondary/30">
+    <section id="services" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
-        <div className="text-center max-w-3xl mx-auto mb-16 animate-fade-in">
-          <h2 className="text-4xl lg:text-5xl font-bold mb-6">
+        <div className="mb-8 max-w-xl md:mx-auto md:mb-16 md:max-w-3xl md:text-center animate-fade-in">
+          <h2 className="text-[18px] font-bold text-[var(--bank-navy)] md:text-4xl lg:text-5xl md:text-foreground">
             Our Financial Services
           </h2>
-          <p className="text-xl text-muted-foreground">
+          <p className="mt-2 text-[11px] leading-5 text-[var(--bank-muted)] md:mt-6 md:text-xl md:text-muted-foreground">
             Comprehensive banking solutions designed to meet your unique financial needs
           </p>
         </div>
-        
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+
+        <div className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200 md:hidden">
+          {services.map((service, index) => (
+            <div
+              key={service.title}
+              className="flex items-start gap-3 px-4 py-4"
+              style={index < services.length - 1 ? { borderBottom: "1px solid rgba(148, 163, 184, 0.16)" } : undefined}
+            >
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-xl bg-[var(--bank-navy)]">
+                <service.icon className="h-[18px] w-[18px] text-[var(--bank-gold)]" />
+              </div>
+              <div className="min-w-0">
+                <h3 className="text-[12px] font-semibold text-[var(--bank-navy)]">{service.title}</h3>
+                <p className="mt-1 text-[10px] leading-5 text-[var(--bank-muted)]">{service.description}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {services.map((service, index) => (
             <Card
               key={service.title}

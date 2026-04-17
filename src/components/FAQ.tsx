@@ -34,19 +34,28 @@ const faqs = [
 
 const FAQ = () => {
   return (
-    <section className="py-24 bg-secondary/30">
+    <section className="bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto">
-          <div className="text-center mb-16 animate-fade-in">
-            <h2 className="text-4xl lg:text-5xl font-bold mb-6">
+          <div className="mb-8 md:mb-16 md:text-center animate-fade-in">
+            <h2 className="text-[18px] font-bold text-[var(--bank-navy)] md:text-4xl lg:text-5xl md:text-foreground">
               Frequently Asked Questions
             </h2>
-            <p className="text-xl text-muted-foreground">
+            <p className="mt-2 text-[11px] leading-5 text-[var(--bank-muted)] md:mt-6 md:text-xl md:text-muted-foreground">
               Find answers to common questions about our services
             </p>
           </div>
-          
-          <Accordion type="single" collapsible className="space-y-4">
+
+          <div className="divide-y divide-slate-200 rounded-2xl bg-transparent md:hidden">
+            {faqs.map((faq) => (
+              <div key={faq.question} className="py-4">
+                <h3 className="text-[12px] font-semibold text-[var(--bank-navy)]">{faq.question}</h3>
+                <p className="mt-2 text-[11px] leading-6 text-[var(--bank-muted)]">{faq.answer}</p>
+              </div>
+            ))}
+          </div>
+
+          <Accordion type="single" collapsible className="hidden md:block space-y-4">
             {faqs.map((faq, index) => (
               <AccordionItem
                 key={index}

@@ -15,8 +15,8 @@ export default function LandingNavyGold() {
   const tagline = siteSettings.site_tagline || "Smarter banking for modern life.";
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="sr-only">{bankName} — {tagline}</div>
+    <div className="min-h-screen overflow-x-hidden bg-background pb-20 md:pb-0">
+      <div className="sr-only">{bankName} - {tagline}</div>
       <Navbar />
       <DynamicHero />
       <Services />
@@ -29,4 +29,3 @@ export default function LandingNavyGold() {
     </div>
   );
 }
-
