@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { playAgentJoinSound, playNewMessageSound, playSendSound, playTypingSound } from "@/lib/chat-sounds";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Check, CheckCheck, Loader2, Lock, MessageCircle, Send, X } from "lucide-react";
@@ -22,7 +23,6 @@ import {
   normalizeChatMessage,
   parseGuestConversationSubject,
   upsertMessage,
-  WIDGET_QUICK_REPLIES,
 } from "@/lib/live-chat";
 
 interface LiveChatWidgetProps {
@@ -112,6 +112,8 @@ export default function LiveChatWidget({
   const initialGuestSessionRef = useRef<GuestChatSession | null>(readGuestSession());
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingValueRef = useRef(false);
+  const recentSoundEventsRef = useRef<Record<string, number>>({});
+  const agentTypingSoundPlayedRef = useRef(false);
   const [open, setOpen] = useState(false);
   const [showIntroLabel, setShowIntroLabel] = useState(variant === "landing");
   const [identityReady, setIdentityReady] = useState(Boolean(customerId));
@@ -162,6 +164,18 @@ export default function LiveChatWidget({
       ? "Reconnecting..."
       : null;
 
+  const canPlaySound = (key: string, cooldownMs = 600) => {
+    const now = Date.now();
+    const previousTimestamp = recentSoundEventsRef.current[key] ?? 0;
+
+    if (now - previousTimestamp < cooldownMs) {
+      return false;
+    }
+
+    recentSoundEventsRef.current[key] = now;
+    return true;
+  };
+
   useEffect(() => {
     if (!isLandingVariant) {
       setShowIntroLabel(false);
@@ -177,6 +191,10 @@ export default function LiveChatWidget({
       window.clearTimeout(timeout);
     };
   }, [isLandingVariant]);
+
+  useEffect(() => {
+    agentTypingSoundPlayedRef.current = false;
+  }, [conversation?.id]);
 
   useEffect(() => {
     persistGuestSession(guestSession);
@@ -532,6 +550,12 @@ export default function LiveChatWidget({
             if (open) {
               void markMessagesAsRead(conversation.id);
             } else {
+              if (
+                nextMessage.sender_id !== resolvedIdentity.customerId
+                && canPlaySound(`widget-agent-message-${nextMessage.id}`)
+              ) {
+                playNewMessageSound();
+              }
               setUnreadCount((current) => current + 1);
             }
           }
@@ -577,6 +601,7 @@ export default function LiveChatWidget({
         },
         (payload) => {
           const nextConversation = normalizeChatConversation(payload.new);
+          const previousConversation = payload.old ? normalizeChatConversation(payload.old) : null;
 
           if (nextConversation.status === "resolved") {
             setConversation(null);
@@ -594,6 +619,14 @@ export default function LiveChatWidget({
             }
             toast.success("This chat was resolved. You can start a new conversation anytime.");
             return;
+          }
+
+          if (
+            !previousConversation?.agent_id
+            && nextConversation.agent_id
+            && canPlaySound(`widget-agent-join-${nextConversation.id}`)
+          ) {
+            playAgentJoinSound();
           }
 
           setConversation(nextConversation);
@@ -625,7 +658,17 @@ export default function LiveChatWidget({
             return;
           }
 
-          setAgentTyping(Boolean(nextRow?.is_typing));
+          const nextTyping = Boolean(nextRow?.is_typing);
+          if (nextTyping && !agentTypingSoundPlayedRef.current && canPlaySound(`widget-agent-typing-${conversation.id}`, 900)) {
+            playTypingSound();
+            agentTypingSoundPlayedRef.current = true;
+          }
+
+          if (!nextTyping) {
+            agentTypingSoundPlayedRef.current = false;
+          }
+
+          setAgentTyping(nextTyping);
         },
       )
       .subscribe();
@@ -821,6 +864,7 @@ export default function LiveChatWidget({
           : { ...activeConversation, status: nextStatus, last_message_at: sentAt },
       );
       setMessages((current) => upsertMessage(current, normalizeChatMessage(insertedMessage)));
+      playSendSound();
       setMessageText("");
       setGuestMessage("");
       void syncTypingState(false);
@@ -839,26 +883,6 @@ export default function LiveChatWidget({
     } finally {
       setSending(false);
     }
-  };
-
-  const handleQuickReply = async (reply: string) => {
-    if (sending) {
-      return;
-    }
-
-    if (showGuestPreChat && (!guestName.trim() || !guestEmail.trim())) {
-      setGuestMessage(reply);
-      toast.error("Enter your name and email, then tap Start Chat to send this message.");
-      return;
-    }
-
-    if (showGuestPreChat) {
-      setGuestMessage(reply);
-    } else {
-      setMessageText(reply);
-    }
-
-    await handleSendMessage(reply);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1152,19 +1176,6 @@ export default function LiveChatWidget({
               </div>
             ) : (
               <div className="space-y-3">
-                <div className="flex flex-wrap gap-2">
-                  {WIDGET_QUICK_REPLIES.map((reply) => (
-                    <button
-                      key={reply}
-                      type="button"
-                      onClick={() => void handleQuickReply(reply)}
-                      disabled={sending}
-                      className="rounded-full border border-[var(--bank-navy)]/15 bg-[var(--bank-bg)] px-3 py-1.5 text-xs font-medium text-[var(--bank-navy)] transition hover:border-[var(--bank-gold)]/50 hover:bg-[var(--bank-gold)]/10"
-                    >
-                      {reply}
-                    </button>
-                  ))}
-                </div>
                 {!conversation ? (
                   <p className="text-[11px] text-muted-foreground">
                     Subject: {conversationSubjectLabel}

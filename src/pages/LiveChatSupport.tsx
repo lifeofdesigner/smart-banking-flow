@@ -47,6 +47,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { playAgentJoinSound, playNewMessageSound, playSendSound, playTypingSound } from "@/lib/chat-sounds";
 import { cn } from "@/lib/utils";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -94,6 +95,8 @@ export default function LiveChatSupport() {
   const navigate = useNavigate();
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingValueRef = useRef(false);
+  const recentSoundEventsRef = useRef<Record<string, number>>({});
+  const customerTypingSoundPlayedRef = useRef(false);
   const [loadingAuth, setLoadingAuth] = useState(true);
   const [authorized, setAuthorized] = useState(false);
   const [agentId, setAgentId] = useState<string | null>(null);
@@ -138,6 +141,18 @@ export default function LiveChatSupport() {
     [conversations],
   );
   const primaryAccount = accounts[0] ?? null;
+
+  const canPlaySound = (key: string, cooldownMs = 600) => {
+    const now = Date.now();
+    const previousTimestamp = recentSoundEventsRef.current[key] ?? 0;
+
+    if (now - previousTimestamp < cooldownMs) {
+      return false;
+    }
+
+    recentSoundEventsRef.current[key] = now;
+    return true;
+  };
 
   const filteredConversations = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -588,6 +603,16 @@ export default function LiveChatSupport() {
         (payload) => {
           const changedConversationId = (payload.new as { id?: string } | null)?.id
             || (payload.old as { id?: string } | null)?.id;
+          const nextConversationRow = payload.new as { id?: string; status?: string } | null;
+
+          if (
+            payload.eventType === "INSERT"
+            && nextConversationRow?.id
+            && nextConversationRow.status === "waiting"
+            && canPlaySound(`support-new-conversation-${nextConversationRow.id}`)
+          ) {
+            playAgentJoinSound();
+          }
 
           void loadConversations(changedConversationId);
 
@@ -606,12 +631,23 @@ export default function LiveChatSupport() {
         (payload) => {
           const changedConversationId = (payload.new as { conversation_id?: string } | null)?.conversation_id
             || (payload.old as { conversation_id?: string } | null)?.conversation_id;
+          const nextMessage = payload.new ? normalizeChatMessage(payload.new) : null;
+
+          if (
+            payload.eventType === "INSERT"
+            && nextMessage
+            && nextMessage.sender_type === "customer"
+            && !nextMessage.is_internal_note
+            && canPlaySound(`support-customer-message-${nextMessage.id}`)
+          ) {
+            playNewMessageSound();
+          }
 
           void loadConversations(changedConversationId);
 
           if (selectedConversationId && changedConversationId === selectedConversationId) {
-            if (payload.eventType === "INSERT" && payload.new) {
-              setMessages((current) => upsertMessage(current, normalizeChatMessage(payload.new)));
+            if (payload.eventType === "INSERT" && nextMessage) {
+              setMessages((current) => upsertMessage(current, nextMessage));
             }
 
             void loadConversationDetails(selectedConversationId, false);
@@ -643,8 +679,11 @@ export default function LiveChatSupport() {
   useEffect(() => {
     if (!selectedConversationId) {
       setCustomerTyping(false);
+      customerTypingSoundPlayedRef.current = false;
       return;
     }
+
+    customerTypingSoundPlayedRef.current = false;
 
     const typingChannel = chatSupabase
       .channel(`support-live-chat-typing-${selectedConversationId}`)
@@ -665,7 +704,17 @@ export default function LiveChatSupport() {
             return;
           }
 
-          setCustomerTyping(Boolean(nextRow?.is_typing));
+          const nextTyping = Boolean(nextRow?.is_typing);
+          if (nextTyping && !customerTypingSoundPlayedRef.current && canPlaySound(`support-customer-typing-${selectedConversationId}`, 900)) {
+            playTypingSound();
+            customerTypingSoundPlayedRef.current = true;
+          }
+
+          if (!nextTyping) {
+            customerTypingSoundPlayedRef.current = false;
+          }
+
+          setCustomerTyping(nextTyping);
         },
       )
       .subscribe();
@@ -811,6 +860,7 @@ export default function LiveChatSupport() {
             : conversation,
         ),
       );
+      playSendSound();
       lastTypingValueRef.current = false;
       void chatSupabase.from("chat_typing").upsert(
         {
