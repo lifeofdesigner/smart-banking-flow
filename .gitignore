@@ -28,5 +28,7 @@ dist-ssr
 .env.*.local
 supabase/functions/.env
 *.rar
+banking-audit-*
+*-audit-report.md
 r.profiles
 supabase/.temp/

@@ -1,73 +1,68 @@
-# Welcome to your Lovable project
+# Smart Banking App — React + TypeScript + Supabase
 
-## Project info
+A full-stack smart banking dashboard and admin portal built with React, TypeScript, Vite, Tailwind CSS, shadcn/ui, and Supabase.
 
-**URL**: https://lovable.dev/projects/e9e1ba2a-cb13-4932-b387-7830d57ad247
+## Features
 
-## How can I edit this code?
+- Customer authentication with Supabase Auth
+- Account dashboard with balances, recent transactions, insights, and notifications
+- Internal transfers, beneficiaries, wire transfers, bill payments, cards, investments, savings goals, loans, statements, and ATM withdrawal workflows
+- KYC verification and live chat support
+- Admin portal for users, accounts, wires, loans, fees, fraud alerts, referrals, audit logs, reports, liquidity, support tickets, cards, investments, bills, ATM withdrawals, savings, scheduled transfers, site settings, and content management
+- Supabase migrations, RPCs, RLS policies, and demo seed data
 
-There are several ways of editing your application.
+## Tech Stack
 
-**Use Lovable**
+- React 18
+- TypeScript
+- Vite
+- Tailwind CSS
+- shadcn/ui
+- Supabase Auth, Database, Realtime, Edge Functions
+- ESLint
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/e9e1ba2a-cb13-4932-b387-7830d57ad247) and start prompting.
+## Requirements
 
-Changes made via Lovable will be committed automatically to this repo.
+- Node.js 18 or newer
+- npm
+- A Supabase project
+- Supabase CLI, recommended for local migration workflows
 
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Install
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+npm install
+cp .env.example .env
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+Fill `.env` with your Supabase project URL and anon key:
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```env
+VITE_SUPABASE_URL=https://your-project.supabase.co
+VITE_SUPABASE_ANON_KEY=your-anon-key-here
+```
 
-**Use GitHub Codespaces**
+Apply the SQL migrations in `supabase/migrations`, then optionally run `seed-demo.sql` in the Supabase SQL editor to load demo data.
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## Scripts
 
-## What technologies are used for this project?
+```sh
+npm run dev
+npm run lint
+npm run build
+npm run preview
+```
 
-This project is built with:
+## Screenshots
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Add screenshots here before listing the product:
 
-## How can I deploy this project?
+- `screenshots/customer-dashboard.png`
+- `screenshots/admin-dashboard.png`
+- `screenshots/transfer-flow.png`
+- `screenshots/mobile-dashboard.png`
 
-Simply open [Lovable](https://lovable.dev/projects/e9e1ba2a-cb13-4932-b387-7830d57ad247) and click on Share -> Publish.
+## License
 
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Commercial license. Replace this section with your final marketplace or buyer license terms before distribution.

@@ -42,7 +42,7 @@ const defaultAccountTypeIds: Record<AccountTypeOption, string | null> = {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const createSignupClient = () =>
-  createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY, {
+  createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
     auth: {
       persistSession: false,
       autoRefreshToken: false,
