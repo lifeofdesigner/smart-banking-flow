@@ -42,13 +42,17 @@ const defaultAccountTypeIds: Record<AccountTypeOption, string | null> = {
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
 const createSignupClient = () =>
-  createClient<Database>(import.meta.env.VITE_SUPABASE_URL, import.meta.env.VITE_SUPABASE_ANON_KEY, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
+  createClient<Database>(
+    import.meta.env.VITE_SUPABASE_URL,
+    import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+    {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+      },
     },
-  });
+  );
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
