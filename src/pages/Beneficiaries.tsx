@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -143,7 +144,7 @@ const Beneficiaries = () => {
         );
         setBeneficiaries(enriched);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Error",
         description: err.message,

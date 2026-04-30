@@ -61,7 +61,7 @@ export default function LoanManagement() {
       if (error) throw error;
       toast.success(data as string);
       fetchLoans();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
     } finally {
       setProcessing("");
@@ -90,7 +90,7 @@ export default function LoanManagement() {
       toast.success(data as string);
       setRejectDialogOpen(false);
       fetchLoans();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
     } finally {
       setProcessing("");

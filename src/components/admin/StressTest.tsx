@@ -46,7 +46,7 @@ export default function StressTest() {
       if (res.error) throw new Error(res.error.message);
       setReport(res.data);
       toast.success("Stress test completed");
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Stress test failed: " + err.message);
     } finally {
       setRunning(false);
@@ -62,7 +62,7 @@ export default function StressTest() {
       if (res.error) throw new Error(res.error.message);
       toast.success("Simulation data cleaned up");
       setReport(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Cleanup failed: " + err.message);
     } finally {
       setCleaning(false);

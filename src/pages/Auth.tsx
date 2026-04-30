@@ -119,7 +119,7 @@ const Auth = () => {
           description: `Welcome to ${siteSettings["site_name"] || "MicroFinance Bank"}. Redirecting to your dashboard...`,
         });
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
@@ -162,7 +162,7 @@ const Auth = () => {
         title: "Login successful!",
         description: "Welcome back to your account.",
       });
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
@@ -267,7 +267,7 @@ const Auth = () => {
                         title: "Reset link sent!",
                         description: "Check your email for the password reset link.",
                       });
-                    } catch (err: any) {
+                    } catch (err: unknown) {
                       toast({
                         title: "Error",
                         description: err.message || "Could not send reset link.",

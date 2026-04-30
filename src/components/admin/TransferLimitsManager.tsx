@@ -50,27 +50,27 @@ export default function TransferLimitsManager() {
         return;
       }
 
-      const accountIds = data.map((l: any) => l.account_id);
+      const accountIds = data.map((l: unknown) => l.account_id);
       const { data: accounts } = await supabase
         .from("accounts")
         .select("id, account_number, user_id")
         .in("id", accountIds);
 
-      const accMap = new Map((accounts ?? []).map((a: any) => [a.id, a]));
-      const userIds = [...new Set((accounts ?? []).map((a: any) => a.user_id).filter(Boolean))];
+      const accMap = new Map((accounts ?? []).map((a: unknown) => [a.id, a]));
+      const userIds = [...new Set((accounts ?? []).map((a: unknown) => a.user_id).filter(Boolean))];
 
-      let profileMap = new Map<string, any>();
+      let profileMap = new Map<string, unknown>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
           .select("id, full_name")
           .in("id", userIds);
-        profileMap = new Map((profiles ?? []).map((p: any) => [p.id, p]));
+        profileMap = new Map((profiles ?? []).map((p: unknown) => [p.id, p]));
       }
 
       // Fetch daily usage for each account
       const enriched = await Promise.all(
-        data.map(async (limit: any) => {
+        data.map(async (limit: unknown) => {
           const acc = accMap.get(limit.account_id);
           const profile = acc?.user_id ? profileMap.get(acc.user_id) : null;
           const { data: usage } = await supabase.rpc("get_daily_transfer_usage", {

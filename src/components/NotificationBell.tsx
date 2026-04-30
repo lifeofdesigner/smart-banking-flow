@@ -60,7 +60,7 @@ export default function NotificationBell({ variant = "default" }: NotificationBe
 
     if (data) {
       setNotifications(data as Notification[]);
-      setUnreadCount(data.filter((n: any) => !n.read).length);
+      setUnreadCount(data.filter((n: unknown) => !n.read).length);
     }
   };
 

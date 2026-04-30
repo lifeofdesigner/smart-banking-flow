@@ -71,7 +71,7 @@ export default function KYCReviews() {
       });
 
       setSubmissions(enriched);
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error("Failed to load KYC submissions");
     } finally {
       setLoading(false);
@@ -95,7 +95,7 @@ export default function KYCReviews() {
       toast.success(`KYC approved for ${record.user_name}`);
       setSelectedRecord(null);
       fetchSubmissions();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message);
     } finally {
       setProcessing(false);
@@ -125,7 +125,7 @@ export default function KYCReviews() {
       setSelectedRecord(null);
       setRejectionReason("");
       fetchSubmissions();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast.error(err.message);
     } finally {
       setProcessing(false);

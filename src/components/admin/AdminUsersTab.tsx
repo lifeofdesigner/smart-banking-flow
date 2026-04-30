@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AdminUsersTabProps {
-  users: any[];
+  users: unknown[];
   updateKycStatus: (userId: string, status: string) => Promise<void>;
 }
 

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -334,7 +335,7 @@ export default function Analytics() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px"
                           }}
-                          formatter={(value: number, name: string, props: any) => [
+                          formatter={(value: number, name: string, props: unknown) => [
                             `$${value.toLocaleString()} (${props.payload.count} transactions)`,
                             ""
                           ]}

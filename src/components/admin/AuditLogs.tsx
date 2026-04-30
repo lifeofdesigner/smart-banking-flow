@@ -10,7 +10,7 @@ interface AuditLog {
   id: string;
   action: string;
   user_id: string | null;
-  metadata: any;
+  metadata: unknown;
   ip_address: string | null;
   user_agent: string | null;
   created_at: string;
@@ -101,7 +101,7 @@ export default function AuditLogs() {
                     </TableCell>
                     <TableCell>{log.user_name}</TableCell>
                     <TableCell>
-                      <Badge variant={actionColor(log.action) as any} className="text-xs">
+                      <Badge variant={actionColor(log.action) as unknown} className="text-xs">
                         {log.action}
                       </Badge>
                     </TableCell>

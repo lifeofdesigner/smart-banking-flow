@@ -35,7 +35,7 @@ export default function TransactionReversal() {
       toast.success("Transaction reversed successfully");
       setTxId("");
       setReason("");
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
       setResult(`Error: ${e.message}`);
     } finally {

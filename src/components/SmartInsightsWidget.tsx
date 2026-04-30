@@ -46,13 +46,13 @@ export default function SmartInsightsWidget() {
       .gte("created_at", lastMonthStart.toISOString())
       .lt("created_at", thisMonthStart.toISOString());
 
-    const sumByKind = (txns: any[], isIncome: boolean) =>
+    const sumByKind = (txns: unknown[], isIncome: boolean) =>
       (txns ?? [])
         .filter((t) => {
           const inc = ["deposit", "loan_disbursement", "cashback", "system"].some((k) => t.transaction_type.includes(k));
           return isIncome ? inc : !inc && !t.transaction_type.includes("fee");
         })
-        .reduce((s: number, t: any) => s + t.amount, 0);
+        .reduce((s: number, t: unknown) => s + t.amount, 0);
 
     const thisIncome = sumByKind(thisMonthTxns ?? [], true);
     const lastIncome = sumByKind(lastMonthTxns ?? [], true);

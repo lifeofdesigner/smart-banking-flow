@@ -79,8 +79,8 @@ export default function HelpCenter() {
   const loadTickets = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { data } = await supabase.from("support_tickets" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false });
-    if (data) setTickets(data as any);
+    const { data } = await supabase.from("support_tickets" as unknown).select("*").eq("user_id", user.id).order("created_at", { ascending: false });
+    if (data) setTickets(data as unknown);
     setLoadingTickets(false);
   };
 
@@ -95,7 +95,7 @@ export default function HelpCenter() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("support_tickets" as any).insert({
+    const { error } = await supabase.from("support_tickets" as unknown).insert({
       user_id: user.id,
       subject,
       category,
@@ -288,7 +288,7 @@ export default function HelpCenter() {
                               <h4 className="font-medium">{t.subject}</h4>
                               <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()} · {t.category}</p>
                             </div>
-                            <Badge variant={statusColor(t.status) as any}>{t.status}</Badge>
+                            <Badge variant={statusColor(t.status) as unknown}>{t.status}</Badge>
                           </div>
                           <p className="text-sm text-muted-foreground mb-3">{t.message}</p>
                           {t.admin_reply && (

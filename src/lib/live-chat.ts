@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 
 export const chatSupabase = supabase as typeof supabase & {
-  from: (table: string) => any;
+  from: (table: string) => unknown;
 };
 
 export const PRIVILEGED_ROLES = [
@@ -137,7 +137,7 @@ export const SUPPORT_RESOLUTION_TAGS = [
   "Complaint",
 ] as const;
 
-export const normalizeChatConversation = (value: any): ChatConversationRow => ({
+export const normalizeChatConversation = (value: unknown): ChatConversationRow => ({
   id: value.id,
   customer_id: value.customer_id ?? null,
   agent_id: value.agent_id ?? null,
@@ -151,7 +151,7 @@ export const normalizeChatConversation = (value: any): ChatConversationRow => ({
   unread_count: typeof value.unread_count === "number" ? value.unread_count : 0,
 });
 
-export const normalizeChatMessage = (value: any): ChatMessageRow => ({
+export const normalizeChatMessage = (value: unknown): ChatMessageRow => ({
   id: value.id,
   conversation_id: value.conversation_id,
   sender_id: value.sender_id ?? null,

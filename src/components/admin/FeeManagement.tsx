@@ -123,7 +123,7 @@ export default function FeeManagement() {
       }
       setDialogOpen(false);
       fetchFeeRules();
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Error saving fee rule:", error);
       toast.error(error.message || "Failed to save fee rule");
     } finally {

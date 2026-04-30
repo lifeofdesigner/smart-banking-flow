@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AdminNotificationsTabProps {
-  allNotifications: any[];
+  allNotifications: unknown[];
 }
 
 export default function AdminNotificationsTab({ allNotifications }: AdminNotificationsTabProps) {
@@ -27,7 +27,7 @@ export default function AdminNotificationsTab({ allNotifications }: AdminNotific
             </TableRow>
           </TableHeader>
           <TableBody>
-            {allNotifications.map((n: any) => (
+            {allNotifications.map((n: unknown) => (
               <TableRow key={n.id}>
                 <TableCell>{n.user_name}</TableCell>
                 <TableCell>

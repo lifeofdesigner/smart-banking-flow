@@ -69,7 +69,7 @@ export default function InvestmentsPage() {
       const months = parseInt(form.months);
 
       // Use the invest_funds RPC that properly debits the account
-      const { data, error } = await (supabase.rpc as any)("invest_funds", {
+      const { data, error } = await (supabase.rpc as unknown)("invest_funds", {
         p_account_id: form.account,
         p_product_name: form.name,
         p_investment_type: form.type,
@@ -82,7 +82,7 @@ export default function InvestmentsPage() {
       setOpen(false);
       setForm({ name: "", type: "fixed_deposit", amount: "", account: "", months: "12" });
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     } finally {
       setCreating(false);

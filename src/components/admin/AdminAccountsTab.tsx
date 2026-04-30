@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 
 interface AdminAccountsTabProps {
-  accounts: any[];
+  accounts: unknown[];
   adminId: string;
   onDepositSuccess: () => void;
   updateAccountStatus: (accountId: string, status: string) => Promise<void>;
@@ -24,12 +24,12 @@ export default function AdminAccountsTab({
   updateAccountStatus,
 }: AdminAccountsTabProps) {
   const [depositOpen, setDepositOpen] = useState(false);
-  const [selectedAccount, setSelectedAccount] = useState<any | null>(null);
+  const [selectedAccount, setSelectedAccount] = useState<unknown | null>(null);
   const [amount, setAmount] = useState("");
   const [description, setDescription] = useState("Admin manual deposit");
   const [submitting, setSubmitting] = useState(false);
 
-  const openDepositDialog = (account: any) => {
+  const openDepositDialog = (account: unknown) => {
     setSelectedAccount(account);
     setAmount("");
     setDescription("Admin manual deposit");
@@ -47,7 +47,7 @@ export default function AdminAccountsTab({
 
     try {
       setSubmitting(true);
-      const { data, error } = await (supabase as any).rpc("admin_manual_deposit", {
+      const { data, error } = await (supabase as unknown).rpc("admin_manual_deposit", {
         p_admin_id: adminId,
         p_account_id: selectedAccount.id,
         p_amount: parsedAmount,
@@ -60,7 +60,7 @@ export default function AdminAccountsTab({
       toast.success(resultMessage);
       setDepositOpen(false);
       onDepositSuccess();
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(error.message || "Failed to process deposit");
     } finally {
       setSubmitting(false);

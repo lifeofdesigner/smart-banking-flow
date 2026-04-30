@@ -33,12 +33,12 @@ export default function SupportTicketsManager() {
   useEffect(() => { loadTickets(); }, []);
 
   const loadTickets = async () => {
-    const { data } = await supabase.from("support_tickets" as any).select("*").order("created_at", { ascending: false });
+    const { data } = await supabase.from("support_tickets" as unknown).select("*").order("created_at", { ascending: false });
     if (data) {
-      const userIds = [...new Set((data as any[]).map((t: any) => t.user_id).filter(Boolean))];
+      const userIds = [...new Set((data as unknown[]).map((t: unknown) => t.user_id).filter(Boolean))];
       const { data: profiles } = await supabase.from("profiles").select("id, full_name").in("id", userIds);
       const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
-      setTickets((data as any[]).map((t: any) => ({ ...t, user_name: profileMap.get(t.user_id) || "Unknown" })));
+      setTickets((data as unknown[]).map((t: unknown) => ({ ...t, user_name: profileMap.get(t.user_id) || "Unknown" })));
     }
     setLoading(false);
   };
@@ -47,7 +47,7 @@ export default function SupportTicketsManager() {
     if (!replyTicket || !reply.trim()) return;
     setReplying(true);
     const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from("support_tickets" as any)
+    const { error } = await supabase.from("support_tickets" as unknown)
       .update({ admin_reply: reply, replied_at: new Date().toISOString(), replied_by: user?.id, status: "replied", updated_at: new Date().toISOString() })
       .eq("id", replyTicket.id);
     if (error) toast.error(error.message);
@@ -68,7 +68,7 @@ export default function SupportTicketsManager() {
   };
 
   const updateStatus = async (id: string, status: string) => {
-    await supabase.from("support_tickets" as any).update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+    await supabase.from("support_tickets" as unknown).update({ status, updated_at: new Date().toISOString() }).eq("id", id);
     loadTickets();
   };
 
@@ -111,7 +111,7 @@ export default function SupportTicketsManager() {
                         <Badge variant={t.priority === "high" ? "destructive" : "secondary"}>{t.priority}</Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={statusColor(t.status) as any}>{t.status}</Badge>
+                        <Badge variant={statusColor(t.status) as unknown}>{t.status}</Badge>
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-1">

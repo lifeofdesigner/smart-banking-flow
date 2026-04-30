@@ -14,7 +14,7 @@ interface FraudAlert {
   transaction_id: string | null;
   alert_type: string;
   risk_score: number;
-  details: any;
+  details: unknown;
   status: string;
   created_at: string;
   reviewed_at: string | null;
@@ -64,7 +64,7 @@ export default function FraudAlerts() {
       action: "fraud_alert.review",
       user_id: user?.id,
       metadata: { alert_id: alertId, new_status: status },
-    } as any);
+    } as unknown);
 
     toast.success(`Alert marked as ${status}`);
     loadAlerts();
@@ -127,7 +127,7 @@ export default function FraudAlerts() {
                   <TableCell>{alert.user_name}</TableCell>
                   <TableCell className="capitalize">{alert.alert_type.replace(/_/g, " ")}</TableCell>
                   <TableCell>
-                    <Badge variant={riskColor(alert.risk_score) as any}>{alert.risk_score}</Badge>
+                    <Badge variant={riskColor(alert.risk_score) as unknown}>{alert.risk_score}</Badge>
                   </TableCell>
                   <TableCell className="max-w-xs">
                     <pre className="text-xs text-muted-foreground truncate">

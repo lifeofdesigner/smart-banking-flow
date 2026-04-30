@@ -62,7 +62,7 @@ export default function Loans() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<LoanProduct[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<unknown[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<string>("");
@@ -131,7 +131,7 @@ export default function Loans() {
       toast.success("Loan application submitted! Awaiting admin review.");
       setAmount(""); setSelectedProduct(""); setSelectedAccount("");
       await loadData(userId);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
     } finally {
       setApplying(false);
@@ -155,7 +155,7 @@ export default function Loans() {
       toast.success(data as string);
       await viewRepayments(selectedLoanId);
       await loadData(userId);
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
     } finally {
       setPayingId("");

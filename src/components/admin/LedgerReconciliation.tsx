@@ -8,7 +8,7 @@ import { Scale, RefreshCw, CheckCircle, AlertTriangle } from "lucide-react";
 import { toast } from "sonner";
 
 export default function LedgerReconciliation() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [running, setRunning] = useState(false);
 
@@ -29,9 +29,9 @@ export default function LedgerReconciliation() {
     try {
       const { data, error } = await supabase.rpc("run_ledger_reconciliation", { p_date: new Date().toISOString().split("T")[0] });
       if (error) throw error;
-      toast.success(`Reconciliation complete: ${(data as any)?.status || "done"}`);
+      toast.success(`Reconciliation complete: ${(data as unknown)?.status || "done"}`);
       loadReports();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast.error(e.message);
     } finally {
       setRunning(false);

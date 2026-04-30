@@ -9,17 +9,17 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { toast } from "sonner";
 
 interface AdminWiresTabProps {
-  wireTransfers: any[];
+  wireTransfers: unknown[];
   approveWireTransfer: (transferId: string) => Promise<void>;
   adminId: string;
   onViewCodes: (wireTransferId: string) => void;
 }
 
 export default function AdminWiresTab({ wireTransfers, approveWireTransfer, adminId, onViewCodes }: AdminWiresTabProps) {
-  const [selectedWire, setSelectedWire] = useState<any | null>(null);
+  const [selectedWire, setSelectedWire] = useState<unknown | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadingCodes, setLoadingCodes] = useState(false);
-  const [codes, setCodes] = useState<{ code_type: string; plain_code: string | null; is_verified: boolean }[]>([]);
+  const [codes, setCodes] = useState<{ code_type: string; code_value: string; is_verified: boolean }[]>([]);
 
   useEffect(() => {
     if (!dialogOpen || !selectedWire?.id) return;
@@ -27,14 +27,14 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
     const fetchCodes = async () => {
       setLoadingCodes(true);
       try {
-        const { data, error } = await (supabase as any).rpc("get_wire_transfer_codes_for_admin", {
+        const { data, error } = await (supabase as unknown).rpc("get_wire_transfer_codes_for_admin", {
           p_admin_id: adminId,
           p_wire_transfer_id: selectedWire.id,
         });
 
         if (error) throw error;
         setCodes(data || []);
-      } catch (error: any) {
+      } catch (error: unknown) {
         toast.error(error.message || "Failed to load wire transfer codes");
         setCodes([]);
       } finally {
@@ -45,7 +45,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
     fetchCodes();
   }, [dialogOpen, selectedWire, adminId]);
 
-  const openCodesDialog = (wire: any) => {
+  const openCodesDialog = (wire: unknown) => {
     setSelectedWire(wire);
     setDialogOpen(true);
     onViewCodes(wire.id);
@@ -181,7 +181,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
                       codes.map((code) => (
                         <TableRow key={code.code_type}>
                           <TableCell>{code.code_type}</TableCell>
-                          <TableCell className="font-mono">{code.plain_code || "-"}</TableCell>
+                          <TableCell className="font-mono">{code.code_value || "-"}</TableCell>
                           <TableCell>{code.is_verified ? "✓ Verified" : "Pending"}</TableCell>
                         </TableRow>
                       ))

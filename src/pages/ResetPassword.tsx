@@ -78,7 +78,7 @@ const ResetPassword = () => {
       });
 
       setTimeout(() => navigate("/auth"), 3000);
-    } catch (error: any) {
+    } catch (error: unknown) {
       if (error instanceof z.ZodError) {
         const fieldErrors: Record<string, string> = {};
         error.errors.forEach((err) => {

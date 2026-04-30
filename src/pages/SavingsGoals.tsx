@@ -116,7 +116,7 @@ export default function SavingsGoals() {
 
     try {
       // Use the RPC that moves real funds
-      const { data, error } = await (supabase.rpc as any)("contribute_to_savings_goal", {
+      const { data, error } = await (supabase.rpc as unknown)("contribute_to_savings_goal", {
         p_goal_id: selectedGoal.id,
         p_account_id: selectedAccount,
         p_amount: parseFloat(contributionAmount)
@@ -130,7 +130,7 @@ export default function SavingsGoals() {
       setSelectedAccount("");
       setSelectedGoal(null);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
     setSaving(false);
@@ -144,7 +144,7 @@ export default function SavingsGoals() {
     setSaving(true);
 
     try {
-      const { data, error } = await (supabase.rpc as any)("withdraw_from_savings_goal", {
+      const { data, error } = await (supabase.rpc as unknown)("withdraw_from_savings_goal", {
         p_goal_id: selectedGoal.id,
         p_account_id: selectedAccount,
         p_amount: parseFloat(withdrawalAmount)
@@ -158,7 +158,7 @@ export default function SavingsGoals() {
       setSelectedAccount("");
       setSelectedGoal(null);
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({ title: "Error", description: e.message, variant: "destructive" });
     }
     setSaving(false);

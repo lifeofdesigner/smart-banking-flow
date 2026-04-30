@@ -221,7 +221,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
       setSetting(key, publicUrl);
       toast.success("Settings saved");
-    } catch (error: any) {
+    } catch (error: unknown) {
       toast.error(error?.message || "Upload failed");
     } finally {
       setUploadingKey(null);

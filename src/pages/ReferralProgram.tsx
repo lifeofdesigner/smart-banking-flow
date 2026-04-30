@@ -20,8 +20,7 @@ interface Referral {
   created_at: string;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any;
+const db = supabase as unknown;
 
 export default function ReferralProgram() {
   const siteSettings = useSiteSettings();
@@ -40,7 +39,7 @@ export default function ReferralProgram() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const { data: profile } = await supabase.from("profiles").select("referral_code").eq("id", user.id).single();
-    setReferralCode((profile as any)?.referral_code ?? null);
+    setReferralCode((profile as unknown)?.referral_code ?? null);
     const { data: refs } = await db.from("referrals").select("*").eq("referrer_user_id", user.id).order("created_at", { ascending: false });
     setReferrals(refs || []);
     const { data: usedRef } = await db.from("referrals").select("id").eq("referred_user_id", user.id).maybeSingle();
@@ -66,7 +65,7 @@ export default function ReferralProgram() {
       if (error) throw error;
       toast({ title: "Success!", description: data });
       setCodeInput(""); setHasUsedCode(true);
-    } catch (err: any) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
+    } catch (err: unknown) { toast({ title: "Error", description: err.message, variant: "destructive" }); }
     setApplying(false);
   };
 

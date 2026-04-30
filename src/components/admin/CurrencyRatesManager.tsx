@@ -24,8 +24,8 @@ export default function CurrencyRatesManager() {
   useEffect(() => { loadRates(); }, []);
 
   const loadRates = async () => {
-    const { data } = await supabase.from("currency_rates" as any).select("*").order("base_currency");
-    if (data) setRates(data as any);
+    const { data } = await supabase.from("currency_rates" as unknown).select("*").order("base_currency");
+    if (data) setRates(data as unknown);
     setLoading(false);
   };
 
@@ -35,7 +35,7 @@ export default function CurrencyRatesManager() {
       toast.error("Invalid rate");
       return;
     }
-    const { error } = await supabase.from("currency_rates" as any).update({ rate: newRate, updated_at: new Date().toISOString() }).eq("id", id);
+    const { error } = await supabase.from("currency_rates" as unknown).update({ rate: newRate, updated_at: new Date().toISOString() }).eq("id", id);
     if (error) {
       toast.error(error.message);
     } else {

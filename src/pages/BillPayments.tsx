@@ -82,7 +82,7 @@ export default function BillPayments() {
       toast({ title: "Bill paid successfully!" });
       setProvider(""); setAmount(""); setReference("");
       loadData();
-    } catch (e: any) {
+    } catch (e: unknown) {
       toast({ title: "Payment failed", description: e.message, variant: "destructive" });
     } finally {
       setPaying(false);

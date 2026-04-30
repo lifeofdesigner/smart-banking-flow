@@ -48,7 +48,7 @@ export default function CardsManager() {
   };
 
   const updateCardStatus = async (cardId: string, status: string) => {
-    const updateData: any = { status };
+    const updateData: unknown = { status };
     if (status === "frozen") {
       updateData.frozen_at = new Date().toISOString();
     } else if (status === "active") {

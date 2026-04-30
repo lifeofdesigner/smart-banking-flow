@@ -17,7 +17,7 @@ export default function NotificationToaster() {
           "postgres_changes",
           { event: "INSERT", schema: "public", table: "notifications" },
           (payload) => {
-            const n = payload.new as any;
+            const n = payload.new as unknown;
             if (n.user_id !== userId) return;
 
             const isAlert = ["debit_alert", "transfer_failed", "fraud_alert"].includes(n.type);

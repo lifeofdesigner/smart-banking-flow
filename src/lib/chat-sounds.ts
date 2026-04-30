@@ -73,7 +73,9 @@ export const playTypingSound = () => {
     gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.08);
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.08);
-  } catch {}
+  } catch {
+    console.log("Audio not available");
+  }
 };
 
 export const playAgentJoinSound = () => {
@@ -100,7 +102,9 @@ export const playAgentJoinSound = () => {
     playTone(ctx.currentTime, 523);
     playTone(ctx.currentTime + 0.22, 659);
     playTone(ctx.currentTime + 0.44, 784);
-  } catch {}
+  } catch {
+    console.log("Audio not available");
+  }
 };
 
 export const playSendSound = () => {
@@ -120,5 +124,7 @@ export const playSendSound = () => {
     gainNode.gain.linearRampToValueAtTime(0, ctx.currentTime + 0.1);
     oscillator.start(ctx.currentTime);
     oscillator.stop(ctx.currentTime + 0.1);
-  } catch {}
+  } catch {
+    console.log("Audio not available");
+  }
 };

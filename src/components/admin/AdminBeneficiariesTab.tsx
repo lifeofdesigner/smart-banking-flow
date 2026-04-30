@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AdminBeneficiariesTabProps {
-  allBeneficiaries: any[];
+  allBeneficiaries: unknown[];
 }
 
 export default function AdminBeneficiariesTab({ allBeneficiaries }: AdminBeneficiariesTabProps) {
@@ -24,7 +24,7 @@ export default function AdminBeneficiariesTab({ allBeneficiaries }: AdminBenefic
             </TableRow>
           </TableHeader>
           <TableBody>
-            {allBeneficiaries.map((b: any) => (
+            {allBeneficiaries.map((b: unknown) => (
               <TableRow key={b.id}>
                 <TableCell>{b.user_name}</TableCell>
                 <TableCell>{b.nickname}</TableCell>

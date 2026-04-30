@@ -49,11 +49,11 @@ export default function ATMWithdrawal() {
 
     const [acctRes, withdrawRes] = await Promise.all([
       supabase.from("accounts").select("id, account_number, account_type, available_balance, currency").eq("user_id", user.id).eq("status", "active"),
-      supabase.from("atm_withdrawals" as any).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
+      supabase.from("atm_withdrawals" as unknown).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
     ]);
 
     if (acctRes.data) setAccounts(acctRes.data);
-    if (withdrawRes.data) setWithdrawals(withdrawRes.data as any);
+    if (withdrawRes.data) setWithdrawals(withdrawRes.data as unknown);
     setLoading(false);
   };
 
@@ -66,12 +66,12 @@ export default function ATMWithdrawal() {
         p_amount: parseFloat(amount),
       });
       if (error) throw error;
-      const result = data as any;
+      const result = data as unknown;
       setGeneratedCode(result.code);
       toast({ title: "Withdrawal Code Generated", description: `Code: ${result.code} — Valid for ${result.expires_in_minutes} minutes` });
       setAmount("");
       loadData();
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({ title: "Withdrawal Failed", description: err.message, variant: "destructive" });
     } finally {
       setSubmitting(false);

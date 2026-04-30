@@ -34,11 +34,11 @@ interface LedgerFilters {
 const PAGE_SIZE = 50;
 
 export default function LedgerExplorer() {
-  const [entries, setEntries] = useState<any[]>([]);
+  const [entries, setEntries] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
   const [totalCount, setTotalCount] = useState(0);
-  const [selectedEntry, setSelectedEntry] = useState<any | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<unknown | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [filters, setFilters] = useState<LedgerFilters>({
     dateFrom: "",
@@ -109,7 +109,7 @@ export default function LedgerExplorer() {
         ),
       ];
 
-      let profileMap = new Map<string, any>();
+      let profileMap = new Map<string, unknown>();
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
           .from("profiles")
@@ -187,7 +187,7 @@ export default function LedgerExplorer() {
     setPage(0);
   };
 
-  const handleRowClick = (entry: any) => {
+  const handleRowClick = (entry: unknown) => {
     setSelectedEntry(entry);
     setDrawerOpen(true);
   };

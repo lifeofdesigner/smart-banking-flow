@@ -1,6 +1,3 @@
-ALTER TABLE public.wire_transfer_codes
-ADD COLUMN IF NOT EXISTS plain_code text;
-
 CREATE OR REPLACE FUNCTION public.initiate_wire_transfer(
   p_user_id uuid,
   p_account_id uuid,
@@ -16,11 +13,26 @@ CREATE OR REPLACE FUNCTION public.initiate_wire_transfer(
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 DECLARE
+  v_user_id uuid;
   v_wire_id uuid;
   v_code text;
   v_types text[] := ARRAY['COT','IMF','TAX','LEVY','FIN'];
   v_type text;
 BEGIN
+  v_user_id := auth.uid();
+
+  IF v_user_id IS NULL THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
+  IF NOT EXISTS (
+    SELECT 1 FROM accounts
+    WHERE id = p_account_id
+    AND user_id = v_user_id
+  ) THEN
+    RAISE EXCEPTION 'Unauthorized';
+  END IF;
+
   INSERT INTO wire_transfers (
     user_id,
     account_id,
@@ -35,7 +47,7 @@ BEGIN
     status,
     current_stage
   ) VALUES (
-    p_user_id,
+    v_user_id,
     p_account_id,
     p_beneficiary_name,
     p_beneficiary_account,
@@ -56,12 +68,10 @@ BEGIN
       wire_transfer_id,
       code_type,
       code_value,
-      plain_code,
       is_verified
     ) VALUES (
       v_wire_id,
       v_type,
-      v_code,
       v_code,
       false
     );
@@ -74,18 +84,18 @@ $$;
 CREATE OR REPLACE FUNCTION public.get_wire_transfer_codes_for_admin(
   p_admin_id uuid,
   p_wire_transfer_id uuid
-) RETURNS TABLE(code_type text, plain_code text, is_verified boolean)
+) RETURNS TABLE(code_type text, code_value text, is_verified boolean)
 LANGUAGE plpgsql SECURITY DEFINER SET search_path = public
 AS $$
 BEGIN
-  IF NOT has_role(p_admin_id, 'admin') THEN
+  IF NOT has_role(auth.uid(), 'admin') THEN
     RAISE EXCEPTION 'Only admins can view wire transfer codes';
   END IF;
 
   RETURN QUERY
   SELECT
     wtc.code_type,
-    wtc.plain_code,
+    wtc.code_value,
     wtc.is_verified
   FROM wire_transfer_codes wtc
   WHERE wtc.wire_transfer_id = p_wire_transfer_id

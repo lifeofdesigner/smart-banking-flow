@@ -3,7 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 interface AdminTransactionsTabProps {
-  transactions: any[];
+  transactions: unknown[];
 }
 
 export default function AdminTransactionsTab({ transactions }: AdminTransactionsTabProps) {

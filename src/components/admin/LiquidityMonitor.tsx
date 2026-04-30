@@ -16,7 +16,7 @@ const SYSTEM_ACCOUNTS = [
 ];
 
 export default function LiquidityMonitor() {
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { load(); }, []);

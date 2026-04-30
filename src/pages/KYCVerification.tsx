@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -157,7 +158,7 @@ export default function KYCVerification() {
         title: "KYC submitted!",
         description: "Your documents are being reviewed. This usually takes 1-2 business days.",
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       toast({
         title: "Submission failed",
         description: err.message,

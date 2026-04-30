@@ -5,8 +5,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Users, DollarSign } from "lucide-react";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const db = supabase as any;
+const db = supabase as unknown;
 
 interface Referral {
   id: string;
@@ -34,14 +33,14 @@ export default function ReferralsManager() {
       .order("created_at", { ascending: false });
 
     if (data) {
-      const userIds = [...new Set(data.flatMap((r: any) => [r.referrer_user_id, r.referred_user_id].filter(Boolean)))] as string[];
+      const userIds = [...new Set(data.flatMap((r: unknown) => [r.referrer_user_id, r.referred_user_id].filter(Boolean)))] as string[];
       const { data: profiles } = await supabase
         .from("profiles")
         .select("id, full_name")
         .in("id", userIds);
 
       const profileMap = new Map(profiles?.map(p => [p.id, p.full_name]) || []);
-      setReferrals(data.map((r: any) => ({
+      setReferrals(data.map((r: unknown) => ({
         ...r,
         referrer_name: profileMap.get(r.referrer_user_id) || "Unknown",
         referred_name: r.referred_user_id ? (profileMap.get(r.referred_user_id) || "Unknown") : "—",

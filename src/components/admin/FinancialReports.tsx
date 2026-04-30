@@ -7,7 +7,7 @@ import { FileText, Download, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 export default function FinancialReports() {
-  const [reports, setReports] = useState<any[]>([]);
+  const [reports, setReports] = useState<unknown[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { loadReports(); }, []);
@@ -28,7 +28,7 @@ export default function FinancialReports() {
       if (error) throw error;
       toast.success("Today's report generated");
       loadReports();
-    } catch (e: any) { toast.error(e.message); }
+    } catch (e: unknown) { toast.error(e.message); }
   };
 
   const exportCSV = () => {
@@ -43,7 +43,7 @@ export default function FinancialReports() {
     URL.revokeObjectURL(url);
   };
 
-  const fmt = (v: any) => "$" + Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
+  const fmt = (v: unknown) => "$" + Number(v || 0).toLocaleString(undefined, { minimumFractionDigits: 2 });
 
   return (
     <Card>

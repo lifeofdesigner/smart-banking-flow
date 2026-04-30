@@ -39,7 +39,7 @@ Deno.serve(async (req) => {
     .select("role")
     .eq("user_id", user.id);
 
-  const isAdmin = roles?.some((r: any) =>
+  const isAdmin = roles?.some((r: unknown) =>
     ["admin", "super_admin"].includes(r.role)
   );
   if (!isAdmin) {
@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
       return new Response(JSON.stringify(report), {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       return new Response(
         JSON.stringify({ error: err.message, stack: err.stack }),
         {
@@ -77,7 +77,7 @@ Deno.serve(async (req) => {
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
-    } catch (err: any) {
+    } catch (err: unknown) {
       return new Response(JSON.stringify({ error: err.message }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -99,9 +99,9 @@ function generateAccountNumber() {
   return "SIM" + String(Math.floor(Math.random() * 10000000)).padStart(7, "0");
 }
 
-async function runStressTest(supabase: any, adminId: string) {
+async function runStressTest(supabase: unknown, adminId: string) {
   const startTime = Date.now();
-  const report: any = {
+  const report: unknown = {
     simulated_users: 0,
     accounts_created: 0,
     transactions_executed: 0,
@@ -257,7 +257,7 @@ async function runStressTest(supabase: any, adminId: string) {
   // ── Step 4: Fraud detection (large transactions) ──
   for (let i = 0; i < 5; i++) {
     const fromIdx = 0;
-    let toIdx = 1;
+    const toIdx = 1;
     // Top up account first to have enough balance
     await supabase
       .from("accounts")
@@ -492,11 +492,11 @@ async function runStressTest(supabase: any, adminId: string) {
 
     if (acct && debits && credits) {
       const totalDebits = debits.reduce(
-        (sum: number, d: any) => sum + Number(d.amount),
+        (sum: number, d: unknown) => sum + Number(d.amount),
         0
       );
       const totalCredits = credits.reduce(
-        (sum: number, c: any) => sum + Number(c.amount),
+        (sum: number, c: unknown) => sum + Number(c.amount),
         0
       );
       const expectedLedger = totalDebits - totalCredits;
@@ -526,7 +526,7 @@ async function runStressTest(supabase: any, adminId: string) {
   return report;
 }
 
-async function cleanupSimulation(supabase: any) {
+async function cleanupSimulation(supabase: unknown) {
   // Delete sim profiles (cascades will handle related data)
   // First get sim user IDs
   const { data: simProfiles } = await supabase
@@ -536,7 +536,7 @@ async function cleanupSimulation(supabase: any) {
 
   if (!simProfiles || simProfiles.length === 0) return;
 
-  const simUserIds = simProfiles.map((p: any) => p.id);
+  const simUserIds = simProfiles.map((p: unknown) => p.id);
 
   // Delete in order to respect foreign keys
   await supabase
@@ -561,7 +561,7 @@ async function cleanupSimulation(supabase: any) {
     .in("user_id", simUserIds);
 
   if (simLoans && simLoans.length > 0) {
-    const loanIds = simLoans.map((l: any) => l.id);
+    const loanIds = simLoans.map((l: unknown) => l.id);
     await supabase
       .from("loan_repayments")
       .delete()
@@ -576,7 +576,7 @@ async function cleanupSimulation(supabase: any) {
     .in("user_id", simUserIds);
 
   if (simAccounts && simAccounts.length > 0) {
-    const acctIds = simAccounts.map((a: any) => a.id);
+    const acctIds = simAccounts.map((a: unknown) => a.id);
 
     await supabase
       .from("ledger_entries")
