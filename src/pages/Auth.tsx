@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -21,14 +21,24 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const getErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+};
+
 const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const siteSettings = useSiteSettings();
+  const demoRedirectRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [signupEnabled, setSignupEnabled] = useState(true);
   const [registrationReady, setRegistrationReady] = useState(false);
+  const [loginVariant, setLoginVariant] = useState<"customer" | "admin">("customer");
   
   // Signup state
   const [signupData, setSignupData] = useState({
@@ -85,7 +95,7 @@ const Auth = () => {
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
+      if (session && !demoRedirectRef.current) {
         navigate("/dashboard");
       }
     });
@@ -126,7 +136,7 @@ const Auth = () => {
           description: error.errors[0].message,
           variant: "destructive",
         });
-      } else if (error.message.includes("already registered")) {
+      } else if (getErrorMessage(error, "").includes("already registered")) {
         toast({
           title: "Account exists",
           description: "This email is already registered. Please login instead.",
@@ -135,7 +145,7 @@ const Auth = () => {
       } else {
         toast({
           title: "Signup failed",
-          description: error.message || "An error occurred during signup",
+          description: getErrorMessage(error, "An error occurred during signup"),
           variant: "destructive",
         });
       }
@@ -169,7 +179,7 @@ const Auth = () => {
           description: error.errors[0].message,
           variant: "destructive",
         });
-      } else if (error.message.includes("Invalid")) {
+      } else if (getErrorMessage(error, "").includes("Invalid")) {
         toast({
           title: "Invalid credentials",
           description: "Please check your email and password.",
@@ -178,10 +188,36 @@ const Auth = () => {
       } else {
         toast({
           title: "Login failed",
-          description: error.message || "An error occurred during login",
+          description: getErrorMessage(error, "An error occurred during login"),
           variant: "destructive",
         });
       }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async (variant: "customer" | "admin") => {
+    setLoading(true);
+    demoRedirectRef.current = true;
+
+    const credentials =
+      variant === "admin"
+        ? { email: "admin@smartbank.app", password: "demo123456" }
+        : { email: "customer@smartbank.app", password: "demo123456" };
+
+    try {
+      const { error } = await supabase.auth.signInWithPassword(credentials);
+
+      if (error) throw error;
+
+      navigate(variant === "admin" ? "/admin" : "/dashboard", { replace: true });
+    } catch {
+      demoRedirectRef.current = false;
+      toast({
+        title: variant === "admin" ? "Demo admin not set up yet" : "Demo account not set up yet",
+        variant: "destructive",
+      });
     } finally {
       setLoading(false);
     }
@@ -208,6 +244,31 @@ const Auth = () => {
 
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-6">
+              <div className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-1">
+                <button
+                  type="button"
+                  onClick={() => setLoginVariant("customer")}
+                  className={`h-9 rounded-md text-sm font-medium transition-colors ${
+                    loginVariant === "customer"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Customer
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setLoginVariant("admin")}
+                  className={`h-9 rounded-md text-sm font-medium transition-colors ${
+                    loginVariant === "admin"
+                      ? "bg-background text-foreground shadow-sm"
+                      : "text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  Admin
+                </button>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">Email</label>
                 <Input
@@ -245,6 +306,28 @@ const Auth = () => {
                 {loading ? "Logging in..." : "Login"}
               </Button>
 
+              {loginVariant === "customer" ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+                  disabled={loading}
+                  onClick={() => handleDemoLogin("customer")}
+                >
+                  Try as Customer (Demo)
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-12 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+                  disabled={loading}
+                  onClick={() => handleDemoLogin("admin")}
+                >
+                  Try as Admin (Demo)
+                </Button>
+              )}
+
               <div className="text-center">
                 <button
                   type="button"
@@ -270,7 +353,7 @@ const Auth = () => {
                     } catch (err: unknown) {
                       toast({
                         title: "Error",
-                        description: err.message || "Could not send reset link.",
+                        description: getErrorMessage(err, "Could not send reset link."),
                         variant: "destructive",
                       });
                     } finally {
