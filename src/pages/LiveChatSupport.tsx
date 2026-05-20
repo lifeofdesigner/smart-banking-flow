@@ -173,7 +173,7 @@ export default function LiveChatSupport() {
       supabase
         .from("user_roles")
         .select("user_id, role")
-        .in("role", ["admin", "support_admin"]),
+        .eq("role", "admin"),
       chatSupabase.from("chat_agent_status").select("agent_id, is_online"),
     ]);
 

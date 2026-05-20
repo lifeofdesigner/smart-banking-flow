@@ -2346,9 +2346,6 @@ export type Database = {
       app_role:
         | "admin"
         | "user"
-        | "support_admin"
-        | "content_manager"
-        | "finance_admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2486,9 +2483,6 @@ export const Constants = {
       app_role: [
         "admin",
         "user",
-        "support_admin",
-        "content_manager",
-        "finance_admin",
       ],
     },
   },

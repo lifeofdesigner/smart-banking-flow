@@ -42,9 +42,6 @@ const getErrorMessage = (error: unknown, fallback: string) => {
 
 const getPrimaryRole = (roles: string[]) => {
   if (roles.includes("admin")) return "admin";
-  if (roles.includes("support_admin")) return "support_admin";
-  if (roles.includes("finance_admin")) return "finance_admin";
-  if (roles.includes("content_manager")) return "content_manager";
   return roles[0] || "user";
 };
 
