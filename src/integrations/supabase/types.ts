@@ -2225,6 +2225,17 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user: {
+        Args: {
+          p_account_type?: string
+          p_email: string
+          p_full_name: string
+          p_opening_balance?: number
+          p_password: string
+          p_role?: string
+        }
+        Returns: Json
+      }
       apply_referral_code: { Args: { p_code: string }; Returns: string }
       approve_loan: {
         Args: { p_admin_id: string; p_loan_id: string }
