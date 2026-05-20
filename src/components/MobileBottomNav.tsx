@@ -12,6 +12,14 @@ import {
   FileText,
   Gift,
   HelpCircle,
+  Globe,
+  Users,
+  Wallet,
+  ListFilter,
+  TrendingUp,
+  Shield,
+  User,
+  CheckSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import {
@@ -31,13 +39,22 @@ const navItems = [
 ];
 
 const moreItems = [
+  { label: "Transactions", icon: ListFilter, path: "/transactions" },
+  { label: "Wire Transfer", icon: Globe, path: "/wire-transfer" },
+  { label: "ATM Withdrawal", icon: Wallet, path: "/atm-withdrawal" },
+  { label: "Beneficiaries", icon: Users, path: "/beneficiaries" },
   { label: "Loans", icon: Landmark, path: "/loans" },
   { label: "Bills", icon: Receipt, path: "/bills" },
   { label: "Savings", icon: PiggyBank, path: "/savings-goals" },
   { label: "Investments", icon: LineChart, path: "/investments" },
   { label: "Analytics", icon: BarChart3, path: "/analytics" },
+  { label: "Insights", icon: TrendingUp, path: "/spending-insights" },
+  { label: "Budgets", icon: Wallet, path: "/budgets" },
   { label: "Statements", icon: FileText, path: "/statements" },
   { label: "Referral", icon: Gift, path: "/referral" },
+  { label: "Profile", icon: User, path: "/profile" },
+  { label: "Security", icon: Shield, path: "/security" },
+  { label: "KYC", icon: CheckSquare, path: "/kyc" },
   { label: "Help", icon: HelpCircle, path: "/help" },
 ];
 
@@ -79,23 +96,28 @@ export default function MobileBottomNav() {
                     </span>
                   </button>
                 </SheetTrigger>
-                <SheetContent side="bottom" className="rounded-t-[28px] border-0 bg-white p-0 shadow-2xl">
+                <SheetContent side="bottom" className="max-h-[85vh] overflow-y-auto rounded-t-[28px] border-0 bg-white p-0 shadow-2xl">
                   <div className="mx-auto mt-3 h-1.5 w-12 rounded-full bg-[#D7DDE6]" />
-                  <SheetHeader className="px-5 py-4">
-                    <SheetTitle className="text-base font-semibold text-[#0A1628]">More</SheetTitle>
+                  <SheetHeader className="px-5 py-4 text-left">
+                    <SheetTitle className="text-base font-semibold text-[#0A1628]">Menu</SheetTitle>
                   </SheetHeader>
 
-                  <div className="grid grid-cols-2 gap-3 px-4 pb-8">
+                  <div className="grid grid-cols-2 gap-3 px-4 pb-[calc(env(safe-area-inset-bottom)+2rem)]">
                     {moreItems.map(({ label: moreLabel, icon: MoreIcon, path: morePath }) => (
                       <SheetTrigger asChild key={morePath}>
                         <button
                           onClick={() => navigate(morePath)}
-                          className="flex min-h-[104px] flex-col items-center justify-center gap-3 rounded-2xl border border-[#EEF2F6] bg-[#FBFCFD] px-4 text-center text-[#0A1628] transition-transform active:scale-[0.98]"
+                          className={cn(
+                            "flex min-h-[92px] flex-col items-center justify-center gap-2 rounded-2xl border px-3 text-center transition-transform active:scale-[0.98]",
+                            location.pathname === morePath
+                              ? "border-[#C9A84C] bg-[#FFF9E8] text-[#0A1628]"
+                              : "border-[#EEF2F6] bg-[#FBFCFD] text-[#0A1628]",
+                          )}
                         >
-                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-[#F3F6FA] text-[#0A1628] shadow-sm">
+                          <span className="inline-flex h-11 w-11 items-center justify-center rounded-2xl bg-[#F3F6FA] text-[#0A1628] shadow-sm">
                             <MoreIcon className="h-5 w-5" />
                           </span>
-                          <span className="text-sm font-medium">{moreLabel}</span>
+                          <span className="text-xs font-medium leading-tight">{moreLabel}</span>
                         </button>
                       </SheetTrigger>
                     ))}
