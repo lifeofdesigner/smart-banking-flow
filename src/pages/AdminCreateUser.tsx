@@ -84,7 +84,7 @@ export default function AdminCreateUser() {
       } = await supabase.auth.getUser();
 
       if (userError || !user) {
-        navigate("/auth");
+        navigate("/admin-login");
         return;
       }
 

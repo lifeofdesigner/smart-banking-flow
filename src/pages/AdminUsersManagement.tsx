@@ -121,7 +121,7 @@ export default function AdminUsersManagement() {
       } = await supabase.auth.getUser();
 
       if (!user) {
-        navigate("/auth");
+        navigate("/admin-login");
         return;
       }
 

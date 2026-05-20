@@ -108,6 +108,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
   const canViewLiveChatSupport = canAccessLiveChatSupport(userRoles);
+  const authRedirectPath = ["/admin", "/admin-users", "/live-chat-support"].some(
+    (path) => location.pathname === path || location.pathname.startsWith(`${path}/`),
+  )
+    ? "/admin-login"
+    : "/auth";
   const pageTitle = useMemo(() => {
     const pageMap: Record<string, string> = {
       "/dashboard": "Home",
@@ -175,7 +180,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       if (error || !user) {
         resetAuthState();
-        navigate("/auth");
+        navigate(authRedirectPath);
         return;
       }
 
@@ -204,7 +209,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
       if (event === "SIGNED_OUT" || !session?.user) {
         resetAuthState();
-        navigate("/auth");
+        navigate(authRedirectPath);
         return;
       }
 
@@ -219,7 +224,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       isMounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [authRedirectPath, navigate]);
 
   useEffect(() => {
     if (!currentUserId || !canViewLiveChatSupport) {

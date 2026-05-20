@@ -452,7 +452,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                   <div className="space-y-1">
                     <p className="text-sm font-semibold text-[var(--bank-navy)]">Demo Admin Login</p>
                     <p className="text-sm text-[var(--bank-muted)]">
-                      Show or hide the admin demo login button on the public Internet Banking login page.
+                      Show or hide the demo button on the separate admin login page.
                     </p>
                     <div className="flex items-center gap-2 pt-1">
                       <span className="text-xs font-medium text-[var(--bank-muted)]">Current status:</span>
