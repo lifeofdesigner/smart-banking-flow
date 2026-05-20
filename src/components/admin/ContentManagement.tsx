@@ -22,6 +22,7 @@ interface ProductPage {
   hero_image: string | null;
   meta_description: string | null;
   og_image: string | null;
+  icon: string | null;
   status: string;
   display_order: number;
 }
@@ -81,10 +82,20 @@ export default function ContentManagement() {
   const [uploading, setUploading] = useState(false);
 
   // Form states
-  const [productForm, setProductForm] = useState({ product_name: "", slug: "", short_description: "", full_description: "", meta_description: "", status: "active" });
-  const [sectionForm, setSectionForm] = useState({ section_type: "features", section_title: "", section_content: "", display_order: 0 });
+  const [productForm, setProductForm] = useState({
+    product_name: "",
+    slug: "",
+    short_description: "",
+    full_description: "",
+    hero_image: "",
+    meta_description: "",
+    og_image: "",
+    icon: "",
+    status: "active",
+  });
+  const [sectionForm, setSectionForm] = useState({ section_type: "features", section_title: "", section_content: "", section_image: "", display_order: 0 });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", display_order: 0 });
-  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", status: "active" });
+  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" });
 
   useEffect(() => {
     fetchAll();
@@ -277,7 +288,7 @@ export default function ContentManagement() {
                 <CardTitle className="text-lg">Products</CardTitle>
                 <Button size="sm" onClick={() => {
                   setSelectedProduct(null);
-                  setProductForm({ product_name: "", slug: "", short_description: "", full_description: "", meta_description: "", status: "active" });
+                  setProductForm({ product_name: "", slug: "", short_description: "", full_description: "", hero_image: "", meta_description: "", og_image: "", icon: "", status: "active" });
                   setProductDialogOpen(true);
                 }}>
                   <Plus className="w-4 h-4 mr-1" /> Add
@@ -301,7 +312,17 @@ export default function ContentManagement() {
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => {
                         e.stopPropagation();
                         setSelectedProduct(p);
-                        setProductForm({ product_name: p.product_name, slug: p.slug, short_description: p.short_description || "", full_description: p.full_description || "", meta_description: p.meta_description || "", status: p.status });
+                        setProductForm({
+                          product_name: p.product_name,
+                          slug: p.slug,
+                          short_description: p.short_description || "",
+                          full_description: p.full_description || "",
+                          hero_image: p.hero_image || "",
+                          meta_description: p.meta_description || "",
+                          og_image: p.og_image || "",
+                          icon: p.icon || "",
+                          status: p.status,
+                        });
                         setProductDialogOpen(true);
                       }}>
                         <Pencil className="w-3 h-3" />
@@ -337,7 +358,7 @@ export default function ContentManagement() {
                       <CardTitle className="text-lg">Sections</CardTitle>
                       <Button size="sm" onClick={() => {
                         setEditingSection(null);
-                        setSectionForm({ section_type: "features", section_title: "", section_content: "", display_order: sections.length });
+                        setSectionForm({ section_type: "features", section_title: "", section_content: "", section_image: "", display_order: sections.length });
                         setSectionDialogOpen(true);
                       }}>
                         <Plus className="w-4 h-4 mr-1" /> Add Section
@@ -368,7 +389,13 @@ export default function ContentManagement() {
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                                     setEditingSection(sec);
-                                    setSectionForm({ section_type: sec.section_type, section_title: sec.section_title || "", section_content: sec.section_content || "", display_order: sec.display_order });
+                                    setSectionForm({
+                                      section_type: sec.section_type,
+                                      section_title: sec.section_title || "",
+                                      section_content: sec.section_content || "",
+                                      section_image: sec.section_image || "",
+                                      display_order: sec.display_order,
+                                    });
                                     setSectionDialogOpen(true);
                                   }}><Pencil className="w-3 h-3" /></Button>
                                   <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteSection(sec.id)}><Trash2 className="w-3 h-3" /></Button>
@@ -438,7 +465,7 @@ export default function ContentManagement() {
               <CardTitle>Homepage Sections</CardTitle>
               <Button size="sm" onClick={() => {
                 setEditingHomepage(null);
-                setHomepageForm({ section_type: "", title: "", subtitle: "", content: "", status: "active" });
+                setHomepageForm({ section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" });
                 setHomepageDialogOpen(true);
               }}>
                 <Plus className="w-4 h-4 mr-1" /> Add Section
@@ -464,7 +491,14 @@ export default function ContentManagement() {
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             setEditingHomepage(sec);
-                            setHomepageForm({ section_type: sec.section_type, title: sec.title || "", subtitle: sec.subtitle || "", content: sec.content || "", status: sec.status });
+                            setHomepageForm({
+                              section_type: sec.section_type,
+                              title: sec.title || "",
+                              subtitle: sec.subtitle || "",
+                              content: sec.content || "",
+                              image: sec.image || "",
+                              status: sec.status,
+                            });
                             setHomepageDialogOpen(true);
                           }}><Pencil className="w-3 h-3" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteHomepageSection(sec.id)}><Trash2 className="w-3 h-3" /></Button>
@@ -536,7 +570,10 @@ export default function ContentManagement() {
             <div><Label>Slug</Label><Input value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} /></div>
             <div><Label>Short Description</Label><Textarea value={productForm.short_description} onChange={(e) => setProductForm({ ...productForm, short_description: e.target.value })} /></div>
             <div><Label>Full Description</Label><Textarea value={productForm.full_description} onChange={(e) => setProductForm({ ...productForm, full_description: e.target.value })} rows={4} /></div>
+            <div><Label>Hero Image URL</Label><Input value={productForm.hero_image} onChange={(e) => setProductForm({ ...productForm, hero_image: e.target.value })} placeholder="https://..." /></div>
             <div><Label>Meta Description (SEO)</Label><Input value={productForm.meta_description} onChange={(e) => setProductForm({ ...productForm, meta_description: e.target.value })} /></div>
+            <div><Label>OG Image URL</Label><Input value={productForm.og_image} onChange={(e) => setProductForm({ ...productForm, og_image: e.target.value })} placeholder="https://..." /></div>
+            <div><Label>Icon Key</Label><Input value={productForm.icon} onChange={(e) => setProductForm({ ...productForm, icon: e.target.value })} placeholder="savings, credit, card, investment" /></div>
             <div>
               <Label>Status</Label>
               <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
@@ -573,6 +610,7 @@ export default function ContentManagement() {
               </Select>
             </div>
             <div><Label>Title</Label><Input value={sectionForm.section_title} onChange={(e) => setSectionForm({ ...sectionForm, section_title: e.target.value })} /></div>
+            <div><Label>Section Image URL</Label><Input value={sectionForm.section_image} onChange={(e) => setSectionForm({ ...sectionForm, section_image: e.target.value })} placeholder="https://..." /></div>
             <div><Label>Content</Label><Textarea value={sectionForm.section_content} onChange={(e) => setSectionForm({ ...sectionForm, section_content: e.target.value })} rows={6} placeholder='Plain text or JSON array: ["item1","item2"]' /></div>
             <Button className="w-full" onClick={saveSection}>Save Section</Button>
           </div>
@@ -600,10 +638,34 @@ export default function ContentManagement() {
             <DialogTitle>{editingHomepage ? "Edit Homepage Section" : "Add Homepage Section"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <div><Label>Section Name</Label><Input value={homepageForm.section_type} onChange={(e) => setHomepageForm({ ...homepageForm, section_type: e.target.value })} /></div>
+            <div>
+              <Label>Section Type</Label>
+              <Select value={homepageForm.section_type} onValueChange={(v) => setHomepageForm({ ...homepageForm, section_type: v })}>
+                <SelectTrigger><SelectValue placeholder="Choose a section" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="hero">Hero</SelectItem>
+                  <SelectItem value="services">Services</SelectItem>
+                  <SelectItem value="products">Products</SelectItem>
+                  <SelectItem value="about">About</SelectItem>
+                  <SelectItem value="testimonials">Testimonials</SelectItem>
+                  <SelectItem value="faq">FAQ</SelectItem>
+                  <SelectItem value="contact">Contact</SelectItem>
+                  <SelectItem value="custom">Custom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
             <div><Label>Title</Label><Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} /></div>
             <div><Label>Subtitle</Label><Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} /></div>
-            <div><Label>Content</Label><Textarea value={homepageForm.content} onChange={(e) => setHomepageForm({ ...homepageForm, content: e.target.value })} rows={4} /></div>
+            <div><Label>Image URL</Label><Input value={homepageForm.image} onChange={(e) => setHomepageForm({ ...homepageForm, image: e.target.value })} placeholder="https://..." /></div>
+            <div>
+              <Label>Content</Label>
+              <Textarea
+                value={homepageForm.content}
+                onChange={(e) => setHomepageForm({ ...homepageForm, content: e.target.value })}
+                rows={7}
+                placeholder='Text or JSON. Example for services: [{"icon":"savings","title":"Savings","description":"Flexible savings accounts."}]'
+              />
+            </div>
             <div>
               <Label>Status</Label>
               <Select value={homepageForm.status} onValueChange={(v) => setHomepageForm({ ...homepageForm, status: v })}>

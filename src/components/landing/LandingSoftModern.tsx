@@ -1,11 +1,6 @@
 import Navbar from "@/components/Navbar";
 import DynamicHero from "@/components/DynamicHero";
-import Services from "@/components/Services";
-import DynamicProducts from "@/components/DynamicProducts";
-import About from "@/components/About";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
-import Contact from "@/components/Contact";
+import DynamicHomepageSections from "@/components/DynamicHomepageSections";
 import Footer from "@/components/Footer";
 
 export default function LandingSoftModern() {
@@ -13,12 +8,7 @@ export default function LandingSoftModern() {
     <div className="theme-soft-modern min-h-screen overflow-x-hidden bg-background pb-20 text-foreground md:pb-0">
       <Navbar />
       <DynamicHero />
-      <Services />
-      <DynamicProducts />
-      <About />
-      <Testimonials />
-      <FAQ />
-      <Contact />
+      <DynamicHomepageSections />
       <Footer />
     </div>
   );

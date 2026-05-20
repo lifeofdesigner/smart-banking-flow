@@ -33,7 +33,7 @@ const readContentField = (content: unknown, key: string) => {
 
 export default function DynamicHero() {
   const siteSettings = useSiteSettings();
-  const [title, setTitle] = useState("Your Partner in Financial Growth");
+  const [title, setTitle] = useState("Your Digital Banking Partner");
   const [subtitle, setSubtitle] = useState(
     "Empowering individuals and businesses with accessible microfinance solutions. From savings to loans, we're here to help you achieve your financial dreams.",
   );

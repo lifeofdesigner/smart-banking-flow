@@ -1,11 +1,6 @@
 import Navbar from "@/components/Navbar";
 import DynamicHero from "@/components/DynamicHero";
-import Services from "@/components/Services";
-import DynamicProducts from "@/components/DynamicProducts";
-import About from "@/components/About";
-import Testimonials from "@/components/Testimonials";
-import FAQ from "@/components/FAQ";
-import Contact from "@/components/Contact";
+import DynamicHomepageSections from "@/components/DynamicHomepageSections";
 import Footer from "@/components/Footer";
 
 export default function LandingMagazine() {
@@ -15,12 +10,7 @@ export default function LandingMagazine() {
       <div className="md:border-b-4 md:border-t-4 md:border-[hsl(var(--primary))]">
         <DynamicHero />
       </div>
-      <Services />
-      <DynamicProducts />
-      <About />
-      <Testimonials />
-      <FAQ />
-      <Contact />
+      <DynamicHomepageSections />
       <Footer />
     </div>
   );
