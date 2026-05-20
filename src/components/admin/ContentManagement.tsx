@@ -13,6 +13,98 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Eye, Image as ImageIcon, Upload } from "lucide-react";
 import { toast } from "sonner";
 
+type StructuredItem = Record<string, string | number>;
+
+const structuredSectionTypes = ["services", "about", "testimonials", "faq", "faqs", "contact"] as const;
+
+const safeParseContent = (content: string): unknown => {
+  if (!content.trim()) return null;
+  try {
+    return JSON.parse(content);
+  } catch {
+    return null;
+  }
+};
+
+const stringifyContent = (value: unknown) => JSON.stringify(value, null, 2);
+
+const emptyItemForSection = (sectionType: string): StructuredItem => {
+  switch (sectionType) {
+    case "contact":
+      return { phone: "", email: "", hours: "", address: "" };
+    case "faq":
+    case "faqs":
+      return { question: "", answer: "" };
+    case "testimonials":
+      return { name: "", role: "", content: "", rating: 5 };
+    case "about":
+    case "services":
+      return { icon: "target", title: "", description: "" };
+    default:
+      return { title: "", description: "" };
+  }
+};
+
+const getItemsFromContent = (sectionType: string, content: string): StructuredItem[] => {
+  const parsed = safeParseContent(content);
+
+  if (sectionType === "contact") {
+    const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return [{
+      phone: Array.isArray(data.phone) ? String(data.phone[0] || "") : "",
+      email: Array.isArray(data.email) ? String(data.email[0] || "") : "",
+      hours: Array.isArray(data.hours) ? String(data.hours[0] || "") : "",
+      address: Array.isArray(data.address) ? String(data.address.join("\n")) : "",
+    }];
+  }
+
+  if (sectionType === "about" && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+    const cards = (parsed as { cards?: unknown }).cards;
+    return Array.isArray(cards) && cards.length ? cards as StructuredItem[] : [emptyItemForSection(sectionType)];
+  }
+
+  if (Array.isArray(parsed) && parsed.length) {
+    return parsed as StructuredItem[];
+  }
+
+  return [emptyItemForSection(sectionType)];
+};
+
+const buildContentFromItems = (sectionType: string, items: StructuredItem[], currentContent: string) => {
+  const cleanItems = items.map((item) => Object.fromEntries(
+    Object.entries(item).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
+  ));
+
+  if (sectionType === "contact") {
+    const item = cleanItems[0] || {};
+    const address = String(item.address || "")
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean);
+
+    return stringifyContent({
+      phone: item.phone ? [item.phone] : [],
+      email: item.email ? [item.email] : [],
+      hours: item.hours ? [item.hours] : [],
+      address,
+    });
+  }
+
+  if (sectionType === "about") {
+    const parsed = safeParseContent(currentContent);
+    const body = parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? (parsed as { body?: unknown }).body
+      : undefined;
+
+    return stringifyContent({
+      ...(typeof body === "string" && body.trim() ? { body } : {}),
+      cards: cleanItems,
+    });
+  }
+
+  return stringifyContent(cleanItems);
+};
+
 interface ProductPage {
   id: string;
   product_name: string;
@@ -96,6 +188,7 @@ export default function ContentManagement() {
   const [sectionForm, setSectionForm] = useState({ section_type: "features", section_title: "", section_content: "", section_image: "", display_order: 0 });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", display_order: 0 });
   const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" });
+  const [homepageItems, setHomepageItems] = useState<StructuredItem[]>([emptyItemForSection("")]);
 
   useEffect(() => {
     fetchAll();
@@ -220,13 +313,63 @@ export default function ContentManagement() {
   };
 
   // Homepage sections
+  const openHomepageDialog = (section?: HomepageSection | null) => {
+    const form = section
+      ? {
+          section_type: section.section_type,
+          title: section.title || "",
+          subtitle: section.subtitle || "",
+          content: section.content || "",
+          image: section.image || "",
+          status: section.status,
+        }
+      : { section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" };
+
+    setEditingHomepage(section || null);
+    setHomepageForm(form);
+    setHomepageItems(getItemsFromContent(form.section_type, form.content));
+    setHomepageDialogOpen(true);
+  };
+
+  const updateHomepageSectionType = (sectionType: string) => {
+    const currentContent = buildContentFromItems(homepageForm.section_type, homepageItems, homepageForm.content);
+    const nextItems = getItemsFromContent(sectionType, currentContent);
+
+    setHomepageForm((prev) => ({ ...prev, section_type: sectionType, content: currentContent }));
+    setHomepageItems(nextItems);
+  };
+
+  const updateHomepageItem = (index: number, key: string, value: string | number) => {
+    setHomepageItems((prev) => prev.map((item, itemIndex) => (
+      itemIndex === index ? { ...item, [key]: value } : item
+    )));
+  };
+
+  const addHomepageItem = () => {
+    setHomepageItems((prev) => [...prev, emptyItemForSection(homepageForm.section_type)]);
+  };
+
+  const removeHomepageItem = (index: number) => {
+    setHomepageItems((prev) => {
+      const next = prev.filter((_, itemIndex) => itemIndex !== index);
+      return next.length ? next : [emptyItemForSection(homepageForm.section_type)];
+    });
+  };
+
   const saveHomepageSection = async () => {
+    const normalizedHomepageForm = {
+      ...homepageForm,
+      content: structuredSectionTypes.includes(homepageForm.section_type as typeof structuredSectionTypes[number])
+        ? buildContentFromItems(homepageForm.section_type, homepageItems, homepageForm.content)
+        : homepageForm.content,
+    };
+
     if (editingHomepage) {
-      const { error } = await supabase.from("homepage_sections").update(homepageForm).eq("id", editingHomepage.id);
+      const { error } = await supabase.from("homepage_sections").update(normalizedHomepageForm).eq("id", editingHomepage.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Section updated");
     } else {
-      const { error } = await supabase.from("homepage_sections").insert({ ...homepageForm, display_order: homepageSections.length });
+      const { error } = await supabase.from("homepage_sections").insert({ ...normalizedHomepageForm, display_order: homepageSections.length });
       if (error) { toast.error(error.message); return; }
       toast.success("Section added");
     }
@@ -268,6 +411,100 @@ export default function ContentManagement() {
     await supabase.from("media_library").delete().eq("id", item.id);
     toast.success("Media deleted");
     fetchAll();
+  };
+
+  const renderHomepageContentFields = () => {
+    switch (homepageForm.section_type) {
+      case "contact": {
+        const item = homepageItems[0] || emptyItemForSection("contact");
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Phone</Label><Input value={String(item.phone || "")} onChange={(e) => updateHomepageItem(0, "phone", e.target.value)} /></div>
+            <div><Label>Email</Label><Input value={String(item.email || "")} onChange={(e) => updateHomepageItem(0, "email", e.target.value)} /></div>
+            <div className="md:col-span-2"><Label>Hours</Label><Input value={String(item.hours || "")} onChange={(e) => updateHomepageItem(0, "hours", e.target.value)} /></div>
+            <div className="md:col-span-2">
+              <Label>Address</Label>
+              <Textarea value={String(item.address || "")} onChange={(e) => updateHomepageItem(0, "address", e.target.value)} rows={3} />
+            </div>
+          </div>
+        );
+      }
+      case "faq":
+      case "faqs":
+        return (
+          <div className="space-y-3">
+            {homepageItems.map((item, index) => (
+              <div key={index} className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Question {index + 1}</p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div><Label>Question</Label><Input value={String(item.question || "")} onChange={(e) => updateHomepageItem(index, "question", e.target.value)} /></div>
+                <div><Label>Answer</Label><Textarea value={String(item.answer || "")} onChange={(e) => updateHomepageItem(index, "answer", e.target.value)} rows={3} /></div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
+          </div>
+        );
+      case "testimonials":
+        return (
+          <div className="space-y-3">
+            {homepageItems.map((item, index) => (
+              <div key={index} className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">Testimonial {index + 1}</p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div><Label>Name</Label><Input value={String(item.name || "")} onChange={(e) => updateHomepageItem(index, "name", e.target.value)} /></div>
+                  <div><Label>Role</Label><Input value={String(item.role || "")} onChange={(e) => updateHomepageItem(index, "role", e.target.value)} /></div>
+                  <div><Label>Rating</Label><Input type="number" min="1" max="5" value={String(item.rating || 5)} onChange={(e) => updateHomepageItem(index, "rating", Number(e.target.value) || 5)} /></div>
+                  <div className="md:col-span-2"><Label>Quote</Label><Textarea value={String(item.content || "")} onChange={(e) => updateHomepageItem(index, "content", e.target.value)} rows={3} /></div>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Testimonial</Button>
+          </div>
+        );
+      case "services":
+      case "about":
+        return (
+          <div className="space-y-3">
+            {homepageItems.map((item, index) => (
+              <div key={index} className="rounded-lg border p-3 space-y-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">{homepageForm.section_type === "about" ? "Feature" : "Service"} {index + 1}</p>
+                  <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div><Label>Title</Label><Input value={String(item.title || "")} onChange={(e) => updateHomepageItem(index, "title", e.target.value)} /></div>
+                  <div><Label>Icon</Label><Input value={String(item.icon || "")} onChange={(e) => updateHomepageItem(index, "icon", e.target.value)} placeholder="target, savings, credit, briefcase" /></div>
+                  <div className="md:col-span-2"><Label>Description</Label><Textarea value={String(item.description || "")} onChange={(e) => updateHomepageItem(index, "description", e.target.value)} rows={3} /></div>
+                </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Item</Button>
+          </div>
+        );
+      default:
+        return (
+          <div>
+            <Label>Text Content</Label>
+            <Textarea
+              value={homepageForm.content}
+              onChange={(e) => setHomepageForm({ ...homepageForm, content: e.target.value })}
+              rows={5}
+              placeholder="Write the content for this section."
+            />
+          </div>
+        );
+    }
   };
 
   return (
@@ -464,9 +701,7 @@ export default function ContentManagement() {
             <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Homepage Sections</CardTitle>
               <Button size="sm" onClick={() => {
-                setEditingHomepage(null);
-                setHomepageForm({ section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" });
-                setHomepageDialogOpen(true);
+                openHomepageDialog(null);
               }}>
                 <Plus className="w-4 h-4 mr-1" /> Add Section
               </Button>
@@ -490,16 +725,7 @@ export default function ContentManagement() {
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
-                            setEditingHomepage(sec);
-                            setHomepageForm({
-                              section_type: sec.section_type,
-                              title: sec.title || "",
-                              subtitle: sec.subtitle || "",
-                              content: sec.content || "",
-                              image: sec.image || "",
-                              status: sec.status,
-                            });
-                            setHomepageDialogOpen(true);
+                            openHomepageDialog(sec);
                           }}><Pencil className="w-3 h-3" /></Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => deleteHomepageSection(sec.id)}><Trash2 className="w-3 h-3" /></Button>
                         </div>
@@ -640,7 +866,7 @@ export default function ContentManagement() {
           <div className="space-y-4">
             <div>
               <Label>Section Type</Label>
-              <Select value={homepageForm.section_type} onValueChange={(v) => setHomepageForm({ ...homepageForm, section_type: v })}>
+              <Select value={homepageForm.section_type} onValueChange={updateHomepageSectionType}>
                 <SelectTrigger><SelectValue placeholder="Choose a section" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="hero">Hero</SelectItem>
@@ -657,15 +883,7 @@ export default function ContentManagement() {
             <div><Label>Title</Label><Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} /></div>
             <div><Label>Subtitle</Label><Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} /></div>
             <div><Label>Image URL</Label><Input value={homepageForm.image} onChange={(e) => setHomepageForm({ ...homepageForm, image: e.target.value })} placeholder="https://..." /></div>
-            <div>
-              <Label>Content</Label>
-              <Textarea
-                value={homepageForm.content}
-                onChange={(e) => setHomepageForm({ ...homepageForm, content: e.target.value })}
-                rows={7}
-                placeholder='Text or JSON. Example for services: [{"icon":"savings","title":"Savings","description":"Flexible savings accounts."}]'
-              />
-            </div>
+            {renderHomepageContentFields()}
             <div>
               <Label>Status</Label>
               <Select value={homepageForm.status} onValueChange={(v) => setHomepageForm({ ...homepageForm, status: v })}>
