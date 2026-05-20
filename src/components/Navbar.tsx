@@ -7,8 +7,10 @@ import { cn } from "@/lib/utils";
 const Navbar = () => {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings["site_logo_url"];
+  const mobileLogoUrl = siteSettings.mobile_logo_url || logoUrl;
   const siteName = siteSettings["site_name"] || "Your Bank";
   const showBrandNameBesideLogo = siteSettings.show_brand_name_beside_logo !== "false";
+  const showMobileBrandNameBesideLogo = siteSettings.show_mobile_brand_name_beside_logo !== "false";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
@@ -88,9 +90,9 @@ const Navbar = () => {
         <div className="md:container md:mx-auto md:px-4">
           <div className="flex h-14 items-center justify-between bg-[var(--bank-navy)] px-4 md:h-20 md:bg-transparent">
             <div className="flex items-center gap-2.5 md:hidden">
-              {logoUrl ? (
+              {mobileLogoUrl ? (
                 <img
-                  src={logoUrl}
+                  src={mobileLogoUrl}
                   alt={siteName}
                   className="h-8 w-auto object-contain"
                 />
@@ -99,7 +101,7 @@ const Navbar = () => {
                   HB
                 </div>
               )}
-              {showBrandNameBesideLogo ? (
+              {showMobileBrandNameBesideLogo ? (
                 <span className="max-w-[150px] truncate text-[14px] font-semibold text-white">
                   {siteName}
                 </span>
@@ -196,9 +198,9 @@ const Navbar = () => {
         >
           <div className="flex items-start justify-between gap-4">
             <div className="flex items-center gap-2.5">
-              {logoUrl ? (
+              {mobileLogoUrl ? (
                 <img
-                  src={logoUrl}
+                  src={mobileLogoUrl}
                   alt={siteName}
                   className="h-9 w-auto object-contain"
                 />
@@ -207,7 +209,7 @@ const Navbar = () => {
                   HB
                 </div>
               )}
-              {showBrandNameBesideLogo ? (
+              {showMobileBrandNameBesideLogo ? (
                 <div>
                   <p className="text-sm font-semibold">{siteName}</p>
                   <p className="text-xs text-white/60">Mobile Navigation</p>

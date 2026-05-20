@@ -100,7 +100,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const siteSettings = useSiteSettings();
   const siteName = siteSettings["site_name"] || "Your Bank";
   const logoUrl = siteSettings["site_logo_url"];
+  const mobileLogoUrl = siteSettings.mobile_logo_url || logoUrl;
   const showBrandNameBesideLogo = siteSettings.show_brand_name_beside_logo !== "false";
+  const showMobileBrandNameBesideLogo = siteSettings.show_mobile_brand_name_beside_logo !== "false";
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -435,9 +437,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
             <div className="flex h-[60px] items-center justify-between bg-[#0A1628] px-4 md:hidden">
               <div className="flex min-w-0 flex-1 items-center gap-3">
-                {logoUrl ? (
+                {mobileLogoUrl ? (
                   <img
-                    src={logoUrl}
+                    src={mobileLogoUrl}
                     alt={siteName}
                     style={{ height: "32px", width: "32px", objectFit: "contain" }}
                     className="h-8 w-8 rounded-full bg-white/5 p-1"
@@ -448,7 +450,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </div>
                 )}
                 <div className="min-w-0">
-                  {showBrandNameBesideLogo ? (
+                  {showMobileBrandNameBesideLogo ? (
                     <p className="truncate text-[11px] font-medium uppercase tracking-[0.24em] text-white/45">
                       {siteName}
                     </p>
