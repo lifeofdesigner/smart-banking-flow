@@ -98,7 +98,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const siteSettings = useSiteSettings();
-  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
+  const siteName = siteSettings["site_name"] || "Your Bank";
   const logoUrl = siteSettings["site_logo_url"];
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
@@ -441,12 +441,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   />
                 ) : (
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#C9A84C] text-sm font-semibold text-[#0A1628]">
-                    H
+                    {(siteSettings.brand_initials || siteName.slice(0, 1)).toUpperCase()}
                   </div>
                 )}
                 <div className="min-w-0">
                   <p className="truncate text-[11px] font-medium uppercase tracking-[0.24em] text-white/45">
-                    Halverix Bank
+                    {siteName}
                   </p>
                   <p className="truncate text-[14px] font-medium text-white">{pageTitle}</p>
                 </div>

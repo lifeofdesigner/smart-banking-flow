@@ -71,6 +71,7 @@ const Auth = () => {
   const location = useLocation();
   const { toast } = useToast();
   const siteSettings = useSiteSettings();
+  const supportEmail = siteSettings.support_email || "support@example.com";
   const isAdminLogin = location.pathname === "/admin-login";
   const showAdminDemoLogin = siteSettings.demo_admin_login_enabled !== "false";
   const manualRedirectRef = useRef(false);
@@ -169,7 +170,7 @@ const Auth = () => {
       if (data.user) {
         toast({
           title: "Account created successfully!",
-          description: `Welcome to ${siteSettings["site_name"] || "MicroFinance Bank"}. Redirecting to your dashboard...`,
+          description: `Welcome to ${siteSettings["site_name"] || "Your Bank"}. Redirecting to your dashboard...`,
         });
       }
     } catch (error: unknown) {
@@ -420,7 +421,7 @@ const Auth = () => {
                   <p className="font-medium">Account registration is currently closed.</p>
                   <p className="mt-1">Please contact support.</p>
                   <a
-                    href="mailto:support@halverixbank.com?subject=Account%20Registration%20Inquiry"
+                    href={`mailto:${supportEmail}?subject=Account%20Registration%20Inquiry`}
                     className="mt-2 inline-flex text-sm font-medium text-[var(--bank-navy)] underline underline-offset-4"
                   >
                     Contact support

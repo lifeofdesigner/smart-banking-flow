@@ -25,6 +25,7 @@ import {
   parseGuestConversationSubject,
   upsertMessage,
 } from "@/lib/live-chat";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface LiveChatWidgetProps {
   customerId?: string | null;
@@ -47,7 +48,7 @@ interface GuestChatSession {
   email: string;
 }
 
-const GUEST_STORAGE_KEY = "halverix-live-chat-guest";
+const GUEST_STORAGE_KEY = "bank-live-chat-guest";
 const DEFAULT_GUEST_SUBJECT = "Public Landing Page Chat";
 const CHAT_TEMPORARILY_UNAVAILABLE_MESSAGE = "Live chat is temporarily unavailable. Please try again later.";
 
@@ -127,6 +128,7 @@ export default function LiveChatWidget({
   customerEmail,
   variant = "default",
 }: LiveChatWidgetProps) {
+  const siteSettings = useSiteSettings();
   const initialGuestSessionRef = useRef<GuestChatSession | null>(readGuestSession());
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastTypingValueRef = useRef(false);
@@ -996,7 +998,7 @@ export default function LiveChatWidget({
                 </Avatar>
 
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold">Halverix Bank Support</p>
+                  <p className="text-sm font-semibold">{siteSettings.site_name || "Support"} Support</p>
                   <div className="mt-1 flex items-center gap-2 text-xs text-white/80">
                     <span className={cn("h-2.5 w-2.5 rounded-full", agentOnline ? "bg-emerald-400" : "bg-slate-400")} />
                     <span className="truncate">

@@ -24,7 +24,7 @@ const db = supabase as unknown;
 
 export default function ReferralProgram() {
   const siteSettings = useSiteSettings();
-  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
+  const siteName = siteSettings["site_name"] || "Your Bank";
   const [referralCode, setReferralCode] = useState<string | null>(null);
   const [referrals, setReferrals] = useState<Referral[]>([]);
   const [loading, setLoading] = useState(true);

@@ -66,7 +66,7 @@ const Beneficiaries = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const siteSettings = useSiteSettings();
-  const bankName = siteSettings["site_name"] || "MicroFinance Bank";
+  const bankName = siteSettings["site_name"] || "Your Bank";
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

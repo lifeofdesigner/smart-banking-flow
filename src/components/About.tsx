@@ -10,7 +10,7 @@ const About = () => {
       <div className="container mx-auto px-4">
         <div className="mb-8 max-w-2xl md:mx-auto md:mb-16 md:max-w-4xl md:text-center animate-fade-in">
           <h2 className="text-[18px] font-bold text-[var(--bank-navy)] md:text-4xl lg:text-5xl md:text-foreground">
-            About {siteSettings["site_name"] || "MicroFinance Bank"}
+            About {siteSettings["site_name"] || "Your Bank"}
           </h2>
           <p className="mt-3 text-[11px] leading-6 text-[var(--bank-muted)] md:text-xl md:text-muted-foreground md:leading-relaxed">
             Since 2010, we've been committed to providing accessible financial services to individuals

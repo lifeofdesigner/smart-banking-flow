@@ -9,7 +9,7 @@ const Testimonials = () => {
     {
       name: "Sarah Johnson",
       role: "Small Business Owner",
-      content: `The business loan from ${siteSettings["site_name"] || "MicroFinance Bank"} helped me expand my grocery store. The process was quick, and the team was incredibly supportive throughout.`,
+      content: `The business loan from ${siteSettings["site_name"] || "Your Bank"} helped me expand my grocery store. The process was quick, and the team was incredibly supportive throughout.`,
       rating: 5,
     },
     {

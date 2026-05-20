@@ -28,6 +28,64 @@ const DEFAULTS: SiteSettingsMap = {
   site_twitter_handle: "",
   site_google_verification: "",
   site_canonical_url: "",
+  site_og_image_width: "1200",
+  site_og_image_height: "630",
+  brand_initials: "",
+  support_email: "",
+  support_phone: "",
+  support_hours: "",
+  contact_section_title: "",
+  contact_section_subtitle: "",
+  contact_address_line_1: "",
+  contact_address_line_2: "",
+  contact_phone_primary: "",
+  contact_phone_secondary: "",
+  contact_email_primary: "",
+  contact_email_secondary: "",
+  contact_hours_line_1: "",
+  contact_hours_line_2: "",
+  footer_description: "",
+  footer_disclaimer: "",
+  footer_quick_links_title: "Quick Links",
+  footer_services_title: "Services",
+  footer_legal_title: "Legal",
+  footer_quick_links_json: "",
+  footer_service_links_json: "",
+  footer_legal_links_json: "",
+  footer_privacy_url: "",
+  footer_terms_url: "",
+  footer_cookie_url: "",
+  footer_compliance_url: "",
+  social_facebook_url: "",
+  social_x_url: "",
+  social_instagram_url: "",
+  social_linkedin_url: "",
+  announcement_enabled: "false",
+  announcement_title: "",
+  announcement_message: "",
+  announcement_link_label: "",
+  announcement_link_url: "",
+  theme_color_primary: "#0A1628",
+  theme_color_accent: "#C9A84C",
+  theme_color_secondary: "#2C4A7C",
+  theme_color_background: "#F4F5F7",
+  theme_color_text: "#1A2332",
+  theme_color_muted: "#6B7A8D",
+  hero_badge_text: "",
+  hero_primary_cta_label: "",
+  hero_secondary_cta_label: "",
+  hero_stat_1_value: "",
+  hero_stat_1_label: "",
+  hero_stat_2_value: "",
+  hero_stat_2_label: "",
+  hero_stat_3_value: "",
+  hero_stat_3_label: "",
+  hero_image_alt: "",
+  market_widget_enabled: "false",
+  market_widget_title: "Market Watch",
+  forex_base_currency: "USD",
+  forex_quote_currencies: "EUR,GBP,NGN",
+  stock_symbols: "AAPL,MSFT,TSLA",
   active_theme: "navy-gold",
   active_landing: "classic",
   signup_enabled: "true",
@@ -270,8 +328,10 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
         <TabsList className="flex-wrap">
           <TabsTrigger value="themes">Themes</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
+          <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
+          <TabsTrigger value="markets">Markets</TabsTrigger>
         </TabsList>
 
         <TabsContent value="themes" className="space-y-4">
@@ -358,6 +418,53 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                     </button>
                   );
                 })}
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Custom Color Tokens</CardTitle>
+              <CardDescription>Override the public site and dashboard colors for white-label deployments.</CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {[
+                ["theme_color_primary", "Primary / Navy"],
+                ["theme_color_accent", "Accent / Gold"],
+                ["theme_color_secondary", "Secondary"],
+                ["theme_color_background", "Background"],
+                ["theme_color_text", "Text"],
+                ["theme_color_muted", "Muted Text"],
+              ].map(([key, label]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key}>{label}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={key}
+                      type="color"
+                      value={settings[key] || "#000000"}
+                      onChange={(e) => setSetting(key, e.target.value)}
+                      className="h-11 w-16 p-1"
+                    />
+                    <Input value={settings[key] || ""} onChange={(e) => setSetting(key, e.target.value)} />
+                  </div>
+                </div>
+              ))}
+              <div className="md:col-span-2 xl:col-span-3">
+                <Button
+                  disabled={saving}
+                  className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                  onClick={() => saveKeys([
+                    "theme_color_primary",
+                    "theme_color_accent",
+                    "theme_color_secondary",
+                    "theme_color_background",
+                    "theme_color_text",
+                    "theme_color_muted",
+                  ])}
+                >
+                  {saving ? "Saving..." : "Save Colors"}
+                </Button>
               </div>
             </CardContent>
           </Card>
@@ -527,6 +634,177 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
           </Card>
         </TabsContent>
 
+        <TabsContent value="content" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Homepage Hero Controls</CardTitle>
+              <CardDescription>Control the public hero badges, CTAs, stats, and image alt text.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Hero Badge</Label>
+                  <Input value={settings.hero_badge_text} onChange={(e) => setSetting("hero_badge_text", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Hero Image Alt Text</Label>
+                  <Input value={settings.hero_image_alt} onChange={(e) => setSetting("hero_image_alt", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Primary CTA Label</Label>
+                  <Input value={settings.hero_primary_cta_label} onChange={(e) => setSetting("hero_primary_cta_label", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Secondary CTA Label</Label>
+                  <Input value={settings.hero_secondary_cta_label} onChange={(e) => setSetting("hero_secondary_cta_label", e.target.value)} />
+                </div>
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-3">
+                {[1, 2, 3].map((index) => (
+                  <div key={index} className="rounded-lg border p-4">
+                    <p className="mb-3 text-sm font-semibold">Stat {index}</p>
+                    <div className="space-y-2">
+                      <Input
+                        placeholder="Value"
+                        value={settings[`hero_stat_${index}_value`] || ""}
+                        onChange={(e) => setSetting(`hero_stat_${index}_value`, e.target.value)}
+                      />
+                      <Input
+                        placeholder="Label"
+                        value={settings[`hero_stat_${index}_label`] || ""}
+                        onChange={(e) => setSetting(`hero_stat_${index}_label`, e.target.value)}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys([
+                  "hero_badge_text",
+                  "hero_image_alt",
+                  "hero_primary_cta_label",
+                  "hero_secondary_cta_label",
+                  "hero_stat_1_value",
+                  "hero_stat_1_label",
+                  "hero_stat_2_value",
+                  "hero_stat_2_label",
+                  "hero_stat_3_value",
+                  "hero_stat_3_label",
+                ])}
+              >
+                {saving ? "Saving..." : "Save Hero Controls"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Announcement</CardTitle>
+              <CardDescription>Add a site-wide announcement banner above the public navbar.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <p className="text-sm font-semibold">Announcement Banner</p>
+                  <p className="text-sm text-muted-foreground">Show this message on the public website.</p>
+                </div>
+                <Switch
+                  checked={settings.announcement_enabled === "true"}
+                  onCheckedChange={(checked) => setSetting("announcement_enabled", checked ? "true" : "false")}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input value={settings.announcement_title} onChange={(e) => setSetting("announcement_title", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Link Label</Label>
+                  <Input value={settings.announcement_link_label} onChange={(e) => setSetting("announcement_link_label", e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Message</Label>
+                  <Textarea value={settings.announcement_message} onChange={(e) => setSetting("announcement_message", e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Link URL</Label>
+                  <Input value={settings.announcement_link_url} onChange={(e) => setSetting("announcement_link_url", e.target.value)} />
+                </div>
+              </div>
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys(["announcement_enabled", "announcement_title", "announcement_message", "announcement_link_label", "announcement_link_url"])}
+              >
+                {saving ? "Saving..." : "Save Announcement"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact & Footer</CardTitle>
+              <CardDescription>Update support details and footer copy shown across the public site and dashboard.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Support Email</Label>
+                  <Input value={settings.support_email} onChange={(e) => setSetting("support_email", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Support Phone</Label>
+                  <Input value={settings.support_phone} onChange={(e) => setSetting("support_phone", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Support Hours</Label>
+                  <Input value={settings.support_hours} onChange={(e) => setSetting("support_hours", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Brand Initials</Label>
+                  <Input value={settings.brand_initials} onChange={(e) => setSetting("brand_initials", e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Footer Description</Label>
+                  <Textarea value={settings.footer_description} onChange={(e) => setSetting("footer_description", e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Footer Disclaimer</Label>
+                  <Input value={settings.footer_disclaimer} onChange={(e) => setSetting("footer_disclaimer", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Address Line 1</Label>
+                  <Input value={settings.contact_address_line_1} onChange={(e) => setSetting("contact_address_line_1", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Address Line 2</Label>
+                  <Input value={settings.contact_address_line_2} onChange={(e) => setSetting("contact_address_line_2", e.target.value)} />
+                </div>
+              </div>
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys([
+                  "support_email",
+                  "support_phone",
+                  "support_hours",
+                  "brand_initials",
+                  "footer_description",
+                  "footer_disclaimer",
+                  "contact_address_line_1",
+                  "contact_address_line_2",
+                ])}
+              >
+                {saving ? "Saving..." : "Save Content"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="seo" className="space-y-4">
           <Card>
             <CardHeader>
@@ -583,6 +861,25 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                 </div>
               </div>
 
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="og-width">OG Image Width</Label>
+                  <Input
+                    id="og-width"
+                    value={settings.site_og_image_width}
+                    onChange={(e) => setSetting("site_og_image_width", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="og-height">OG Image Height</Label>
+                  <Input
+                    id="og-height"
+                    value={settings.site_og_image_height}
+                    onChange={(e) => setSetting("site_og_image_height", e.target.value)}
+                  />
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <Label htmlFor="site-canonical">Canonical URL (your main domain)</Label>
                 <Input
@@ -610,7 +907,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               <Button
                 disabled={saving}
                 className="bg-[var(--bank-navy)] hover:bg-[var(--bank-navy)]/90 text-white"
-                onClick={() => saveKeys(["site_description", "site_keywords", "site_og_image_url", "site_canonical_url", "site_google_verification"])}
+                onClick={() => saveKeys(["site_description", "site_keywords", "site_og_image_url", "site_og_image_width", "site_og_image_height", "site_canonical_url", "site_google_verification"])}
               >
                 {saving ? "Saving..." : "Save All"}
               </Button>
@@ -633,6 +930,25 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                   value={settings.site_twitter_handle}
                   onChange={(e) => setSetting("site_twitter_handle", e.target.value)}
                 />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Facebook URL</Label>
+                  <Input value={settings.social_facebook_url} onChange={(e) => setSetting("social_facebook_url", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>X URL</Label>
+                  <Input value={settings.social_x_url} onChange={(e) => setSetting("social_x_url", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Instagram URL</Label>
+                  <Input value={settings.social_instagram_url} onChange={(e) => setSetting("social_instagram_url", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>LinkedIn URL</Label>
+                  <Input value={settings.social_linkedin_url} onChange={(e) => setSetting("social_linkedin_url", e.target.value)} />
+                </div>
               </div>
 
               <div className="grid md:grid-cols-2 gap-4">
@@ -658,9 +974,57 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               <Button
                 disabled={saving}
                 className="bg-[var(--bank-navy)] hover:bg-[var(--bank-navy)]/90 text-white"
-                onClick={() => saveKeys(["site_twitter_handle"])}
+                onClick={() => saveKeys(["site_twitter_handle", "social_facebook_url", "social_x_url", "social_instagram_url", "social_linkedin_url"])}
               >
                 {saving ? "Saving..." : "Save"}
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="markets" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Forex & Stock Widget</CardTitle>
+              <CardDescription>Show public market rates using free public data sources.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <p className="text-sm font-semibold">Market Widget</p>
+                  <p className="text-sm text-muted-foreground">Display exchange rates and stock links below the hero.</p>
+                </div>
+                <Switch
+                  checked={settings.market_widget_enabled === "true"}
+                  onCheckedChange={(checked) => setSetting("market_widget_enabled", checked ? "true" : "false")}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Widget Title</Label>
+                  <Input value={settings.market_widget_title} onChange={(e) => setSetting("market_widget_title", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Base Currency</Label>
+                  <Input value={settings.forex_base_currency} onChange={(e) => setSetting("forex_base_currency", e.target.value.toUpperCase())} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Quote Currencies</Label>
+                  <Input value={settings.forex_quote_currencies} onChange={(e) => setSetting("forex_quote_currencies", e.target.value.toUpperCase())} />
+                  <p className="text-xs text-muted-foreground">Comma-separated, for example EUR,GBP,NGN.</p>
+                </div>
+                <div className="space-y-2">
+                  <Label>Stock Symbols</Label>
+                  <Input value={settings.stock_symbols} onChange={(e) => setSetting("stock_symbols", e.target.value.toUpperCase())} />
+                  <p className="text-xs text-muted-foreground">Comma-separated US stock symbols.</p>
+                </div>
+              </div>
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys(["market_widget_enabled", "market_widget_title", "forex_base_currency", "forex_quote_currencies", "stock_symbols"])}
+              >
+                {saving ? "Saving..." : "Save Market Widget"}
               </Button>
             </CardContent>
           </Card>

@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { HelpCircle, MessageSquare, AlertCircle, Phone, Mail, Clock, Search, Ticket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const faqs = [
   {
@@ -65,6 +66,7 @@ interface SupportTicket {
 
 export default function HelpCenter() {
   const { toast } = useToast();
+  const siteSettings = useSiteSettings();
   const [searchTerm, setSearchTerm] = useState("");
   const [subject, setSubject] = useState("");
   const [category, setCategory] = useState("general");
@@ -131,7 +133,7 @@ export default function HelpCenter() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10"><Phone className="h-5 w-5 text-primary" /></div>
-                <div><p className="font-medium">Phone Support</p><p className="text-sm text-muted-foreground">+1 (800) 123-4567</p></div>
+                <div><p className="font-medium">Phone Support</p><p className="text-sm text-muted-foreground">{siteSettings.support_phone || "Add support phone in Site Settings"}</p></div>
               </div>
             </CardContent>
           </Card>
@@ -139,7 +141,7 @@ export default function HelpCenter() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10"><Mail className="h-5 w-5 text-primary" /></div>
-                <div><p className="font-medium">Email Support</p><p className="text-sm text-muted-foreground">support@microfinance.com</p></div>
+                <div><p className="font-medium">Email Support</p><p className="text-sm text-muted-foreground">{siteSettings.support_email || "support@example.com"}</p></div>
               </div>
             </CardContent>
           </Card>
@@ -147,7 +149,7 @@ export default function HelpCenter() {
             <CardContent className="pt-6">
               <div className="flex items-center gap-3">
                 <div className="p-2 rounded-full bg-primary/10"><Clock className="h-5 w-5 text-primary" /></div>
-                <div><p className="font-medium">Support Hours</p><p className="text-sm text-muted-foreground">Mon-Fri, 8AM - 8PM EST</p></div>
+                <div><p className="font-medium">Support Hours</p><p className="text-sm text-muted-foreground">{siteSettings.support_hours || "Add support hours in Site Settings"}</p></div>
               </div>
             </CardContent>
           </Card>

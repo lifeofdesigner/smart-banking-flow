@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, TrendingUp, Users } from "lucide-react";
 import heroImage from "@/assets/hero-banking.jpg";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 type HomepageHeroRow = {
   title?: string | null;
@@ -31,6 +32,7 @@ const readContentField = (content: unknown, key: string) => {
 };
 
 export default function DynamicHero() {
+  const siteSettings = useSiteSettings();
   const [title, setTitle] = useState("Your Partner in Financial Growth");
   const [subtitle, setSubtitle] = useState(
     "Empowering individuals and businesses with accessible microfinance solutions. From savings to loans, we're here to help you achieve your financial dreams.",
@@ -83,13 +85,23 @@ export default function DynamicHero() {
     };
   }, [title]);
 
+  const badgeText = siteSettings.hero_badge_text || "Trusted by our customers";
+  const primaryCta = siteSettings.hero_primary_cta_label || "Open Account";
+  const secondaryCta = siteSettings.hero_secondary_cta_label || "Learn More";
+  const statOneValue = siteSettings.hero_stat_1_value || "4.5%";
+  const statOneLabel = siteSettings.hero_stat_1_label || "Interest Rate";
+  const statTwoValue = siteSettings.hero_stat_2_value || "50K+";
+  const statTwoLabel = siteSettings.hero_stat_2_label || "Active Users";
+  const statThreeValue = siteSettings.hero_stat_3_value || "100%";
+  const statThreeLabel = siteSettings.hero_stat_3_label || "Secure";
+
   return (
     <section id="home" className="relative overflow-hidden scroll-mt-20">
       <div className="md:hidden bg-[var(--bank-navy)] px-4 pb-10 pt-6 text-white">
         <div className="mx-auto max-w-md space-y-6">
           <div className="inline-flex min-h-[36px] items-center gap-2 rounded-full border border-[var(--bank-gold)]/60 px-3 py-2 text-[12px] font-medium text-[var(--bank-gold)]">
             <Shield className="h-4 w-4" />
-            <span>Trusted by 50,000+ Customers</span>
+            <span>{badgeText}</span>
           </div>
 
           <div className="space-y-3">
@@ -116,7 +128,7 @@ export default function DynamicHero() {
                 window.location.href = "/auth";
               }}
             >
-              Open Account
+              {primaryCta}
             </Button>
             <Button
               size="lg"
@@ -124,7 +136,7 @@ export default function DynamicHero() {
               className="h-11 rounded-full border-white/40 bg-transparent px-4 text-sm font-semibold text-white hover:bg-white/10 hover:text-white"
               onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
             >
-              Learn More
+              {secondaryCta}
             </Button>
           </div>
 
@@ -132,23 +144,23 @@ export default function DynamicHero() {
             <div className="rounded-2xl bg-white/5 px-3 py-4">
               <div className="flex items-center gap-1.5 text-[var(--bank-gold)]">
                 <TrendingUp className="h-4 w-4" />
-                <span className="text-lg font-semibold">4.5%</span>
+                <span className="text-lg font-semibold">{statOneValue}</span>
               </div>
-              <p className="mt-1 text-[11px] text-white/55">Interest Rate</p>
+              <p className="mt-1 text-[11px] text-white/55">{statOneLabel}</p>
             </div>
             <div className="rounded-2xl bg-white/5 px-3 py-4">
               <div className="flex items-center gap-1.5 text-[var(--bank-gold)]">
                 <Users className="h-4 w-4" />
-                <span className="text-lg font-semibold">50K+</span>
+                <span className="text-lg font-semibold">{statTwoValue}</span>
               </div>
-              <p className="mt-1 text-[11px] text-white/55">Active Users</p>
+              <p className="mt-1 text-[11px] text-white/55">{statTwoLabel}</p>
             </div>
             <div className="rounded-2xl bg-white/5 px-3 py-4">
               <div className="flex items-center gap-1.5 text-[var(--bank-gold)]">
                 <Shield className="h-4 w-4" />
-                <span className="text-lg font-semibold">100%</span>
+                <span className="text-lg font-semibold">{statThreeValue}</span>
               </div>
-              <p className="mt-1 text-[11px] text-white/55">Secure</p>
+              <p className="mt-1 text-[11px] text-white/55">{statThreeLabel}</p>
             </div>
           </div>
         </div>
@@ -162,24 +174,15 @@ export default function DynamicHero() {
               <div className="space-y-8 animate-fade-in">
                 <div className="inline-flex items-center space-x-2 bg-accent/10 rounded-full px-4 py-2">
                   <Shield className="w-4 h-4 text-accent" />
-                  <span className="text-sm font-medium text-accent">Trusted by 50,000+ Customers</span>
+                  <span className="text-sm font-medium text-accent">{badgeText}</span>
                 </div>
                 <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                  {title.includes("Financial Growth") ? (
-                    <>
-                      Your Partner in{" "}
-                      <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-                        Financial Growth
-                      </span>
-                    </>
-                  ) : (
-                    title
-                  )}
+                  {title}
                 </h1>
                 <p className="text-xl text-muted-foreground leading-relaxed">{subtitle}</p>
                 <div className="flex flex-wrap gap-4">
                   <Button size="lg" className="text-lg h-14 px-8 group" onClick={() => (window.location.href = "/auth")}>
-                    Open Account
+                    {primaryCta}
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                   <Button
@@ -188,36 +191,36 @@ export default function DynamicHero() {
                     className="text-lg h-14 px-8"
                     onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
                   >
-                    Learn More
+                    {secondaryCta}
                   </Button>
                 </div>
                 <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-accent">
                       <TrendingUp className="w-5 h-5" />
-                      <span className="text-2xl font-bold">4.5%</span>
+                      <span className="text-2xl font-bold">{statOneValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Interest Rate</p>
+                    <p className="text-sm text-muted-foreground">{statOneLabel}</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-accent">
                       <Users className="w-5 h-5" />
-                      <span className="text-2xl font-bold">50K+</span>
+                      <span className="text-2xl font-bold">{statTwoValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Active Users</p>
+                    <p className="text-sm text-muted-foreground">{statTwoLabel}</p>
                   </div>
                   <div className="space-y-2">
                     <div className="flex items-center space-x-2 text-accent">
                       <Shield className="w-5 h-5" />
-                      <span className="text-2xl font-bold">100%</span>
+                      <span className="text-2xl font-bold">{statThreeValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">Secure</p>
+                    <p className="text-sm text-muted-foreground">{statThreeLabel}</p>
                   </div>
                 </div>
               </div>
               <div className="relative animate-scale-in">
                 <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
-                <img src={image || heroImage} alt="Banking Services" className="relative rounded-3xl shadow-2xl w-full h-auto" />
+                <img src={image || heroImage} alt={siteSettings.hero_image_alt || title} className="relative rounded-3xl shadow-2xl w-full h-auto" />
               </div>
             </div>
           </div>

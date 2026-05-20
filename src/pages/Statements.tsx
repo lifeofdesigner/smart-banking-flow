@@ -247,7 +247,7 @@ export default function Statements() {
                         <span className="text-primary-foreground font-bold">M</span>
                       </div>
                       <div>
-                        <h2 className="text-xl font-bold">{siteSettings["site_name"] || "MicroFinance Bank"}</h2>
+                        <h2 className="text-xl font-bold">{siteSettings["site_name"] || "Your Bank"}</h2>
                         <p className="text-sm text-muted-foreground">Account Statement</p>
                       </div>
                     </div>

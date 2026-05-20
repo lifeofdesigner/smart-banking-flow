@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 const Navbar = () => {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings["site_logo_url"];
-  const siteName = siteSettings["site_name"] || "MicroFinance Bank";
+  const siteName = siteSettings["site_name"] || "Your Bank";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");

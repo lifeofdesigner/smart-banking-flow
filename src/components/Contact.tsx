@@ -3,38 +3,54 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { MapPin, Phone, Mail, Clock } from "lucide-react";
-
-const contactItems = [
-  {
-    icon: MapPin,
-    title: "Visit Us",
-    details: ["123 Financial District, Downtown", "City Center, State 12345"],
-  },
-  {
-    icon: Phone,
-    title: "Call Us",
-    details: ["+1 (555) 123-4567", "+1 (555) 765-4321"],
-  },
-  {
-    icon: Mail,
-    title: "Email Us",
-    details: ["info@microfinancebank.com", "support@microfinancebank.com"],
-  },
-  {
-    icon: Clock,
-    title: "Business Hours",
-    details: ["Monday - Friday: 8:00 AM - 6:00 PM", "Saturday: 9:00 AM - 2:00 PM"],
-  },
-];
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const Contact = () => {
+  const siteSettings = useSiteSettings();
+  const contactItems = [
+    {
+      icon: MapPin,
+      title: siteSettings.contact_address_title || "Visit Us",
+      details: [
+        siteSettings.contact_address_line_1 || "Add your main office address",
+        siteSettings.contact_address_line_2 || "",
+      ].filter(Boolean),
+    },
+    {
+      icon: Phone,
+      title: siteSettings.contact_phone_title || "Call Us",
+      details: [
+        siteSettings.contact_phone_primary || siteSettings.support_phone || "Add support phone",
+        siteSettings.contact_phone_secondary || "",
+      ].filter(Boolean),
+    },
+    {
+      icon: Mail,
+      title: siteSettings.contact_email_title || "Email Us",
+      details: [
+        siteSettings.contact_email_primary || siteSettings.support_email || "support@example.com",
+        siteSettings.contact_email_secondary || "",
+      ].filter(Boolean),
+    },
+    {
+      icon: Clock,
+      title: siteSettings.contact_hours_title || "Business Hours",
+      details: [
+        siteSettings.contact_hours_line_1 || "Add opening hours",
+        siteSettings.contact_hours_line_2 || "",
+      ].filter(Boolean),
+    },
+  ];
+
   return (
     <section id="contact" className="scroll-mt-20 bg-[var(--bank-navy)] py-12 text-white md:bg-background md:py-24 md:text-foreground">
       <div className="container mx-auto px-4">
         <div className="mb-8 max-w-2xl md:mx-auto md:mb-16 md:max-w-3xl md:text-center animate-fade-in">
-          <h2 className="text-[18px] font-bold text-white md:text-4xl lg:text-5xl md:text-foreground">Get In Touch</h2>
+          <h2 className="text-[18px] font-bold text-white md:text-4xl lg:text-5xl md:text-foreground">
+            {siteSettings.contact_section_title || "Get In Touch"}
+          </h2>
           <p className="mt-2 text-[11px] leading-5 text-white/65 md:mt-6 md:text-xl md:text-muted-foreground">
-            Have questions? We're here to help. Reach out to our team today.
+            {siteSettings.contact_section_subtitle || "Have questions? We're here to help. Reach out to our team today."}
           </p>
         </div>
 
@@ -96,8 +112,12 @@ const Contact = () => {
               <div>
                 <h3 className="font-bold text-lg mb-2">Visit Us</h3>
                 <p className="text-muted-foreground">
-                  123 Financial District, Downtown<br />
-                  City Center, State 12345
+                  {contactItems[0].details.map((detail) => (
+                    <span key={detail}>
+                      {detail}
+                      <br />
+                    </span>
+                  ))}
                 </p>
               </div>
             </Card>
@@ -109,8 +129,12 @@ const Contact = () => {
               <div>
                 <h3 className="font-bold text-lg mb-2">Call Us</h3>
                 <p className="text-muted-foreground">
-                  +1 (555) 123-4567<br />
-                  +1 (555) 765-4321
+                  {contactItems[1].details.map((detail) => (
+                    <span key={detail}>
+                      {detail}
+                      <br />
+                    </span>
+                  ))}
                 </p>
               </div>
             </Card>
@@ -122,8 +146,12 @@ const Contact = () => {
               <div>
                 <h3 className="font-bold text-lg mb-2">Email Us</h3>
                 <p className="text-muted-foreground">
-                  info@microfinancebank.com<br />
-                  support@microfinancebank.com
+                  {contactItems[2].details.map((detail) => (
+                    <span key={detail}>
+                      {detail}
+                      <br />
+                    </span>
+                  ))}
                 </p>
               </div>
             </Card>
@@ -135,8 +163,12 @@ const Contact = () => {
               <div>
                 <h3 className="font-bold text-lg mb-2">Business Hours</h3>
                 <p className="text-muted-foreground">
-                  Monday - Friday: 8:00 AM - 6:00 PM<br />
-                  Saturday: 9:00 AM - 2:00 PM
+                  {contactItems[3].details.map((detail) => (
+                    <span key={detail}>
+                      {detail}
+                      <br />
+                    </span>
+                  ))}
                 </p>
               </div>
             </Card>

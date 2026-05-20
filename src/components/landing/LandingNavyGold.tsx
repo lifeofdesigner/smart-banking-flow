@@ -8,6 +8,8 @@ import FAQ from "@/components/FAQ";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import AnnouncementBanner from "@/components/AnnouncementBanner";
+import MarketTicker from "@/components/MarketTicker";
 
 export default function LandingNavyGold() {
   const siteSettings = useSiteSettings();
@@ -17,8 +19,10 @@ export default function LandingNavyGold() {
   return (
     <div className="min-h-screen overflow-x-hidden bg-background pb-20 md:pb-0">
       <div className="sr-only">{bankName} - {tagline}</div>
+      <AnnouncementBanner />
       <Navbar />
       <DynamicHero />
+      <MarketTicker />
       <Services />
       <DynamicProducts />
       <About />

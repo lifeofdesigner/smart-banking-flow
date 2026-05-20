@@ -253,7 +253,7 @@ export default function AdminDashboard() {
               Back
               </Button>
               <div>
-                <h1 className="admin-premium-heading text-3xl leading-tight text-[var(--bank-navy)]">{siteSettings["site_name"] || "MicroFinance Bank"}</h1>
+                <h1 className="admin-premium-heading text-3xl leading-tight text-[var(--bank-navy)]">{siteSettings["site_name"] || "Your Bank"}</h1>
                 <p className="text-sm font-medium tracking-wide text-[var(--bank-gold)]">Administration Portal</p>
               </div>
             </div>

@@ -117,7 +117,7 @@ export const WIDGET_QUICK_REPLIES = [
   "Speak to an agent",
 ] as const;
 export const SUPPORT_CANNED_REPLIES = [
-  "Thank you for contacting Halverix Bank support.",
+  "Thank you for contacting support.",
   "I can see your account details. Let me help you with that.",
   "Your request has been processed successfully.",
   "Please allow 24-48 hours for this to reflect.",
