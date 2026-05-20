@@ -4,6 +4,32 @@ import { Button } from "@/components/ui/button";
 import { ArrowRight, Shield, TrendingUp, Users } from "lucide-react";
 import heroImage from "@/assets/hero-banking.jpg";
 
+type HomepageHeroRow = {
+  title?: string | null;
+  subtitle?: string | null;
+  image?: string | null;
+  content?: unknown;
+};
+
+const readContentField = (content: unknown, key: string) => {
+  if (!content) return "";
+  const parsedContent =
+    typeof content === "string"
+      ? (() => {
+          try {
+            return JSON.parse(content);
+          } catch {
+            return null;
+          }
+        })()
+      : content;
+
+  if (!parsedContent || typeof parsedContent !== "object") return "";
+  const value = (parsedContent as Record<string, unknown>)[key];
+
+  return typeof value === "string" ? value : "";
+};
+
 export default function DynamicHero() {
   const [title, setTitle] = useState("Your Partner in Financial Growth");
   const [subtitle, setSubtitle] = useState(
@@ -12,19 +38,37 @@ export default function DynamicHero() {
   const [image, setImage] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase
-      .from("homepage_sections")
-      .select("title, subtitle, image")
-      .eq("section_type", "hero")
-      .eq("is_active", true)
-      .order("display_order", { ascending: true })
-      .limit(1)
-      .maybeSingle()
-      .then(({ data }) => {
-        if (data?.title) setTitle(data.title);
-        if (data?.subtitle) setSubtitle(data.subtitle);
-        if (data?.image) setImage(data.image);
-      });
+    const loadHero = async () => {
+      let result = await supabase
+        .from("homepage_sections")
+        .select("title, subtitle, image, content")
+        .eq("section_type", "hero")
+        .eq("status", "active")
+        .order("display_order", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+
+      if (result.error?.message.includes("status") || result.error?.message.includes("image")) {
+        result = await supabase
+          .from("homepage_sections")
+          .select("title, subtitle, content")
+          .eq("section_type", "hero")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+      }
+
+      const data = result.data as HomepageHeroRow | null;
+      const headline = readContentField(data?.content, "headline");
+      const subheadline = readContentField(data?.content, "subheadline");
+
+      if (headline || data?.title) setTitle(headline || data?.title || "");
+      if (subheadline || data?.subtitle) setSubtitle(subheadline || data?.subtitle || "");
+      if (data?.image) setImage(data.image);
+    };
+
+    loadHero();
   }, []);
 
   const mobileHeading = useMemo(() => {

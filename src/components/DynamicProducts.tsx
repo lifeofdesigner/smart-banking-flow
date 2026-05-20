@@ -5,7 +5,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 
 interface Product {
   id: string;
@@ -15,9 +14,65 @@ interface Product {
   display_order: number;
 }
 
+type HomepageProductsRow = {
+  title?: string | null;
+  subtitle?: string | null;
+  content?: unknown;
+};
+
+const readContentField = (content: unknown, key: string) => {
+  if (!content) return "";
+  const parsedContent =
+    typeof content === "string"
+      ? (() => {
+          try {
+            return JSON.parse(content);
+          } catch {
+            return null;
+          }
+        })()
+      : content;
+
+  if (!parsedContent || typeof parsedContent !== "object") return "";
+  const value = (parsedContent as Record<string, unknown>)[key];
+
+  return typeof value === "string" ? value : "";
+};
+
+const fallbackProducts: Product[] = [
+  {
+    id: "fallback-savings",
+    product_name: "Savings Account",
+    slug: "savings-account",
+    short_description: "Build your savings with competitive rates, flexible deposits, and easy digital access.",
+    display_order: 1,
+  },
+  {
+    id: "fallback-business-loan",
+    product_name: "Business Loan",
+    slug: "business-loan",
+    short_description: "Flexible financing for working capital, inventory, expansion, and everyday business needs.",
+    display_order: 2,
+  },
+  {
+    id: "fallback-term-deposit",
+    product_name: "Term Deposits",
+    slug: "term-deposits",
+    short_description: "Lock in guaranteed returns with fixed deposit terms that match your financial goals.",
+    display_order: 3,
+  },
+  {
+    id: "fallback-micro-credit",
+    product_name: "Micro-Credit",
+    slug: "micro-credit",
+    short_description: "Quick access to small credit facilities designed for individuals and growing entrepreneurs.",
+    display_order: 4,
+  },
+];
+
 export default function DynamicProducts() {
   const navigate = useNavigate();
-  const [products, setProducts] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>(fallbackProducts);
   const [loading, setLoading] = useState(true);
   const [sectionTitle, setSectionTitle] = useState("Banking Products");
   const [sectionSubtitle, setSectionSubtitle] = useState("Choose the perfect financial product for your needs");
@@ -27,35 +82,48 @@ export default function DynamicProducts() {
   }, []);
 
   const fetchData = async () => {
-    const [prodRes, secRes] = await Promise.all([
-      supabase
+    try {
+      const prodRes = await supabase
         .from("product_pages")
         .select("id, product_name, slug, short_description, display_order")
         .in("status", ["published", "active"])
-        .order("display_order"),
-      supabase
+        .order("display_order");
+
+      let secRes = await supabase
         .from("homepage_sections")
-        .select("title, subtitle")
+        .select("title, subtitle, content")
         .eq("section_type", "products")
-        .eq("is_active", true)
+        .eq("status", "active")
         .order("display_order", { ascending: true })
         .limit(1)
-        .maybeSingle(),
-    ]);
+        .maybeSingle();
 
-    if (prodRes.error) {
-      toast.error(prodRes.error.message);
-    }
-    if (secRes.error) {
-      toast.error(secRes.error.message);
-    }
+      if (secRes.error?.message.includes("status")) {
+        secRes = await supabase
+          .from("homepage_sections")
+          .select("title, subtitle, content")
+          .eq("section_type", "products")
+          .eq("is_active", true)
+          .order("display_order", { ascending: true })
+          .limit(1)
+          .maybeSingle();
+      }
 
-    if (prodRes.data) setProducts(prodRes.data);
-    if (secRes.data) {
-      if (secRes.data.title) setSectionTitle(secRes.data.title);
-      if (secRes.data.subtitle) setSectionSubtitle(secRes.data.subtitle);
+      if (prodRes.data?.length) {
+        setProducts(prodRes.data);
+      }
+
+      if (secRes.data) {
+        const section = secRes.data as HomepageProductsRow;
+        const contentTitle = readContentField(section.content, "title");
+        const contentSubtitle = readContentField(section.content, "subtitle");
+
+        if (contentTitle || section.title) setSectionTitle(contentTitle || section.title || "");
+        if (contentSubtitle || section.subtitle) setSectionSubtitle(contentSubtitle || section.subtitle || "");
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (loading) {

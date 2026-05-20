@@ -27,8 +27,10 @@ dist-ssr
 .env.local
 .env.*.local
 supabase/functions/.env
+supabase/seed.sql
 *.rar
 banking-audit-*
 *-audit-report.md
 r.profiles
 supabase/.temp/
+migration-backups/

@@ -49,6 +49,7 @@ interface GuestChatSession {
 
 const GUEST_STORAGE_KEY = "halverix-live-chat-guest";
 const DEFAULT_GUEST_SUBJECT = "Public Landing Page Chat";
+const CHAT_TEMPORARILY_UNAVAILABLE_MESSAGE = "Live chat is temporarily unavailable. Please try again later.";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
@@ -56,6 +57,22 @@ const getErrorMessage = (error: unknown, fallback: string) => {
   }
 
   return fallback;
+};
+
+const isNetworkFetchError = (error: unknown) => {
+  const message = getErrorMessage(error, "").toLowerCase();
+  const name = error && typeof error === "object" && "name" in error && typeof (error as { name?: unknown }).name === "string"
+    ? (error as { name: string }).name.toLowerCase()
+    : "";
+
+  return error instanceof TypeError
+    || name.includes("fetch")
+    || message.includes("failed to fetch")
+    || message.includes("fetch failed")
+    || message.includes("load failed")
+    || message.includes("networkerror")
+    || message.includes("network request failed")
+    || message.includes("failed to send a request");
 };
 
 const isValidEmail = (value: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
@@ -207,29 +224,62 @@ export default function LiveChatWidget({
     const loadResolvedIdentity = async () => {
       setLoading(true);
 
-      if (customerId) {
+      try {
+        if (customerId) {
+          setResolvedIdentity({
+            customerId,
+            customerName: customerName ?? null,
+            customerEmail: customerEmail ?? null,
+            isAuthenticated: true,
+          });
+          setIdentityReady(true);
+          return;
+        }
+
+        setIdentityReady(false);
+
+        const {
+          data: { user },
+          error,
+        } = await supabase.auth.getUser();
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (error || !user) {
+          setResolvedIdentity({
+            customerId: null,
+            customerName: null,
+            customerEmail: null,
+            isAuthenticated: false,
+          });
+          setIdentityReady(true);
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("full_name, email")
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (!isMounted) {
+          return;
+        }
+
         setResolvedIdentity({
-          customerId,
-          customerName: customerName ?? null,
-          customerEmail: customerEmail ?? null,
+          customerId: user.id,
+          customerName: customerName ?? profile?.full_name ?? user.user_metadata?.full_name ?? null,
+          customerEmail: customerEmail ?? profile?.email ?? user.email ?? null,
           isAuthenticated: true,
         });
         setIdentityReady(true);
-        return;
-      }
+      } catch {
+        if (!isMounted) {
+          return;
+        }
 
-      setIdentityReady(false);
-
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
-
-      if (!isMounted) {
-        return;
-      }
-
-      if (error || !user) {
         setResolvedIdentity({
           customerId: null,
           customerName: null,
@@ -237,26 +287,8 @@ export default function LiveChatWidget({
           isAuthenticated: false,
         });
         setIdentityReady(true);
-        return;
+        setConnectionState("idle");
       }
-
-      const { data: profile } = await supabase
-        .from("profiles")
-        .select("full_name, email")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!isMounted) {
-        return;
-      }
-
-      setResolvedIdentity({
-        customerId: user.id,
-        customerName: customerName ?? profile?.full_name ?? user.user_metadata?.full_name ?? null,
-        customerEmail: customerEmail ?? profile?.email ?? user.email ?? null,
-        isAuthenticated: true,
-      });
-      setIdentityReady(true);
     };
 
     void loadResolvedIdentity();
@@ -342,7 +374,11 @@ export default function LiveChatWidget({
     setLoadingMessages(false);
 
     if (error) {
-      toast.error(getErrorMessage(error, "Failed to load chat messages"));
+      if (open) {
+        toast.error(isNetworkFetchError(error)
+          ? CHAT_TEMPORARILY_UNAVAILABLE_MESSAGE
+          : getErrorMessage(error, "Failed to load chat messages"));
+      }
       return;
     }
 
@@ -473,7 +509,16 @@ export default function LiveChatWidget({
       }
 
       setConnectionState("reconnecting");
-      toast.error(getErrorMessage(error, "Failed to load live chat"));
+      if (isNetworkFetchError(error)) {
+        if (open) {
+          toast.error(CHAT_TEMPORARILY_UNAVAILABLE_MESSAGE);
+        }
+        return;
+      }
+
+      if (open) {
+        toast.error(getErrorMessage(error, "Failed to load live chat"));
+      }
     } finally {
       setLoading(false);
     }
@@ -484,8 +529,14 @@ export default function LiveChatWidget({
       return;
     }
 
+    if (!open && !guestSession?.conversationId && !isAuthenticated) {
+      setLoading(false);
+      setConnectionState("idle");
+      return;
+    }
+
     void loadConversation();
-  }, [guestSession?.conversationId, identityReady, isAuthenticated, resolvedIdentity.customerId]);
+  }, [guestSession?.conversationId, identityReady, isAuthenticated, open, resolvedIdentity.customerId]);
 
   useEffect(() => {
     if (!conversation?.id || !open) return;
@@ -706,6 +757,10 @@ export default function LiveChatWidget({
   }, [conversation?.agent_id]);
 
   useEffect(() => {
+    if (!open && !conversation?.id) {
+      return;
+    }
+
     const availabilityChannel = chatSupabase
       .channel(`customer-chat-availability-${widgetScope}`)
       .on(
@@ -728,7 +783,7 @@ export default function LiveChatWidget({
     return () => {
       void chatSupabase.removeChannel(availabilityChannel);
     };
-  }, [conversation?.agent_id, widgetScope]);
+  }, [conversation?.agent_id, conversation?.id, open, widgetScope]);
 
   const handleSendMessage = async (overrideMessage?: string) => {
     const trimmedMessage = (overrideMessage ?? (showGuestPreChat ? guestMessage : messageText)).trim();
@@ -880,7 +935,9 @@ export default function LiveChatWidget({
         return;
       }
 
-      toast.error(getErrorMessage(error, "Failed to send message"));
+      toast.error(isNetworkFetchError(error)
+        ? CHAT_TEMPORARILY_UNAVAILABLE_MESSAGE
+        : getErrorMessage(error, "Failed to send message"));
     } finally {
       setSending(false);
     }

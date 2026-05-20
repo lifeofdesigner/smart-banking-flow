@@ -3,8 +3,28 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PROJECT_ID = import.meta.env.VITE_SUPABASE_PROJECT_ID;
 const SUPABASE_ANON_KEY =
   import.meta.env.VITE_SUPABASE_ANON_KEY || import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+const SUPABASE_PROJECT_REF = SUPABASE_URL?.match(/^https:\/\/([^.]+)\.supabase\.co\/?$/)?.[1];
+
+if (import.meta.env.DEV) {
+  console.info("[supabase] URL:", SUPABASE_URL || "(missing)");
+
+  if (!SUPABASE_URL) {
+    console.error("[supabase] Missing VITE_SUPABASE_URL.");
+  }
+
+  if (!SUPABASE_ANON_KEY) {
+    console.error("[supabase] Missing VITE_SUPABASE_ANON_KEY or VITE_SUPABASE_PUBLISHABLE_KEY.");
+  }
+
+  if (SUPABASE_PROJECT_ID && SUPABASE_PROJECT_ID !== SUPABASE_PROJECT_REF) {
+    console.warn(
+      `[supabase] VITE_SUPABASE_PROJECT_ID (${SUPABASE_PROJECT_ID}) does not match VITE_SUPABASE_URL (${SUPABASE_PROJECT_REF}).`,
+    );
+  }
+}
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";

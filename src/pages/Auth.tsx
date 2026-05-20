@@ -21,12 +21,27 @@ const loginSchema = z.object({
   password: z.string().min(1, "Password is required"),
 });
 
+const demoCredentials = {
+  customer: { email: "customer@halverixbank.com", password: "DemoCustomer123!" },
+  admin: { email: "admin@halverixbank.com", password: "DemoAdmin123!" },
+} as const;
+
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
     return (error as { message: string }).message;
   }
 
   return fallback;
+};
+
+const isNetworkError = (error: unknown) => {
+  const message = getErrorMessage(error, "").toLowerCase();
+
+  return error instanceof TypeError
+    || message.includes("failed to fetch")
+    || message.includes("networkerror")
+    || message.includes("network request failed")
+    || message.includes("err_name_not_resolved");
 };
 
 const Auth = () => {
@@ -201,10 +216,7 @@ const Auth = () => {
     setLoading(true);
     demoRedirectRef.current = true;
 
-    const credentials =
-      variant === "admin"
-        ? { email: "admin@smartbank.app", password: "demo123456" }
-        : { email: "customer@smartbank.app", password: "demo123456" };
+    const credentials = demoCredentials[variant];
 
     try {
       const { error } = await supabase.auth.signInWithPassword(credentials);
@@ -212,10 +224,15 @@ const Auth = () => {
       if (error) throw error;
 
       navigate(variant === "admin" ? "/admin" : "/dashboard", { replace: true });
-    } catch {
+    } catch (error: unknown) {
       demoRedirectRef.current = false;
+      const description = isNetworkError(error)
+        ? "Supabase is unreachable from this browser right now. Check your network/DNS, then try again."
+        : `Run seed-demo.sql in Supabase, then use ${credentials.email} with the documented demo password.`;
+
       toast({
-        title: variant === "admin" ? "Demo admin not set up yet" : "Demo account not set up yet",
+        title: variant === "admin" ? "Demo admin login unavailable" : "Demo customer login unavailable",
+        description,
         variant: "destructive",
       });
     } finally {

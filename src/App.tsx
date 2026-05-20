@@ -3,7 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import DynamicSEO from "@/components/DynamicSEO";
 
 const Index = lazy(() => import("./pages/Index"));
@@ -38,6 +38,42 @@ const ATMWithdrawal = lazy(() => import("./pages/ATMWithdrawal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 const queryClient = new QueryClient();
+const AUTH_STORAGE_KEY = "fintech-app-auth";
+
+const decodeJwtPayload = (token: string) => {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return null;
+
+    const normalizedPayload = payload.replace(/-/g, "+").replace(/_/g, "/");
+    const decodedPayload = atob(normalizedPayload.padEnd(Math.ceil(normalizedPayload.length / 4) * 4, "="));
+
+    return JSON.parse(decodedPayload) as { iss?: string };
+  } catch {
+    return null;
+  }
+};
+
+const clearStaleSupabaseSession = () => {
+  if (typeof window === "undefined") return;
+
+  const rawSession = window.localStorage.getItem(AUTH_STORAGE_KEY);
+  if (!rawSession) return;
+
+  try {
+    const session = JSON.parse(rawSession) as { access_token?: string };
+    const issuer = session.access_token ? decodeJwtPayload(session.access_token)?.iss : null;
+    const expectedIssuer = `${import.meta.env.VITE_SUPABASE_URL}/auth/v1`;
+
+    if (!issuer || issuer !== expectedIssuer) {
+      window.localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
+  } catch {
+    window.localStorage.removeItem(AUTH_STORAGE_KEY);
+  }
+};
+
+clearStaleSupabaseSession();
 
 function PageLoader() {
   return (
@@ -47,51 +83,57 @@ function PageLoader() {
   );
 }
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <DynamicSEO />
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Suspense fallback={<PageLoader />}>
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/accounts" element={<AccountsPage />} />
-            <Route path="/transactions" element={<TransactionHistory />} />
-            <Route path="/savings-goals" element={<SavingsGoals />} />
-            <Route path="/analytics" element={<Analytics />} />
-            <Route path="/statements" element={<Statements />} />
-            <Route path="/security" element={<SecuritySettings />} />
-            <Route path="/help" element={<HelpCenter />} />
-            <Route path="/wire-transfer" element={<WireTransfer />} />
-            <Route path="/transfer" element={<TransferFunds />} />
-            <Route path="/beneficiaries" element={<Beneficiaries />} />
-            <Route path="/profile" element={<UserProfile />} />
-            <Route path="/admin" element={<AdminDashboard />} />
-            <Route path="/admin-users" element={<AdminCreateUser />} />
-            <Route path="/admin/users" element={<AdminUsersManagement />} />
-            <Route path="/live-chat-support" element={<LiveChatSupport />} />
-            <Route path="/kyc" element={<KYCVerification />} />
-            <Route path="/loans" element={<Loans />} />
-            <Route path="/referral" element={<ReferralProgram />} />
-            <Route path="/spending-insights" element={<SpendingInsights />} />
-            <Route path="/budgets" element={<Budgets />} />
-            <Route path="/bills" element={<BillPayments />} />
-            <Route path="/cards" element={<CardsPage />} />
-            <Route path="/investments" element={<InvestmentsPage />} />
-            <Route path="/products/:slug" element={<ProductPage />} />
-            <Route path="/atm-withdrawal" element={<ATMWithdrawal />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </Suspense>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+const App = () => {
+  useEffect(() => {
+    clearStaleSupabaseSession();
+  }, []);
+
+  return (
+    <QueryClientProvider client={queryClient}>
+      <DynamicSEO />
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Suspense fallback={<PageLoader />}>
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/accounts" element={<AccountsPage />} />
+              <Route path="/transactions" element={<TransactionHistory />} />
+              <Route path="/savings-goals" element={<SavingsGoals />} />
+              <Route path="/analytics" element={<Analytics />} />
+              <Route path="/statements" element={<Statements />} />
+              <Route path="/security" element={<SecuritySettings />} />
+              <Route path="/help" element={<HelpCenter />} />
+              <Route path="/wire-transfer" element={<WireTransfer />} />
+              <Route path="/transfer" element={<TransferFunds />} />
+              <Route path="/beneficiaries" element={<Beneficiaries />} />
+              <Route path="/profile" element={<UserProfile />} />
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin-users" element={<AdminCreateUser />} />
+              <Route path="/admin/users" element={<AdminUsersManagement />} />
+              <Route path="/live-chat-support" element={<LiveChatSupport />} />
+              <Route path="/kyc" element={<KYCVerification />} />
+              <Route path="/loans" element={<Loans />} />
+              <Route path="/referral" element={<ReferralProgram />} />
+              <Route path="/spending-insights" element={<SpendingInsights />} />
+              <Route path="/budgets" element={<Budgets />} />
+              <Route path="/bills" element={<BillPayments />} />
+              <Route path="/cards" element={<CardsPage />} />
+              <Route path="/investments" element={<InvestmentsPage />} />
+              <Route path="/products/:slug" element={<ProductPage />} />
+              <Route path="/atm-withdrawal" element={<ATMWithdrawal />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </Suspense>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 export default App;

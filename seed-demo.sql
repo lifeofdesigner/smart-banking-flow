@@ -32,7 +32,7 @@ BEGIN
       v_admin_id,
       'authenticated',
       'authenticated',
-      'admin@demo.local',
+      'admin@halverixbank.com',
       crypt('DemoAdmin123!', gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
@@ -45,7 +45,7 @@ BEGIN
       v_customer_id,
       'authenticated',
       'authenticated',
-      'customer@demo.local',
+      'customer@halverixbank.com',
       crypt('DemoCustomer123!', gen_salt('bf')),
       now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
@@ -75,7 +75,7 @@ BEGIN
       '00000000-0000-4000-8000-000000005001',
       v_admin_id,
       v_admin_id::text,
-      jsonb_build_object('sub', v_admin_id::text, 'email', 'admin@demo.local'),
+      jsonb_build_object('sub', v_admin_id::text, 'email', 'admin@halverixbank.com'),
       'email',
       now(),
       now(),
@@ -85,7 +85,7 @@ BEGIN
       '00000000-0000-4000-8000-000000005002',
       v_customer_id,
       v_customer_id::text,
-      jsonb_build_object('sub', v_customer_id::text, 'email', 'customer@demo.local'),
+      jsonb_build_object('sub', v_customer_id::text, 'email', 'customer@halverixbank.com'),
       'email',
       now(),
       now(),
@@ -95,10 +95,25 @@ BEGIN
     identity_data = EXCLUDED.identity_data,
     updated_at = now();
 
+  UPDATE auth.users
+  SET
+    confirmation_token = coalesce(confirmation_token, ''),
+    recovery_token = coalesce(recovery_token, ''),
+    email_change_token_new = coalesce(email_change_token_new, ''),
+    email_change = coalesce(email_change, ''),
+    email_change_token_current = coalesce(email_change_token_current, ''),
+    phone_change = coalesce(phone_change, ''),
+    phone_change_token = coalesce(phone_change_token, ''),
+    reauthentication_token = coalesce(reauthentication_token, ''),
+    email_change_confirm_status = coalesce(email_change_confirm_status, 0),
+    is_sso_user = coalesce(is_sso_user, false),
+    is_anonymous = coalesce(is_anonymous, false)
+  WHERE id IN (v_admin_id, v_customer_id);
+
   INSERT INTO public.profiles (id, full_name, email, phone, address, kyc_status)
   VALUES
-    (v_admin_id, 'Demo Admin', 'admin@demo.local', '+1 555 0100', '100 Admin Avenue', 'verified'),
-    (v_customer_id, 'Demo Customer', 'customer@demo.local', '+1 555 0200', '200 Customer Street', 'verified')
+    (v_admin_id, 'Demo Admin', 'admin@halverixbank.com', '+1 555 0100', '100 Admin Avenue', 'verified'),
+    (v_customer_id, 'Demo Customer', 'customer@halverixbank.com', '+1 555 0200', '200 Customer Street', 'verified')
   ON CONFLICT (id) DO UPDATE SET
     full_name = EXCLUDED.full_name,
     email = EXCLUDED.email,
