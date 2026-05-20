@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { invalidateSiteSettingsCache } from "@/hooks/useSiteSettings";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -30,6 +31,7 @@ const DEFAULTS: SiteSettingsMap = {
   active_theme: "navy-gold",
   active_landing: "classic",
   signup_enabled: "true",
+  demo_admin_login_enabled: "true",
 };
 
 const LANDING_THEMES = [
@@ -122,6 +124,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
   };
 
   const registrationOpen = settings.signup_enabled !== "false";
+  const demoAdminLoginVisible = settings.demo_admin_login_enabled !== "false";
 
   const saveKeys = async (keys: string[]) => {
     setSaving(true);
@@ -143,6 +146,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
       return;
     }
 
+    invalidateSiteSettingsCache();
     toast.success("Settings saved");
   };
 
@@ -162,6 +166,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
     }
 
     setSettings((prev) => ({ ...prev, [key]: value }));
+    invalidateSiteSettingsCache();
     toast.success(successMessage);
   };
 
@@ -190,6 +195,32 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
     }
 
     toast.success(checked ? "Registration is now open" : "Registration is now closed");
+    invalidateSiteSettingsCache();
+  };
+
+  const toggleDemoAdminLogin = async (checked: boolean) => {
+    const previousValue = settings.demo_admin_login_enabled ?? "true";
+    const nextValue = checked ? "true" : "false";
+
+    setSetting("demo_admin_login_enabled", nextValue);
+
+    const { error } = await supabase.from("site_settings").upsert(
+      {
+        key: "demo_admin_login_enabled",
+        value: nextValue,
+        updated_by: adminId ?? null,
+      },
+      { onConflict: "key" }
+    );
+
+    if (error) {
+      setSetting("demo_admin_login_enabled", previousValue);
+      toast.error(error.message);
+      return;
+    }
+
+    invalidateSiteSettingsCache();
+    toast.success(checked ? "Demo admin login is visible" : "Demo admin login is hidden");
   };
 
   const uploadBrandingAsset = async (key: "site_logo_url" | "site_favicon_url" | "site_og_image_url", file?: File | null) => {
@@ -220,6 +251,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
       if (saveError) throw saveError;
 
       setSetting(key, publicUrl);
+      invalidateSiteSettingsCache();
       toast.success("Settings saved");
     } catch (error: unknown) {
       toast.error(error?.message || "Upload failed");
@@ -412,6 +444,40 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                     value={settings.site_tagline}
                     onChange={(e) => setSetting("site_tagline", e.target.value)}
                   />
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-[var(--bank-navy)]">Demo Admin Login</p>
+                    <p className="text-sm text-[var(--bank-muted)]">
+                      Show or hide the admin demo login button on the public Internet Banking login page.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-medium text-[var(--bank-muted)]">Current status:</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          demoAdminLoginVisible
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {demoAdminLoginVisible ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="demo-admin-login-enabled" className="text-sm font-medium text-[var(--bank-navy)]">
+                      Show Demo Admin
+                    </Label>
+                    <Switch
+                      id="demo-admin-login-enabled"
+                      checked={demoAdminLoginVisible}
+                      onCheckedChange={toggleDemoAdminLogin}
+                    />
+                  </div>
                 </div>
               </div>
 

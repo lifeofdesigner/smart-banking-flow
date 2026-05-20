@@ -4,6 +4,11 @@ import { supabase } from "@/integrations/supabase/client";
 let settingsCache: Record<string, string> | null = null;
 let settingsPromise: Promise<Record<string, string>> | null = null;
 
+export const invalidateSiteSettingsCache = () => {
+  settingsCache = null;
+  settingsPromise = null;
+};
+
 const loadSiteSettings = async () => {
   if (settingsCache) {
     return settingsCache;

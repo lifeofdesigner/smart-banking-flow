@@ -48,6 +48,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const siteSettings = useSiteSettings();
+  const showAdminDemoLogin = siteSettings.demo_admin_login_enabled !== "false";
   const demoRedirectRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -333,7 +334,7 @@ const Auth = () => {
                 >
                   Try as Customer (Demo)
                 </Button>
-              ) : (
+              ) : showAdminDemoLogin ? (
                 <Button
                   type="button"
                   variant="outline"
@@ -343,7 +344,7 @@ const Auth = () => {
                 >
                   Try as Admin (Demo)
                 </Button>
-              )}
+              ) : null}
 
               <div className="text-center">
                 <button
