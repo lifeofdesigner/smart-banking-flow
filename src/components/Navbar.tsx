@@ -8,6 +8,7 @@ const Navbar = () => {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings["site_logo_url"];
   const siteName = siteSettings["site_name"] || "Your Bank";
+  const showBrandNameBesideLogo = siteSettings.show_brand_name_beside_logo !== "false";
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeSection, setActiveSection] = useState("home");
@@ -98,9 +99,11 @@ const Navbar = () => {
                   HB
                 </div>
               )}
-              <span className="max-w-[150px] truncate text-[14px] font-semibold text-white">
-                {siteName}
-              </span>
+              {showBrandNameBesideLogo ? (
+                <span className="max-w-[150px] truncate text-[14px] font-semibold text-white">
+                  {siteName}
+                </span>
+              ) : null}
             </div>
 
             <div className="hidden md:flex items-center space-x-2">
@@ -115,7 +118,9 @@ const Navbar = () => {
                   <span className="text-primary-foreground font-bold text-xl">M</span>
                 </div>
               )}
-              <span className="text-xl font-bold text-foreground">{siteName}</span>
+              {showBrandNameBesideLogo ? (
+                <span className="text-xl font-bold text-foreground">{siteName}</span>
+              ) : null}
             </div>
 
             <div className="hidden md:flex items-center space-x-8">
@@ -202,10 +207,12 @@ const Navbar = () => {
                   HB
                 </div>
               )}
-              <div>
-                <p className="text-sm font-semibold">{siteName}</p>
-                <p className="text-xs text-white/60">Mobile Navigation</p>
-              </div>
+              {showBrandNameBesideLogo ? (
+                <div>
+                  <p className="text-sm font-semibold">{siteName}</p>
+                  <p className="text-xs text-white/60">Mobile Navigation</p>
+                </div>
+              ) : null}
             </div>
 
             <button

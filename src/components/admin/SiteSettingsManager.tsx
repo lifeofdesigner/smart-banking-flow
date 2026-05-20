@@ -23,6 +23,7 @@ const DEFAULTS: SiteSettingsMap = {
   site_description: "",
   site_keywords: "",
   site_logo_url: "",
+  show_brand_name_beside_logo: "true",
   site_favicon_url: "",
   site_og_image_url: "",
   site_twitter_handle: "",
@@ -183,6 +184,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
   const registrationOpen = settings.signup_enabled !== "false";
   const demoAdminLoginVisible = settings.demo_admin_login_enabled !== "false";
+  const showBrandNameBesideLogo = settings.show_brand_name_beside_logo !== "false";
 
   const saveKeys = async (keys: string[]) => {
     setSaving(true);
@@ -557,6 +559,40 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div className="space-y-1">
+                    <p className="text-sm font-semibold text-[var(--bank-navy)]">Brand Name Beside Logo</p>
+                    <p className="text-sm text-[var(--bank-muted)]">
+                      Show or hide the bank name next to the logo in website and banking navigation.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-medium text-[var(--bank-muted)]">Current status:</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          showBrandNameBesideLogo
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-slate-100 text-slate-700"
+                        }`}
+                      >
+                        {showBrandNameBesideLogo ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="show-brand-name-beside-logo" className="text-sm font-medium text-[var(--bank-navy)]">
+                      Show Brand Name
+                    </Label>
+                    <Switch
+                      id="show-brand-name-beside-logo"
+                      checked={showBrandNameBesideLogo}
+                      onCheckedChange={(checked) => setSetting("show_brand_name_beside_logo", checked ? "true" : "false")}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-1">
                     <p className="text-sm font-semibold text-[var(--bank-navy)]">Demo Admin Login</p>
                     <p className="text-sm text-[var(--bank-muted)]">
                       Show or hide the demo button on the separate admin login page.
@@ -626,7 +662,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               <Button
                 disabled={saving}
                 className="bg-[var(--bank-navy)] hover:bg-[var(--bank-navy)]/90 text-white"
-                onClick={() => saveKeys(["site_name", "site_tagline", "site_logo_url", "site_favicon_url"])}
+                onClick={() => saveKeys(["site_name", "site_tagline", "site_logo_url", "site_favicon_url", "show_brand_name_beside_logo"])}
               >
                 {saving ? "Saving..." : "Save"}
               </Button>

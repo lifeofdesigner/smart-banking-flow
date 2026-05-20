@@ -100,6 +100,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const siteSettings = useSiteSettings();
   const siteName = siteSettings["site_name"] || "Your Bank";
   const logoUrl = siteSettings["site_logo_url"];
+  const showBrandNameBesideLogo = siteSettings.show_brand_name_beside_logo !== "false";
   const [profile, setProfile] = useState<Profile | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
@@ -345,10 +346,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <span className="text-primary-foreground font-bold text-sm">M</span>
                 </div>
               )}
-              <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
-                <span className="font-semibold text-sm truncate">{siteName}</span>
-                <span className="text-xs text-muted-foreground">Internet Banking</span>
-              </div>
+              {showBrandNameBesideLogo ? (
+                <div className="flex flex-col overflow-hidden group-data-[collapsible=icon]:hidden">
+                  <span className="font-semibold text-sm truncate">{siteName}</span>
+                  <span className="text-xs text-muted-foreground">Internet Banking</span>
+                </div>
+              ) : null}
             </div>
           </SidebarHeader>
 
@@ -445,9 +448,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   </div>
                 )}
                 <div className="min-w-0">
-                  <p className="truncate text-[11px] font-medium uppercase tracking-[0.24em] text-white/45">
-                    {siteName}
-                  </p>
+                  {showBrandNameBesideLogo ? (
+                    <p className="truncate text-[11px] font-medium uppercase tracking-[0.24em] text-white/45">
+                      {siteName}
+                    </p>
+                  ) : null}
                   <p className="truncate text-[14px] font-medium text-white">{pageTitle}</p>
                 </div>
               </div>
