@@ -3,10 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 
 let settingsCache: Record<string, string> | null = null;
 let settingsPromise: Promise<Record<string, string>> | null = null;
+const SITE_SETTINGS_CHANGED_EVENT = "site-settings-changed";
 
 export const invalidateSiteSettingsCache = () => {
   settingsCache = null;
   settingsPromise = null;
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event(SITE_SETTINGS_CHANGED_EVENT));
+  }
 };
 
 const loadSiteSettings = async () => {
@@ -59,9 +64,11 @@ export function useSiteSettings() {
     };
 
     void load();
+    window.addEventListener(SITE_SETTINGS_CHANGED_EVENT, load);
 
     return () => {
       mounted = false;
+      window.removeEventListener(SITE_SETTINGS_CHANGED_EVENT, load);
     };
   }, []);
 

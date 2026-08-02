@@ -30,6 +30,48 @@ function setLinkTag(rel: string, href: string, type?: string) {
   link.setAttribute("href", href);
 }
 
+function getImageType(href: string) {
+  const path = href.split("?")[0].toLowerCase();
+
+  if (path.endsWith(".ico")) return "image/x-icon";
+  if (path.endsWith(".svg")) return "image/svg+xml";
+  if (path.endsWith(".png")) return "image/png";
+  if (path.endsWith(".jpg") || path.endsWith(".jpeg")) return "image/jpeg";
+  if (path.endsWith(".webp")) return "image/webp";
+  if (path.endsWith(".gif")) return "image/gif";
+
+  return undefined;
+}
+
+function withCacheBust(href: string) {
+  if (/^(blob|data):/i.test(href)) return href;
+
+  try {
+    const url = new URL(href, window.location.origin);
+    url.searchParams.set("v", Date.now().toString());
+    return url.toString();
+  } catch {
+    const separator = href.includes("?") ? "&" : "?";
+    return `${href}${separator}v=${Date.now()}`;
+  }
+}
+
+function setFaviconTags(href: string) {
+  const faviconHref = withCacheBust(href);
+  const faviconType = getImageType(href);
+
+  document.querySelectorAll<HTMLLinkElement>("link[rel~='icon'], link[rel='apple-touch-icon']").forEach((link) => {
+    link.setAttribute("href", faviconHref);
+    if (faviconType) {
+      link.setAttribute("type", faviconType);
+    }
+  });
+
+  setLinkTag("icon", faviconHref, faviconType);
+  setLinkTag("shortcut icon", faviconHref, faviconType);
+  setLinkTag("apple-touch-icon", faviconHref, faviconType);
+}
+
 const hexToHsl = (hex: string) => {
   const normalized = hex.replace("#", "");
   if (!/^[0-9a-f]{6}$/i.test(normalized)) return "";
@@ -117,12 +159,7 @@ export default function DynamicSEO() {
     }
 
     if (faviconUrl) {
-      const iconLink = document.querySelector("link[rel~='icon']") as HTMLLinkElement | null;
-      if (iconLink) {
-        iconLink.setAttribute("href", faviconUrl);
-      }
-      setLinkTag("icon", faviconUrl);
-      setLinkTag("apple-touch-icon", faviconUrl);
+      setFaviconTags(faviconUrl);
     }
 
     if (googleVerification) {

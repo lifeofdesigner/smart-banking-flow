@@ -525,7 +525,11 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => uploadBrandingAsset("site_logo_url", e.target.files?.[0])}
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        e.currentTarget.value = "";
+                        void uploadBrandingAsset("site_logo_url", file);
+                      }}
                     />
                     <Button asChild variant="outline" disabled={uploadingKey === "site_logo_url"}>
                       <label htmlFor="site-logo-upload" className="cursor-pointer">
@@ -554,7 +558,11 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => uploadBrandingAsset("mobile_logo_url", e.target.files?.[0])}
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        e.currentTarget.value = "";
+                        void uploadBrandingAsset("mobile_logo_url", file);
+                      }}
                     />
                     <Button asChild variant="outline" disabled={uploadingKey === "mobile_logo_url"}>
                       <label htmlFor="mobile-logo-upload" className="cursor-pointer">
@@ -581,7 +589,11 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                       type="file"
                       accept="image/*,.ico"
                       className="hidden"
-                      onChange={(e) => uploadBrandingAsset("site_favicon_url", e.target.files?.[0])}
+                      onChange={(e) => {
+                        const file = e.currentTarget.files?.[0];
+                        e.currentTarget.value = "";
+                        void uploadBrandingAsset("site_favicon_url", file);
+                      }}
                     />
                     <Button asChild variant="outline" disabled={uploadingKey === "site_favicon_url"}>
                       <label htmlFor="site-favicon-upload" className="cursor-pointer">
@@ -1018,7 +1030,11 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                     type="file"
                     accept="image/*"
                     className="hidden"
-                    onChange={(e) => uploadBrandingAsset("site_og_image_url", e.target.files?.[0])}
+                    onChange={(e) => {
+                      const file = e.currentTarget.files?.[0];
+                      e.currentTarget.value = "";
+                      void uploadBrandingAsset("site_og_image_url", file);
+                    }}
                   />
                   <Button asChild variant="outline" disabled={uploadingKey === "site_og_image_url"}>
                     <label htmlFor="site-og-upload" className="cursor-pointer">
@@ -1204,4 +1220,3 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
     </div>
   );
 }
-
