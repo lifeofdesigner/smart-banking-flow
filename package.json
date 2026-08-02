@@ -12,6 +12,7 @@
     "local:create-user": "node scripts/local-create-user.mjs",
     "local:create-admin": "node scripts/local-create-user.mjs --role admin",
     "local:create-customer": "node scripts/local-create-user.mjs --role user",
+    "local:user-manager": "node scripts/local-user-manager-server.mjs",
     "build": "vite build",
     "build:dev": "vite build --mode development",
     "lint": "eslint .",

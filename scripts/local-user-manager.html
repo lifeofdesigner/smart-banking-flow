@@ -1,0 +1,304 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Local User Manager</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    margin: 0;
+    padding: 2rem;
+    background: #0f172a;
+    color: #e2e8f0;
+    max-width: 960px;
+    margin-inline: auto;
+  }
+  h1 { font-size: 1.4rem; margin-bottom: 0.25rem; }
+  .subtitle { color: #94a3b8; margin-top: 0; margin-bottom: 1.5rem; font-size: 0.9rem; }
+  .warning {
+    background: #422006;
+    border: 1px solid #92400e;
+    color: #fde68a;
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    margin-bottom: 1.5rem;
+  }
+  section {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  h2 { font-size: 1.05rem; margin-top: 0; }
+  label { display: block; font-size: 0.8rem; color: #94a3b8; margin-bottom: 0.25rem; margin-top: 0.75rem; }
+  input, select {
+    width: 100%;
+    padding: 0.5rem 0.6rem;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1rem; }
+  button {
+    margin-top: 1.25rem;
+    padding: 0.55rem 1.1rem;
+    border-radius: 6px;
+    border: none;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-primary { background: #2563eb; color: white; }
+  .btn-primary:hover { background: #1d4ed8; }
+  .btn-danger { background: #dc2626; color: white; padding: 0.35rem 0.7rem; font-size: 0.8rem; margin: 0; }
+  .btn-danger:hover { background: #b91c1c; }
+  .btn-secondary { background: #334155; color: #e2e8f0; padding: 0.35rem 0.7rem; font-size: 0.8rem; margin: 0; }
+  .btn-secondary:hover { background: #475569; }
+  #create-status, #list-status { margin-top: 0.75rem; font-size: 0.85rem; white-space: pre-wrap; }
+  .ok { color: #4ade80; }
+  .err { color: #f87171; }
+  table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.85rem; }
+  th, td { text-align: left; padding: 0.5rem 0.6rem; border-bottom: 1px solid #334155; vertical-align: top; }
+  th { color: #94a3b8; font-weight: 600; }
+  .badge {
+    display: inline-block;
+    padding: 0.1rem 0.5rem;
+    border-radius: 999px;
+    font-size: 0.7rem;
+    font-weight: 600;
+    margin-right: 0.25rem;
+  }
+  .badge-admin { background: #7c2d12; color: #fed7aa; }
+  .badge-user { background: #164e63; color: #a5f3fc; }
+  .badge-ok { background: #14532d; color: #86efac; }
+  .badge-warn { background: #713f12; color: #fde68a; }
+  .badge-danger { background: #7f1d1d; color: #fca5a5; }
+  .muted { color: #64748b; font-size: 0.75rem; }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; }
+  #search { max-width: 240px; }
+</style>
+</head>
+<body>
+  <h1>Local User Manager</h1>
+  <p class="subtitle">Reads/writes directly to your configured Supabase database. Local machine only.</p>
+  <div class="warning">This tool has full database access. Do not expose this server beyond localhost, and never run it against a production database unless you mean to.</div>
+
+  <section>
+    <h2>Create admin or customer</h2>
+    <form id="create-form">
+      <div class="row">
+        <div>
+          <label for="fullName">Full name</label>
+          <input id="fullName" name="fullName" required />
+        </div>
+        <div>
+          <label for="email">Email</label>
+          <input id="email" name="email" type="email" required />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="password">Password (min 8 chars)</label>
+          <input id="password" name="password" type="text" minlength="8" required />
+        </div>
+        <div>
+          <label for="role">Role</label>
+          <select id="role" name="role">
+            <option value="user">Customer</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="phone">Phone</label>
+          <input id="phone" name="phone" />
+        </div>
+        <div>
+          <label for="address">Address</label>
+          <input id="address" name="address" />
+        </div>
+      </div>
+      <div class="row">
+        <div>
+          <label for="accountType">Account type</label>
+          <select id="accountType" name="accountType">
+            <option value="savings">Savings</option>
+            <option value="checking">Checking</option>
+          </select>
+        </div>
+        <div>
+          <label for="balance">Opening balance</label>
+          <input id="balance" name="balance" type="number" min="0" step="0.01" value="0" />
+        </div>
+      </div>
+      <label for="kycStatus">KYC status</label>
+      <select id="kycStatus" name="kycStatus">
+        <option value="verified">Verified</option>
+        <option value="pending">Pending</option>
+        <option value="rejected">Rejected</option>
+      </select>
+      <button type="submit" class="btn-primary">Create / update user</button>
+    </form>
+    <div id="create-status"></div>
+  </section>
+
+  <section>
+    <div class="toolbar">
+      <h2>Existing users</h2>
+      <div>
+        <input id="search" placeholder="Filter by name or email" />
+        <button type="button" id="refresh" class="btn-secondary">Refresh</button>
+      </div>
+    </div>
+    <div id="list-status"></div>
+    <table id="users-table">
+      <thead>
+        <tr>
+          <th>Name / Email</th>
+          <th>Roles</th>
+          <th>Accounts</th>
+          <th>KYC</th>
+          <th>Status</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="users-body"></tbody>
+    </table>
+  </section>
+
+<script>
+  const createForm = document.getElementById("create-form");
+  const createStatus = document.getElementById("create-status");
+  const listStatus = document.getElementById("list-status");
+  const usersBody = document.getElementById("users-body");
+  const searchInput = document.getElementById("search");
+  const refreshBtn = document.getElementById("refresh");
+
+  let allUsers = [];
+
+  const money = (value) => Number(value ?? 0).toLocaleString(undefined, { style: "currency", currency: "USD" });
+
+  const renderUsers = () => {
+    const filter = searchInput.value.trim().toLowerCase();
+    const filtered = filter
+      ? allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(filter) || (u.email || "").toLowerCase().includes(filter))
+      : allUsers;
+
+    usersBody.innerHTML = filtered.map((u) => {
+      const roles = (u.roles || []).filter(Boolean).map((r) =>
+        \`<span class="badge \${r === "admin" ? "badge-admin" : "badge-user"}">\${r}</span>\`
+      ).join("") || '<span class="muted">none</span>';
+
+      const accounts = (u.accounts || []).map((a) =>
+        \`\${a.account_type} \${a.account_number} — \${money(a.balance)}\`
+      ).join("<br/>") || '<span class="muted">no account</span>';
+
+      const statusBadges = [
+        u.email_confirmed
+          ? '<span class="badge badge-ok">confirmed</span>'
+          : '<span class="badge badge-warn">unconfirmed</span>',
+        u.banned ? '<span class="badge badge-danger">banned</span>' : "",
+        u.missing_profile ? '<span class="badge badge-warn">no profile</span>' : "",
+      ].filter(Boolean).join("");
+
+      return \`
+        <tr data-id="\${u.id}">
+          <td><strong>\${u.full_name || "(no name)"}</strong><br/><span class="muted">\${u.email}</span></td>
+          <td>\${roles}</td>
+          <td>\${accounts}</td>
+          <td>\${u.kyc_status || "-"}</td>
+          <td>\${statusBadges}</td>
+          <td><button class="btn-danger" data-action="delete" data-id="\${u.id}" data-email="\${u.email}">Delete</button></td>
+        </tr>
+      \`;
+    }).join("");
+  };
+
+  const loadUsers = async () => {
+    listStatus.textContent = "Loading…";
+    listStatus.className = "";
+    try {
+      const res = await fetch("/api/users");
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to load users");
+      allUsers = data.users;
+      listStatus.textContent = "";
+      renderUsers();
+    } catch (err) {
+      listStatus.textContent = err.message;
+      listStatus.className = "err";
+    }
+  };
+
+  createForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    createStatus.textContent = "Saving…";
+    createStatus.className = "";
+
+    const formData = new FormData(createForm);
+    const payload = Object.fromEntries(formData.entries());
+
+    try {
+      const res = await fetch("/api/create-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to create user");
+      createStatus.textContent = data.message;
+      createStatus.className = "ok";
+      createForm.reset();
+      document.getElementById("balance").value = "0";
+      loadUsers();
+    } catch (err) {
+      createStatus.textContent = err.message;
+      createStatus.className = "err";
+    }
+  });
+
+  usersBody.addEventListener("click", async (e) => {
+    const btn = e.target.closest('button[data-action="delete"]');
+    if (!btn) return;
+
+    const { id, email } = btn.dataset;
+    const typed = prompt(\`Type the email to confirm deleting \${email}:\`);
+    if (typed !== email) {
+      if (typed !== null) alert("Email did not match. Nothing was deleted.");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Deleting…";
+
+    try {
+      const res = await fetch("/api/delete-user", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to delete user");
+      loadUsers();
+    } catch (err) {
+      alert(err.message);
+      btn.disabled = false;
+      btn.textContent = "Delete";
+    }
+  });
+
+  refreshBtn.addEventListener("click", loadUsers);
+  searchInput.addEventListener("input", renderUsers);
+
+  loadUsers();
+</script>
+</body>
+</html>
