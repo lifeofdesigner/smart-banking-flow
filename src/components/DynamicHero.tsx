@@ -73,7 +73,7 @@ export default function DynamicHero() {
     loadHero();
   }, []);
 
-  const mobileHeading = useMemo(() => {
+  const headingParts = useMemo(() => {
     const words = title.trim().split(/\s+/);
     if (words.length <= 1) {
       return { lead: title, accent: "" };
@@ -109,11 +109,11 @@ export default function DynamicHero() {
               className="text-[28px] font-semibold leading-[1.2] text-white"
               style={{ fontFamily: "Georgia, serif" }}
             >
-              {mobileHeading.lead}
-              {mobileHeading.accent ? (
+              {headingParts.lead}
+              {headingParts.accent ? (
                 <>
                   {" "}
-                  <span className="text-[var(--bank-gold)]">{mobileHeading.accent}</span>
+                  <span className="text-[var(--bank-gold)]">{headingParts.accent}</span>
                 </>
               ) : null}
             </h1>
@@ -166,60 +166,70 @@ export default function DynamicHero() {
         </div>
       </div>
 
-      <div className="hidden md:block">
-        <section className="relative min-h-screen flex items-center pt-20">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-background to-accent/5" />
+      <div className="hidden md:block bg-[var(--bank-navy)] text-white">
+        <section className="relative min-h-screen flex items-center pt-20 overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-br from-[var(--bank-gold)]/10 via-transparent to-transparent" />
           <div className="container mx-auto px-4 relative z-10">
             <div className="grid lg:grid-cols-2 gap-12 items-center">
               <div className="space-y-8 animate-fade-in">
-                <div className="inline-flex items-center space-x-2 bg-accent/10 rounded-full px-4 py-2">
-                  <Shield className="w-4 h-4 text-accent" />
-                  <span className="text-sm font-medium text-accent">{badgeText}</span>
+                <div className="inline-flex items-center space-x-2 rounded-full border border-[var(--bank-gold)]/60 px-4 py-2">
+                  <Shield className="w-4 h-4 text-[var(--bank-gold)]" />
+                  <span className="text-sm font-medium text-[var(--bank-gold)]">{badgeText}</span>
                 </div>
-                <h1 className="text-5xl lg:text-7xl font-bold leading-tight">
-                  {title}
+                <h1 className="text-5xl lg:text-7xl font-bold leading-tight text-white">
+                  {headingParts.lead}
+                  {headingParts.accent ? (
+                    <>
+                      {" "}
+                      <span className="text-[var(--bank-gold)]">{headingParts.accent}</span>
+                    </>
+                  ) : null}
                 </h1>
-                <p className="text-xl text-muted-foreground leading-relaxed">{subtitle}</p>
+                <p className="text-xl text-white/70 leading-relaxed">{subtitle}</p>
                 <div className="flex flex-wrap gap-4">
-                  <Button size="lg" className="text-lg h-14 px-8 group" onClick={() => (window.location.href = "/auth")}>
+                  <Button
+                    size="lg"
+                    className="text-lg h-14 px-8 group bg-[var(--bank-gold)] text-[var(--bank-navy)] hover:bg-[#d7b663]"
+                    onClick={() => (window.location.href = "/auth")}
+                  >
                     {primaryCta}
                     <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </Button>
                   <Button
                     size="lg"
                     variant="outline"
-                    className="text-lg h-14 px-8"
+                    className="text-lg h-14 px-8 border-white/30 bg-transparent text-white hover:bg-white/10 hover:text-white"
                     onClick={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth" })}
                   >
                     {secondaryCta}
                   </Button>
                 </div>
-                <div className="grid grid-cols-3 gap-8 pt-8 border-t border-border">
+                <div className="grid grid-cols-3 gap-8 pt-8 border-t border-white/10">
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-accent">
+                    <div className="flex items-center space-x-2 text-[var(--bank-gold)]">
                       <TrendingUp className="w-5 h-5" />
                       <span className="text-2xl font-bold">{statOneValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{statOneLabel}</p>
+                    <p className="text-sm text-white/60">{statOneLabel}</p>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-accent">
+                    <div className="flex items-center space-x-2 text-[var(--bank-gold)]">
                       <Users className="w-5 h-5" />
                       <span className="text-2xl font-bold">{statTwoValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{statTwoLabel}</p>
+                    <p className="text-sm text-white/60">{statTwoLabel}</p>
                   </div>
                   <div className="space-y-2">
-                    <div className="flex items-center space-x-2 text-accent">
+                    <div className="flex items-center space-x-2 text-[var(--bank-gold)]">
                       <Shield className="w-5 h-5" />
                       <span className="text-2xl font-bold">{statThreeValue}</span>
                     </div>
-                    <p className="text-sm text-muted-foreground">{statThreeLabel}</p>
+                    <p className="text-sm text-white/60">{statThreeLabel}</p>
                   </div>
                 </div>
               </div>
               <div className="relative animate-scale-in">
-                <div className="absolute -inset-4 bg-gradient-to-r from-primary/20 to-accent/20 rounded-3xl blur-2xl" />
+                <div className="absolute -inset-4 bg-gradient-to-r from-[var(--bank-gold)]/20 to-[var(--bank-gold)]/5 rounded-3xl blur-2xl" />
                 <img src={image || heroImage} alt={siteSettings.hero_image_alt || title} className="relative rounded-3xl shadow-2xl w-full h-auto" />
               </div>
             </div>

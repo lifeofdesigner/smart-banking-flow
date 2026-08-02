@@ -416,18 +416,6 @@ export default function DynamicHomepageSections() {
   if (renderedSections.length === 0) {
     return (
       <>
-        <ServicesSection
-          section={{
-            id: "fallback-services",
-            section_type: "services",
-            title: "Financial Services",
-            subtitle: "Banking products and services tailored for your customers.",
-            content: JSON.stringify(fallbackServices),
-            image: null,
-            display_order: 0,
-            status: "active",
-          }}
-        />
         <DynamicProducts />
         <AboutSection
           section={{

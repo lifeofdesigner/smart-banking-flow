@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { cn } from "@/lib/utils";
 
@@ -12,8 +11,6 @@ const Navbar = () => {
   const showBrandNameBesideLogo = siteSettings.show_brand_name_beside_logo !== "false";
   const showMobileBrandNameBesideLogo = siteSettings.show_mobile_brand_name_beside_logo !== "false";
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState("home");
 
   const navItems = useMemo(
     () => [
@@ -27,57 +24,15 @@ const Navbar = () => {
   );
 
   useEffect(() => {
-    const updateNavbarState = () => {
-      setIsScrolled(window.scrollY > 20);
-
-      const currentSection = navItems.reduce((activeId, item) => {
-        const section = document.getElementById(item.id);
-        if (!section) {
-          return activeId;
-        }
-
-        const threshold = window.scrollY + 140;
-        return section.offsetTop <= threshold ? item.id : activeId;
-      }, navItems[0]?.id || "home");
-
-      setActiveSection(window.location.hash.replace("#", "") || currentSection);
-    };
+    const updateNavbarState = () => setIsScrolled(window.scrollY > 20);
 
     updateNavbarState();
     window.addEventListener("scroll", updateNavbarState, { passive: true });
-    window.addEventListener("hashchange", updateNavbarState);
 
     return () => {
       window.removeEventListener("scroll", updateNavbarState);
-      window.removeEventListener("hashchange", updateNavbarState);
     };
-  }, [navItems]);
-
-  useEffect(() => {
-    if (!isMobileMenuOpen) {
-      return;
-    }
-
-    const originalOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-
-    return () => {
-      document.body.style.overflow = originalOverflow;
-    };
-  }, [isMobileMenuOpen]);
-
-  const navigateToSection = (href: string) => {
-    const nextSectionId = href.replace("#", "");
-    const targetSection = document.getElementById(nextSectionId);
-
-    if (targetSection) {
-      targetSection.scrollIntoView({ behavior: "smooth", block: "start" });
-      window.history.replaceState(null, "", href);
-      setActiveSection(nextSectionId);
-    }
-
-    setIsMobileMenuOpen(false);
-  };
+  }, []);
 
   return (
     <>
@@ -121,7 +76,9 @@ const Navbar = () => {
                 </div>
               )}
               {showBrandNameBesideLogo ? (
-                <span className="text-xl font-bold text-foreground">{siteName}</span>
+                <span className={cn("text-xl font-bold", isScrolled ? "text-foreground" : "text-white")}>
+                  {siteName}
+                </span>
               ) : null}
             </div>
 
@@ -130,7 +87,12 @@ const Navbar = () => {
                 <a
                   key={item.label}
                   href={item.href}
-                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                  className={cn(
+                    "font-medium transition-colors duration-200",
+                    isScrolled
+                      ? "text-foreground hover:text-primary"
+                      : "text-white/85 hover:text-[var(--bank-gold)]",
+                  )}
                 >
                   {item.label}
                 </a>
@@ -158,107 +120,10 @@ const Navbar = () => {
               >
                 Login
               </Button>
-
-              <button
-                type="button"
-                className="flex h-11 w-11 items-center justify-center rounded-full border border-[var(--bank-gold)]/25 bg-white/5 text-[var(--bank-gold)]"
-                onClick={() => setIsMobileMenuOpen(true)}
-                aria-label="Open navigation menu"
-              >
-                <span className="flex flex-col items-center gap-1.5">
-                  <span className="block h-[1.5px] w-5 rounded-full bg-[var(--bank-gold)]" />
-                  <span className="block h-[1.5px] w-5 rounded-full bg-[var(--bank-gold)]" />
-                  <span className="block h-[1.5px] w-5 rounded-full bg-[var(--bank-gold)]" />
-                </span>
-              </button>
             </div>
           </div>
         </div>
       </nav>
-
-      <div
-        className={cn(
-          "fixed inset-0 z-[100] md:hidden",
-          isMobileMenuOpen ? "pointer-events-auto" : "pointer-events-none",
-        )}
-      >
-        <div
-          className={cn(
-            "absolute inset-0 bg-[var(--bank-navy)]/60 backdrop-blur-sm transition-opacity duration-300",
-            isMobileMenuOpen ? "opacity-100" : "opacity-0",
-          )}
-          onClick={() => setIsMobileMenuOpen(false)}
-        />
-
-        <div
-          className={cn(
-            "absolute inset-y-0 right-0 flex w-full flex-col bg-[var(--bank-navy)] px-6 pb-8 pt-5 text-white transition-transform duration-300 ease-out",
-            isMobileMenuOpen ? "translate-x-0" : "translate-x-full",
-          )}
-        >
-          <div className="flex items-start justify-between gap-4">
-            <div className="flex items-center gap-2.5">
-              {mobileLogoUrl ? (
-                <img
-                  src={mobileLogoUrl}
-                  alt={siteName}
-                  className="h-9 w-auto object-contain"
-                />
-              ) : (
-                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--bank-gold)] text-xs font-bold text-[var(--bank-navy)]">
-                  HB
-                </div>
-              )}
-              {showMobileBrandNameBesideLogo ? (
-                <div>
-                  <p className="text-sm font-semibold">{siteName}</p>
-                  <p className="text-xs text-white/60">Mobile Navigation</p>
-                </div>
-              ) : null}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => setIsMobileMenuOpen(false)}
-              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white"
-              aria-label="Close navigation menu"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="mt-14 flex flex-1 flex-col gap-3">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                onClick={() => navigateToSection(item.href)}
-                className={cn(
-                  "min-h-[52px] border-l-2 px-4 text-left text-[18px] font-medium transition",
-                  activeSection === item.id
-                    ? "border-[var(--bank-gold)] text-white"
-                    : "border-transparent text-white/75 hover:border-[var(--bank-gold)]/40 hover:text-white",
-                )}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          <div className="mt-6 space-y-3">
-            <Button
-              type="button"
-              className="h-12 w-full rounded-full bg-[var(--bank-gold)] text-[var(--bank-navy)] hover:bg-[#d7b663]"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                window.location.href = "/auth";
-              }}
-            >
-              Internet Banking
-            </Button>
-          </div>
-        </div>
-      </div>
     </>
   );
 };
