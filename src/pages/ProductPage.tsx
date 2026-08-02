@@ -32,9 +32,9 @@ interface ProductPage {
 interface ProductSection {
   id: string;
   section_type: string;
-  section_title: string | null;
-  section_content: string | null;
-  section_image: string | null;
+  title: string | null;
+  content: unknown;
+  image: string | null;
   display_order: number;
 }
 
@@ -45,14 +45,17 @@ interface FAQ {
   display_order: number;
 }
 
-function parseJsonArray(content: string | null): string[] {
-  if (!content) return [];
-  try {
-    const parsed = JSON.parse(content);
-    return Array.isArray(parsed) ? parsed : [content];
-  } catch {
-    return content.split("\n").filter(Boolean);
-  }
+/** product_sections.content is jsonb: either a plain string (description) or a string array (features/benefits/steps). */
+function parseJsonArray(content: unknown): string[] {
+  if (Array.isArray(content)) return content.filter((item): item is string => typeof item === "string");
+  if (typeof content === "string" && content.trim()) return [content];
+  return [];
+}
+
+function parseText(content: unknown): string {
+  if (typeof content === "string") return content;
+  if (Array.isArray(content)) return content.filter((item): item is string => typeof item === "string").join("\n\n");
+  return "";
 }
 
 export default function ProductPageView() {
@@ -82,7 +85,7 @@ export default function ProductPageView() {
       .from("product_pages")
       .select("*")
       .eq("slug", slug)
-      .in("status", ["published", "active"])
+      .eq("status", "published")
       .single();
 
     if (!prod) {
@@ -129,9 +132,9 @@ export default function ProductPageView() {
   const benefitsSection = sections.find((s) => s.section_type === "benefits");
   const howItWorksSection = sections.find((s) => s.section_type === "how_it_works");
 
-  const features = parseJsonArray(featuresSection?.section_content);
-  const benefits = parseJsonArray(benefitsSection?.section_content);
-  const steps = parseJsonArray(howItWorksSection?.section_content);
+  const features = parseJsonArray(featuresSection?.content);
+  const benefits = parseJsonArray(benefitsSection?.content);
+  const steps = parseJsonArray(howItWorksSection?.content);
 
   return (
     <div className="min-h-screen bg-background">
@@ -177,8 +180,8 @@ export default function ProductPageView() {
         <section className="py-20 bg-secondary/30">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold">{descSection.section_title}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{descSection.section_content}</p>
+              <h2 className="text-3xl lg:text-4xl font-bold">{descSection.title}</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">{parseText(descSection.content)}</p>
             </div>
           </div>
         </section>
@@ -188,7 +191,7 @@ export default function ProductPageView() {
       {features.length > 0 && (
         <section id="features" className="py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{featuresSection?.section_title || "Features"}</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{featuresSection?.title || "Features"}</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
               {features.map((feature, i) => (
                 <Card key={i} className="p-6 hover:shadow-lg transition-shadow border-border">
@@ -209,7 +212,7 @@ export default function ProductPageView() {
       {benefits.length > 0 && (
         <section className="py-20 bg-secondary/30">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{benefitsSection?.section_title || "Benefits"}</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{benefitsSection?.title || "Benefits"}</h2>
             <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
               {benefits.map((benefit, i) => (
                 <div key={i} className="flex items-start gap-4 animate-slide-up" style={{ animationDelay: `${i * 100}ms` }}>
@@ -228,7 +231,7 @@ export default function ProductPageView() {
       {steps.length > 0 && (
         <section className="py-20">
           <div className="container mx-auto px-4">
-            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{howItWorksSection?.section_title || "How It Works"}</h2>
+            <h2 className="text-3xl lg:text-4xl font-bold text-center mb-12">{howItWorksSection?.title || "How It Works"}</h2>
             <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 max-w-5xl mx-auto">
               {steps.map((step, i) => (
                 <div key={i} className="text-center space-y-4">

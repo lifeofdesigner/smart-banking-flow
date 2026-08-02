@@ -29,15 +29,15 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-type HomepageSection = {
+export type HomepageSection = {
   id: string;
   section_type: string;
   title: string | null;
   subtitle: string | null;
-  content: string | null;
+  content: unknown;
   image: string | null;
   display_order: number;
-  status: string;
+  is_active: boolean;
 };
 
 type ServiceItem = {
@@ -61,13 +61,6 @@ type TestimonialItem = {
 type FaqItem = {
   question: string;
   answer: string;
-};
-
-type ContactContent = {
-  address?: string[];
-  phone?: string[];
-  email?: string[];
-  hours?: string[];
 };
 
 const iconMap: Record<string, LucideIcon> = {
@@ -155,14 +148,36 @@ const fallbackFaqs: FaqItem[] = [
   },
 ];
 
-const parseJson = <T,>(value: string | null, fallback: T): T => {
-  if (!value?.trim()) return fallback;
-
-  try {
-    return JSON.parse(value) as T;
-  } catch {
-    return fallback;
+/**
+ * homepage_sections.content is a jsonb column, so Supabase returns it already
+ * parsed (object/array), not a JSON string — except for CustomSection which
+ * still stores plain text. Handle both.
+ */
+const parseContent = (value: unknown): unknown => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === "string") {
+    if (!value.trim()) return null;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return null;
+    }
   }
+  return value;
+};
+
+/** Real seeded content sometimes wraps its array under a named key (e.g. { services: [...] }); the admin CMS editor writes a raw array. Accept both. */
+const extractArray = <T,>(parsed: unknown, wrapperKeys: string[]): T[] | null => {
+  if (Array.isArray(parsed)) return parsed as T[];
+
+  if (parsed && typeof parsed === "object") {
+    for (const key of wrapperKeys) {
+      const value = (parsed as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return value as T[];
+    }
+  }
+
+  return null;
 };
 
 const getIcon = (name?: string) => iconMap[(name || "").toLowerCase()] || Target;
@@ -183,7 +198,7 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string |
 }
 
 function ServicesSection({ section }: { section: HomepageSection }) {
-  const items = parseJson<ServiceItem[]>(section.content, fallbackServices);
+  const items = extractArray<ServiceItem>(parseContent(section.content), ["services"]) || fallbackServices;
 
   return (
     <section id="services" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
@@ -211,15 +226,20 @@ function ServicesSection({ section }: { section: HomepageSection }) {
   );
 }
 
-function AboutSection({ section }: { section: HomepageSection }) {
+export function AboutSection({ section }: { section: HomepageSection }) {
   const siteSettings = useSiteSettings();
   const bankName = siteSettings.site_name || "Your Bank";
-  const content = parseJson<AboutContent>(section.content, fallbackAbout);
+  const parsed = parseContent(section.content);
+  const record = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  const cards = extractArray<ServiceItem>(parsed, ["cards", "values"]) || fallbackAbout.cards || [];
+  const body = typeof record.body === "string" ? record.body : typeof record.description === "string" ? record.description : undefined;
+  const mission = typeof record.mission === "string" ? record.mission : undefined;
+  const vision = typeof record.vision === "string" ? record.vision : undefined;
 
   return (
     <section id="about" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
-        <SectionHeader title={section.title || `About ${bankName}`} subtitle={section.subtitle || content.body} />
+        <SectionHeader title={section.title || `About ${bankName}`} subtitle={section.subtitle || body} />
         {section.image ? (
           <img
             src={section.image}
@@ -227,8 +247,24 @@ function AboutSection({ section }: { section: HomepageSection }) {
             className="mx-auto mb-8 max-h-[380px] w-full max-w-5xl rounded-lg object-cover"
           />
         ) : null}
+        {mission || vision ? (
+          <div className="mb-8 grid gap-4 md:grid-cols-2">
+            {mission ? (
+              <Card className="p-5 md:p-8">
+                <h3 className="text-lg font-bold md:text-2xl">Our Mission</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{mission}</p>
+              </Card>
+            ) : null}
+            {vision ? (
+              <Card className="p-5 md:p-8">
+                <h3 className="text-lg font-bold md:text-2xl">Our Vision</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{vision}</p>
+              </Card>
+            ) : null}
+          </div>
+        ) : null}
         <div className="grid gap-4 md:grid-cols-3">
-          {(content.cards || fallbackAbout.cards || []).map((item, index) => {
+          {cards.map((item, index) => {
             const Icon = getIcon(item.icon);
             return (
               <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
@@ -245,7 +281,7 @@ function AboutSection({ section }: { section: HomepageSection }) {
 }
 
 function TestimonialsSection({ section }: { section: HomepageSection }) {
-  const testimonials = parseJson<TestimonialItem[]>(section.content, fallbackTestimonials);
+  const testimonials = extractArray<TestimonialItem>(parseContent(section.content), ["testimonials"]) || fallbackTestimonials;
 
   return (
     <section className="bg-background py-12 md:py-24">
@@ -276,7 +312,7 @@ function TestimonialsSection({ section }: { section: HomepageSection }) {
 }
 
 function FaqSection({ section }: { section: HomepageSection }) {
-  const faqs = parseJson<FaqItem[]>(section.content, fallbackFaqs);
+  const faqs = extractArray<FaqItem>(parseContent(section.content), ["faqs"]) || fallbackFaqs;
 
   return (
     <section className="bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
@@ -300,16 +336,23 @@ function FaqSection({ section }: { section: HomepageSection }) {
   );
 }
 
-function ContactSection({ section }: { section: HomepageSection }) {
+/** Real seeded contact content stores these as plain strings; the admin CMS editor writes string arrays. Accept both. */
+const toStringArray = (value: unknown): string[] => {
+  if (Array.isArray(value)) return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  if (typeof value === "string" && value.trim()) return [value];
+  return [];
+};
+
+export function ContactSection({ section }: { section: HomepageSection }) {
   const siteSettings = useSiteSettings();
-  const content = parseJson<ContactContent>(section.content, {});
-  const address = content.address?.filter(Boolean) || [
-    siteSettings.contact_address_line_1,
-    siteSettings.contact_address_line_2,
-  ].filter(Boolean);
-  const phones = content.phone?.filter(Boolean) || [siteSettings.support_phone].filter(Boolean);
-  const emails = content.email?.filter(Boolean) || [siteSettings.support_email].filter(Boolean);
-  const hours = content.hours?.filter(Boolean) || [siteSettings.support_hours].filter(Boolean);
+  const parsed = parseContent(section.content);
+  const record = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+  const address = toStringArray(record.address).length
+    ? toStringArray(record.address)
+    : [siteSettings.contact_address_line_1, siteSettings.contact_address_line_2].filter(Boolean);
+  const phones = toStringArray(record.phone).length ? toStringArray(record.phone) : [siteSettings.support_phone].filter(Boolean);
+  const emails = toStringArray(record.email).length ? toStringArray(record.email) : [siteSettings.support_email].filter(Boolean);
+  const hours = toStringArray(record.hours).length ? toStringArray(record.hours) : [siteSettings.support_hours].filter(Boolean);
   const cards = [
     { icon: MapPin, title: "Visit", values: address },
     { icon: Phone, title: "Call", values: phones },
@@ -390,8 +433,8 @@ export default function DynamicHomepageSections() {
     const fetchSections = async () => {
       const { data, error } = await supabase
         .from("homepage_sections")
-        .select("id, section_type, title, subtitle, content, image, display_order, status")
-        .eq("status", "active")
+        .select("id, section_type, title, subtitle, content, image, display_order, is_active")
+        .eq("is_active", true)
         .order("display_order", { ascending: true });
 
       if (!isMounted) return;
@@ -426,7 +469,7 @@ export default function DynamicHomepageSections() {
             content: JSON.stringify(fallbackAbout),
             image: null,
             display_order: 0,
-            status: "active",
+            is_active: true,
           }}
         />
         <TestimonialsSection
@@ -438,7 +481,7 @@ export default function DynamicHomepageSections() {
             content: JSON.stringify(fallbackTestimonials),
             image: null,
             display_order: 0,
-            status: "active",
+            is_active: true,
           }}
         />
         <FaqSection
@@ -450,7 +493,7 @@ export default function DynamicHomepageSections() {
             content: JSON.stringify(fallbackFaqs),
             image: null,
             display_order: 0,
-            status: "active",
+            is_active: true,
           }}
         />
       </>

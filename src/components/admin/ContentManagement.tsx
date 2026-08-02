@@ -105,6 +105,13 @@ const buildContentFromItems = (sectionType: string, items: StructuredItem[], cur
   return stringifyContent(cleanItems);
 };
 
+/** product_sections.content is jsonb (string or string[]); render it as editable text. */
+const contentToEditableText = (content: unknown): string => {
+  if (Array.isArray(content)) return content.filter((item) => typeof item === "string").join("\n");
+  if (typeof content === "string") return content;
+  return "";
+};
+
 interface ProductPage {
   id: string;
   product_name: string;
@@ -123,16 +130,15 @@ interface ProductSection {
   id: string;
   product_id: string;
   section_type: string;
-  section_title: string | null;
-  section_content: string | null;
-  section_image: string | null;
+  title: string | null;
+  content: unknown;
+  image: string | null;
   display_order: number;
 }
 
 interface FAQ {
   id: string;
   product_id: string | null;
-  page_id: string | null;
   question: string;
   answer: string;
   display_order: number;
@@ -143,10 +149,10 @@ interface HomepageSection {
   section_type: string;
   title: string | null;
   subtitle: string | null;
-  content: string | null;
+  content: unknown;
   image: string | null;
   display_order: number;
-  status: string;
+  is_active: boolean;
 }
 
 interface MediaItem {
@@ -183,11 +189,11 @@ export default function ContentManagement() {
     meta_description: "",
     og_image: "",
     icon: "",
-    status: "active",
+    status: "published",
   });
-  const [sectionForm, setSectionForm] = useState({ section_type: "features", section_title: "", section_content: "", section_image: "", display_order: 0 });
+  const [sectionForm, setSectionForm] = useState({ section_type: "features", title: "", content: "", image: "", display_order: 0 });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", display_order: 0 });
-  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" });
+  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", image: "", is_active: true });
   const [homepageItems, setHomepageItems] = useState<StructuredItem[]>([emptyItemForSection("")]);
 
   useEffect(() => {
@@ -249,21 +255,33 @@ export default function ContentManagement() {
   };
 
   const toggleProductStatus = async (p: ProductPage) => {
-    const newStatus = p.status === "active" ? "draft" : "active";
-    await supabase.from("product_pages").update({ status: newStatus }).eq("id", p.id);
-    toast.success(`Product ${newStatus === "active" ? "enabled" : "disabled"}`);
+    const newStatus = p.status === "published" ? "draft" : "published";
+    const { error } = await supabase.from("product_pages").update({ status: newStatus }).eq("id", p.id);
+    if (error) { toast.error(error.message); return; }
+    toast.success(`Product ${newStatus === "published" ? "published" : "unpublished"}`);
     fetchAll();
   };
 
   // Section CRUD
+  // product_sections.content is jsonb: features/benefits/how_it_works store a string
+  // array (one line per item); description/other section types store plain text.
+  const isListSectionType = (sectionType: string) => ["features", "benefits", "how_it_works"].includes(sectionType);
+
   const saveSection = async () => {
     if (!selectedProduct) return;
+
+    const content = isListSectionType(sectionForm.section_type)
+      ? sectionForm.content.split("\n").map((line) => line.trim()).filter(Boolean)
+      : sectionForm.content;
+
+    const payload = { section_type: sectionForm.section_type, title: sectionForm.title, content, image: sectionForm.image, display_order: sectionForm.display_order };
+
     if (editingSection) {
-      const { error } = await supabase.from("product_sections").update(sectionForm).eq("id", editingSection.id);
+      const { error } = await supabase.from("product_sections").update(payload).eq("id", editingSection.id);
       if (error) { toast.error(error.message); return; }
       toast.success("Section updated");
     } else {
-      const { error } = await supabase.from("product_sections").insert({ ...sectionForm, product_id: selectedProduct.id });
+      const { error } = await supabase.from("product_sections").insert({ ...payload, product_id: selectedProduct.id });
       if (error) { toast.error(error.message); return; }
       toast.success("Section added");
     }
@@ -319,11 +337,11 @@ export default function ContentManagement() {
           section_type: section.section_type,
           title: section.title || "",
           subtitle: section.subtitle || "",
-          content: section.content || "",
+          content: section.content ? JSON.stringify(section.content) : "",
           image: section.image || "",
-          status: section.status,
+          is_active: section.is_active,
         }
-      : { section_type: "", title: "", subtitle: "", content: "", image: "", status: "active" };
+      : { section_type: "", title: "", subtitle: "", content: "", image: "", is_active: true };
 
     setEditingHomepage(section || null);
     setHomepageForm(form);
@@ -357,11 +375,30 @@ export default function ContentManagement() {
   };
 
   const saveHomepageSection = async () => {
+    const contentString = structuredSectionTypes.includes(homepageForm.section_type as typeof structuredSectionTypes[number])
+      ? buildContentFromItems(homepageForm.section_type, homepageItems, homepageForm.content)
+      : homepageForm.content;
+
+    // content is a jsonb column; parse the built/edited JSON string back into a
+    // real object/array so it isn't double-encoded as a JSON string scalar.
+    let parsedContent: unknown = contentString;
+    if (contentString.trim()) {
+      try {
+        parsedContent = JSON.parse(contentString);
+      } catch {
+        parsedContent = contentString;
+      }
+    } else {
+      parsedContent = null;
+    }
+
     const normalizedHomepageForm = {
-      ...homepageForm,
-      content: structuredSectionTypes.includes(homepageForm.section_type as typeof structuredSectionTypes[number])
-        ? buildContentFromItems(homepageForm.section_type, homepageItems, homepageForm.content)
-        : homepageForm.content,
+      section_type: homepageForm.section_type,
+      title: homepageForm.title,
+      subtitle: homepageForm.subtitle,
+      image: homepageForm.image,
+      is_active: homepageForm.is_active,
+      content: parsedContent,
     };
 
     if (editingHomepage) {
@@ -525,7 +562,7 @@ export default function ContentManagement() {
                 <CardTitle className="text-lg">Products</CardTitle>
                 <Button size="sm" onClick={() => {
                   setSelectedProduct(null);
-                  setProductForm({ product_name: "", slug: "", short_description: "", full_description: "", hero_image: "", meta_description: "", og_image: "", icon: "", status: "active" });
+                  setProductForm({ product_name: "", slug: "", short_description: "", full_description: "", hero_image: "", meta_description: "", og_image: "", icon: "", status: "published" });
                   setProductDialogOpen(true);
                 }}>
                   <Plus className="w-4 h-4 mr-1" /> Add
@@ -540,7 +577,7 @@ export default function ContentManagement() {
                   >
                     <div>
                       <p className="font-medium text-sm">{p.product_name}</p>
-                      <Badge variant={p.status === "active" ? "default" : "secondary"} className="text-xs mt-1">{p.status}</Badge>
+                      <Badge variant={p.status === "published" ? "default" : "secondary"} className="text-xs mt-1">{p.status}</Badge>
                     </div>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); toggleProductStatus(p); }}>
@@ -595,7 +632,7 @@ export default function ContentManagement() {
                       <CardTitle className="text-lg">Sections</CardTitle>
                       <Button size="sm" onClick={() => {
                         setEditingSection(null);
-                        setSectionForm({ section_type: "features", section_title: "", section_content: "", section_image: "", display_order: sections.length });
+                        setSectionForm({ section_type: "features", title: "", content: "", image: "", display_order: sections.length });
                         setSectionDialogOpen(true);
                       }}>
                         <Plus className="w-4 h-4 mr-1" /> Add Section
@@ -621,16 +658,16 @@ export default function ContentManagement() {
                                 </div>
                               </TableCell>
                               <TableCell><Badge variant="outline">{sec.section_type}</Badge></TableCell>
-                              <TableCell>{sec.section_title}</TableCell>
+                              <TableCell>{sec.title}</TableCell>
                               <TableCell>
                                 <div className="flex gap-1">
                                   <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                                     setEditingSection(sec);
                                     setSectionForm({
                                       section_type: sec.section_type,
-                                      section_title: sec.section_title || "",
-                                      section_content: sec.section_content || "",
-                                      section_image: sec.section_image || "",
+                                      title: sec.title || "",
+                                      content: contentToEditableText(sec.content),
+                                      image: sec.image || "",
                                       display_order: sec.display_order,
                                     });
                                     setSectionDialogOpen(true);
@@ -721,7 +758,7 @@ export default function ContentManagement() {
                     <TableRow key={sec.id}>
                       <TableCell className="font-medium">{sec.section_type}</TableCell>
                       <TableCell>{sec.title}</TableCell>
-                      <TableCell><Badge variant={sec.status === "active" ? "default" : "secondary"}>{sec.status}</Badge></TableCell>
+                      <TableCell><Badge variant={sec.is_active ? "default" : "secondary"}>{sec.is_active ? "active" : "inactive"}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
@@ -805,8 +842,9 @@ export default function ContentManagement() {
               <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="published">Published</SelectItem>
                   <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -835,9 +873,21 @@ export default function ContentManagement() {
                 </SelectContent>
               </Select>
             </div>
-            <div><Label>Title</Label><Input value={sectionForm.section_title} onChange={(e) => setSectionForm({ ...sectionForm, section_title: e.target.value })} /></div>
-            <div><Label>Section Image URL</Label><Input value={sectionForm.section_image} onChange={(e) => setSectionForm({ ...sectionForm, section_image: e.target.value })} placeholder="https://..." /></div>
-            <div><Label>Content</Label><Textarea value={sectionForm.section_content} onChange={(e) => setSectionForm({ ...sectionForm, section_content: e.target.value })} rows={6} placeholder='Plain text or JSON array: ["item1","item2"]' /></div>
+            <div><Label>Title</Label><Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} /></div>
+            <div><Label>Section Image URL</Label><Input value={sectionForm.image} onChange={(e) => setSectionForm({ ...sectionForm, image: e.target.value })} placeholder="https://..." /></div>
+            <div>
+              <Label>Content</Label>
+              <Textarea
+                value={sectionForm.content}
+                onChange={(e) => setSectionForm({ ...sectionForm, content: e.target.value })}
+                rows={6}
+                placeholder={
+                  isListSectionType(sectionForm.section_type)
+                    ? "One item per line"
+                    : "Plain text paragraph"
+                }
+              />
+            </div>
             <Button className="w-full" onClick={saveSection}>Save Section</Button>
           </div>
         </DialogContent>
@@ -886,11 +936,14 @@ export default function ContentManagement() {
             {renderHomepageContentFields()}
             <div>
               <Label>Status</Label>
-              <Select value={homepageForm.status} onValueChange={(v) => setHomepageForm({ ...homepageForm, status: v })}>
+              <Select
+                value={homepageForm.is_active ? "active" : "inactive"}
+                onValueChange={(v) => setHomepageForm({ ...homepageForm, is_active: v === "active" })}
+              >
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
             </div>
