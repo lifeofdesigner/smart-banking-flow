@@ -15,6 +15,7 @@ import {
 import { ArrowRight, Check, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { applySiteName } from "@/lib/siteNameTemplate";
 
 interface ProductPage {
   id: string;
@@ -73,9 +74,10 @@ export default function ProductPageView() {
 
   useEffect(() => {
     if (product) {
-      document.title = `${product.product_name} | ${siteSettings["site_name"] || "Your Bank"}`;
+      const name = siteSettings["site_name"] || "Your Bank";
+      document.title = `${product.product_name} | ${name}`;
       const metaDesc = document.querySelector('meta[name="description"]');
-      if (metaDesc) metaDesc.setAttribute("content", product.meta_description || product.short_description || "");
+      if (metaDesc) metaDesc.setAttribute("content", applySiteName(product.meta_description || product.short_description || "", name));
     }
   }, [product, siteSettings]);
 
@@ -127,6 +129,7 @@ export default function ProductPageView() {
 
   if (!product) return null;
 
+  const bankName = siteSettings["site_name"] || "Your Bank";
   const descSection = sections.find((s) => s.section_type === "description");
   const featuresSection = sections.find((s) => s.section_type === "features");
   const benefitsSection = sections.find((s) => s.section_type === "benefits");
@@ -153,7 +156,7 @@ export default function ProductPageView() {
             <div className="space-y-6 animate-fade-in">
               <h1 className="text-4xl lg:text-6xl font-bold leading-tight">{product.product_name}</h1>
               <p className="text-xl text-muted-foreground leading-relaxed">
-                {product.short_description}
+                {applySiteName(product.short_description || "", bankName)}
               </p>
               <div className="flex flex-wrap gap-4">
                 <Button size="lg" className="h-14 px-8 text-lg group" onClick={() => navigate("/auth")}>
@@ -180,8 +183,8 @@ export default function ProductPageView() {
         <section className="py-20 bg-secondary/30">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center space-y-6">
-              <h2 className="text-3xl lg:text-4xl font-bold">{descSection.title}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{parseText(descSection.content)}</p>
+              <h2 className="text-3xl lg:text-4xl font-bold">{applySiteName(descSection.title || "", bankName)}</h2>
+              <p className="text-lg text-muted-foreground leading-relaxed">{applySiteName(parseText(descSection.content), bankName)}</p>
             </div>
           </div>
         </section>
@@ -199,7 +202,7 @@ export default function ProductPageView() {
                     <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 mt-0.5">
                       <Check className="w-4 h-4 text-primary" />
                     </div>
-                    <span className="text-sm font-medium">{feature}</span>
+                    <span className="text-sm font-medium">{applySiteName(feature, bankName)}</span>
                   </div>
                 </Card>
               ))}
@@ -219,7 +222,7 @@ export default function ProductPageView() {
                   <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center flex-shrink-0">
                     <Check className="w-5 h-5 text-accent" />
                   </div>
-                  <p className="text-lg text-muted-foreground">{benefit}</p>
+                  <p className="text-lg text-muted-foreground">{applySiteName(benefit, bankName)}</p>
                 </div>
               ))}
             </div>
@@ -238,7 +241,7 @@ export default function ProductPageView() {
                   <div className="w-14 h-14 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xl font-bold mx-auto">
                     {i + 1}
                   </div>
-                  <p className="text-muted-foreground">{step}</p>
+                  <p className="text-muted-foreground">{applySiteName(step, bankName)}</p>
                 </div>
               ))}
             </div>
@@ -255,8 +258,8 @@ export default function ProductPageView() {
               <Accordion type="single" collapsible className="space-y-4">
                 {faqs.map((faq, i) => (
                   <AccordionItem key={faq.id} value={`faq-${i}`} className="bg-card border border-border rounded-lg px-6">
-                    <AccordionTrigger className="text-lg font-semibold hover:text-primary">{faq.question}</AccordionTrigger>
-                    <AccordionContent className="text-muted-foreground leading-relaxed">{faq.answer}</AccordionContent>
+                    <AccordionTrigger className="text-lg font-semibold hover:text-primary">{applySiteName(faq.question, bankName)}</AccordionTrigger>
+                    <AccordionContent className="text-muted-foreground leading-relaxed">{applySiteName(faq.answer, bankName)}</AccordionContent>
                   </AccordionItem>
                 ))}
               </Accordion>

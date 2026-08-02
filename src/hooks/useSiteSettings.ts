@@ -33,7 +33,10 @@ const loadSiteSettings = async () => {
       }
 
       settingsCache = (data || []).reduce<Record<string, string>>((acc, row) => {
-        acc[row.key] = row.value || "";
+        // Trim so a whitespace-only value (e.g. an admin accidentally saving
+        // a blank field) doesn't defeat `siteSettings.x || fallback` checks
+        // everywhere — whitespace-only is truthy in JS but not a real value.
+        acc[row.key] = (row.value || "").trim();
         return acc;
       }, {});
 

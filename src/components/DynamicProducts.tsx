@@ -5,6 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { applySiteName } from "@/lib/siteNameTemplate";
 
 interface Product {
   id: string;
@@ -72,6 +74,8 @@ const fallbackProducts: Product[] = [
 
 export default function DynamicProducts() {
   const navigate = useNavigate();
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
   const [products, setProducts] = useState<Product[]>(fallbackProducts);
   const [loading, setLoading] = useState(true);
   const [sectionTitle, setSectionTitle] = useState("Banking Products");
@@ -162,7 +166,7 @@ export default function DynamicProducts() {
               <div className="flex h-full flex-col">
                 <h3 className="text-sm font-semibold text-[var(--bank-navy)]">{product.product_name}</h3>
                 <p className="mt-2 line-clamp-3 text-[10px] leading-5 text-[var(--bank-muted)]">
-                  {product.short_description}
+                  {applySiteName(product.short_description || "", bankName)}
                 </p>
                 <button
                   type="button"
@@ -188,7 +192,7 @@ export default function DynamicProducts() {
                   {product.product_name}
                 </h3>
                 <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
-                  {product.short_description}
+                  {applySiteName(product.short_description || "", bankName)}
                 </p>
                 <Button variant="ghost" size="sm" className="p-0 h-auto text-primary hover:text-primary/80">
                   Learn More <ArrowRight className="ml-1 w-4 h-4" />

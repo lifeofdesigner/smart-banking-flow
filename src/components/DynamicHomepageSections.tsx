@@ -8,6 +8,7 @@ import {
 import { Card } from "@/components/ui/card";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { applySiteName } from "@/lib/siteNameTemplate";
 import DynamicProducts from "@/components/DynamicProducts";
 import {
   Award,
@@ -198,14 +199,16 @@ function SectionHeader({ title, subtitle }: { title: string; subtitle?: string |
 }
 
 function ServicesSection({ section }: { section: HomepageSection }) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
   const items = extractArray<ServiceItem>(parseContent(section.content), ["services"]) || fallbackServices;
 
   return (
     <section id="services" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
         <SectionHeader
-          title={section.title || "Financial Services"}
-          subtitle={section.subtitle || "Banking products and services tailored for your customers."}
+          title={applySiteName(section.title || "Financial Services", bankName)}
+          subtitle={applySiteName(section.subtitle || "Banking products and services tailored for your customers.", bankName)}
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {items.map((item, index) => {
@@ -215,8 +218,8 @@ function ServicesSection({ section }: { section: HomepageSection }) {
                 <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--bank-public-navy)]/10">
                   <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
                 </div>
-                <h3 className="text-lg font-bold md:text-2xl">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{item.description}</p>
+                <h3 className="text-lg font-bold md:text-2xl">{applySiteName(item.title, bankName)}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{applySiteName(item.description, bankName)}</p>
               </Card>
             );
           })}
@@ -236,14 +239,16 @@ export function AboutSection({ section }: { section: HomepageSection }) {
   const mission = typeof record.mission === "string" ? record.mission : undefined;
   const vision = typeof record.vision === "string" ? record.vision : undefined;
 
+  const title = section.title ? applySiteName(section.title, bankName) : `About ${bankName}`;
+
   return (
     <section id="about" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
-        <SectionHeader title={section.title || `About ${bankName}`} subtitle={section.subtitle || body} />
+        <SectionHeader title={title} subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : body ? applySiteName(body, bankName) : undefined} />
         {section.image ? (
           <img
             src={section.image}
-            alt={section.title || `About ${bankName}`}
+            alt={title}
             className="mx-auto mb-8 max-h-[380px] w-full max-w-5xl rounded-lg object-cover"
           />
         ) : null}
@@ -252,13 +257,13 @@ export function AboutSection({ section }: { section: HomepageSection }) {
             {mission ? (
               <Card className="p-5 md:p-8">
                 <h3 className="text-lg font-bold md:text-2xl">Our Mission</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{mission}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{applySiteName(mission, bankName)}</p>
               </Card>
             ) : null}
             {vision ? (
               <Card className="p-5 md:p-8">
                 <h3 className="text-lg font-bold md:text-2xl">Our Vision</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{vision}</p>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{applySiteName(vision, bankName)}</p>
               </Card>
             ) : null}
           </div>
@@ -269,8 +274,8 @@ export function AboutSection({ section }: { section: HomepageSection }) {
             return (
               <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
                 <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
-                <h3 className="mt-4 text-lg font-bold md:text-2xl">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
+                <h3 className="mt-4 text-lg font-bold md:text-2xl">{applySiteName(item.title, bankName)}</h3>
+                <p className="mt-2 text-sm leading-6 text-muted-foreground">{applySiteName(item.description, bankName)}</p>
               </Card>
             );
           })}
@@ -281,14 +286,16 @@ export function AboutSection({ section }: { section: HomepageSection }) {
 }
 
 function TestimonialsSection({ section }: { section: HomepageSection }) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
   const testimonials = extractArray<TestimonialItem>(parseContent(section.content), ["testimonials"]) || fallbackTestimonials;
 
   return (
     <section className="bg-background py-12 md:py-24">
       <div className="container mx-auto px-4">
         <SectionHeader
-          title={section.title || "Customer Stories"}
-          subtitle={section.subtitle || "Real feedback from people who use our banking services."}
+          title={applySiteName(section.title || "Customer Stories", bankName)}
+          subtitle={applySiteName(section.subtitle || "Real feedback from people who use our banking services.", bankName)}
         />
         <div className="grid gap-4 md:grid-cols-3">
           {testimonials.map((testimonial, index) => (
@@ -298,7 +305,7 @@ function TestimonialsSection({ section }: { section: HomepageSection }) {
                   <Star key={starIndex} className="h-4 w-4 fill-[var(--bank-public-accent)] text-[var(--bank-public-accent)]" />
                 ))}
               </div>
-              <p className="text-sm leading-6 text-muted-foreground md:text-base">"{testimonial.content}"</p>
+              <p className="text-sm leading-6 text-muted-foreground md:text-base">"{applySiteName(testimonial.content, bankName)}"</p>
               <div className="mt-5 border-t border-border pt-4">
                 <p className="font-bold">{testimonial.name}</p>
                 {testimonial.role ? <p className="text-sm text-muted-foreground">{testimonial.role}</p> : null}
@@ -312,6 +319,8 @@ function TestimonialsSection({ section }: { section: HomepageSection }) {
 }
 
 function FaqSection({ section }: { section: HomepageSection }) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
   const faqs = extractArray<FaqItem>(parseContent(section.content), ["faqs"]) || fallbackFaqs;
 
   return (
@@ -319,14 +328,14 @@ function FaqSection({ section }: { section: HomepageSection }) {
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           <SectionHeader
-            title={section.title || "Frequently Asked Questions"}
-            subtitle={section.subtitle || "Answers to common questions about our services."}
+            title={applySiteName(section.title || "Frequently Asked Questions", bankName)}
+            subtitle={applySiteName(section.subtitle || "Answers to common questions about our services.", bankName)}
           />
           <Accordion type="single" collapsible className="space-y-4">
             {faqs.map((faq, index) => (
               <AccordionItem key={`${faq.question}-${index}`} value={`item-${index}`} className="rounded-lg border border-border bg-card px-5">
-                <AccordionTrigger className="text-left text-base font-semibold">{faq.question}</AccordionTrigger>
-                <AccordionContent className="leading-7 text-muted-foreground">{faq.answer}</AccordionContent>
+                <AccordionTrigger className="text-left text-base font-semibold">{applySiteName(faq.question, bankName)}</AccordionTrigger>
+                <AccordionContent className="leading-7 text-muted-foreground">{applySiteName(faq.answer, bankName)}</AccordionContent>
               </AccordionItem>
             ))}
           </Accordion>
@@ -360,12 +369,14 @@ export function ContactSection({ section }: { section: HomepageSection }) {
     { icon: Clock, title: "Hours", values: hours },
   ].filter((card) => card.values.length > 0);
 
+  const bankName = siteSettings.site_name || "Your Bank";
+
   return (
     <section id="contact" className="scroll-mt-20 bg-background py-12 md:py-24">
       <div className="container mx-auto px-4">
         <SectionHeader
-          title={section.title || "Contact Us"}
-          subtitle={section.subtitle || "Reach our team for account, product, or support questions."}
+          title={applySiteName(section.title || "Contact Us", bankName)}
+          subtitle={applySiteName(section.subtitle || "Reach our team for account, product, or support questions.", bankName)}
         />
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {cards.map((card) => (
@@ -386,15 +397,21 @@ export function ContactSection({ section }: { section: HomepageSection }) {
 }
 
 function CustomSection({ section }: { section: HomepageSection }) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
+  const title = applySiteName(section.title || section.section_type, bankName);
+  const parsedContent = parseContent(section.content);
+  const bodyText = typeof parsedContent === "string" ? parsedContent : "";
+
   return (
     <section className="bg-background py-12 md:py-20">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-4xl">
-          <SectionHeader title={section.title || section.section_type} subtitle={section.subtitle} />
+          <SectionHeader title={title} subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : undefined} />
           {section.image ? (
-            <img src={section.image} alt={section.title || section.section_type} className="mb-6 max-h-[420px] w-full rounded-lg object-cover" />
+            <img src={section.image} alt={title} className="mb-6 max-h-[420px] w-full rounded-lg object-cover" />
           ) : null}
-          {section.content ? <p className="whitespace-pre-line text-base leading-8 text-muted-foreground">{section.content}</p> : null}
+          {bodyText ? <p className="whitespace-pre-line text-base leading-8 text-muted-foreground">{applySiteName(bodyText, bankName)}</p> : null}
         </div>
       </div>
     </section>
