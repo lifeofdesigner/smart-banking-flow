@@ -22,18 +22,20 @@ const Footer = () => {
   const footerDescription =
     siteSettings.footer_description ||
     `${siteName} provides secure banking, payments, loans, and support for modern customers.`;
-  const footerDisclaimer = siteSettings.footer_disclaimer || "Member of Deposit Insurance Corporation";
+  const footerDisclaimer =
+    siteSettings.footer_disclaimer || `Member of ${siteSettings.deposit_insurer_name || "Deposit Insurance Corporation"}`;
   const quickLinks = parseLinks(siteSettings.footer_quick_links_json, [
-    { label: "Home", href: "#home" },
-    { label: "Services", href: "#services" },
-    { label: "Products", href: "#products" },
-    { label: "About", href: "#about" },
+    { label: "Home", href: "/" },
+    { label: "About Us", href: "/about" },
+    { label: "Contact Us", href: "/contact" },
   ]);
   const serviceLinks = parseLinks(siteSettings.footer_service_links_json, [
-    { label: "Savings Account", href: "#services" },
-    { label: "Loans", href: "#products" },
-    { label: "Cards", href: "/auth" },
-    { label: "Support", href: "#contact" },
+    { label: "Checking", href: "/products/checking" },
+    { label: "Savings & CDs", href: "/products/savings-account" },
+    { label: "Credit Cards", href: "/products/cards" },
+    { label: "Home Loans", href: "/products/home-loans" },
+    { label: "Auto Loans", href: "/products/auto-loans" },
+    { label: "Investing", href: "/products/investments" },
   ]);
   const legalLinks = parseLinks(siteSettings.footer_legal_links_json, [
     { label: "Privacy", href: siteSettings.footer_privacy_url || "#" },
@@ -49,15 +51,15 @@ const Footer = () => {
   ].filter((item) => item.href);
 
   return (
-    <footer className="bg-[var(--bank-navy)] text-primary-foreground">
+    <footer className="border-t border-[#d8dde6] bg-white text-[#1f2937]">
       <div className="container mx-auto px-4 py-5 md:hidden">
-        <div className="flex items-center justify-between gap-4 text-[11px] text-white/75">
+        <div className="flex items-center justify-between gap-4 text-[11px] text-[#6b7280]">
           <p>
             &copy; {new Date().getFullYear()} {siteName}
           </p>
           <div className="flex items-center gap-4">
             {legalLinks.slice(0, 2).map((link) => (
-              <a key={link.label} href={link.href} className="transition-colors hover:text-[var(--bank-gold)]">
+              <a key={link.label} href={link.href} className="transition-colors hover:text-[var(--bank-public-navy)]">
                 {link.label}
               </a>
             ))}
@@ -77,21 +79,28 @@ const Footer = () => {
                     style={{ height: "36px", width: "auto", objectFit: "contain" }}
                   />
                 ) : (
-                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-accent">
-                    <span className="text-xl font-bold text-accent-foreground">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--bank-public-navy)]">
+                    <span className="text-xl font-bold text-white">
                       {(siteSettings.brand_initials || siteName.slice(0, 2)).toUpperCase()}
                     </span>
                   </div>
                 )}
-                <span className="text-xl font-bold">{siteName}</span>
+                <span className="text-xl font-bold text-[var(--bank-public-navy)]">{siteName}</span>
               </div>
-              <p className="leading-relaxed text-primary-foreground/80">{footerDescription}</p>
+              <p className="leading-relaxed text-[#4b5563]">{footerDescription}</p>
               {socials.length ? (
                 <div className="flex space-x-4">
                   {socials.map((item) => {
                     const Icon = item.icon;
                     return (
-                      <a key={item.label} href={item.href} target="_blank" rel="noreferrer" className="transition-colors hover:text-accent" aria-label={item.label}>
+                      <a
+                        key={item.label}
+                        href={item.href}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-[#6b7280] transition-colors hover:text-[var(--bank-public-navy)]"
+                        aria-label={item.label}
+                      >
                         <Icon className="h-5 w-5" />
                       </a>
                     );
@@ -101,16 +110,16 @@ const Footer = () => {
             </div>
 
             <FooterLinkColumn title={siteSettings.footer_quick_links_title || "Quick Links"} links={quickLinks} />
-            <FooterLinkColumn title={siteSettings.footer_services_title || "Services"} links={serviceLinks} />
+            <FooterLinkColumn title={siteSettings.footer_services_title || "Products"} links={serviceLinks} />
             <FooterLinkColumn title={siteSettings.footer_legal_title || "Legal"} links={legalLinks} />
           </div>
 
-          <div className="border-t border-primary-foreground/20 pt-8">
+          <div className="border-t border-[#e6eaf0] pt-8">
             <div className="flex flex-col items-center justify-between space-y-4 md:flex-row md:space-y-0">
-              <p className="text-sm text-primary-foreground/80">
+              <p className="text-sm text-[#6b7280]">
                 &copy; {new Date().getFullYear()} {siteName}. All rights reserved.
               </p>
-              <p className="text-sm text-primary-foreground/80">{footerDisclaimer}</p>
+              <p className="text-sm text-[#6b7280]">{footerDisclaimer}</p>
             </div>
           </div>
         </div>
@@ -122,11 +131,11 @@ const Footer = () => {
 function FooterLinkColumn({ title, links }: { title: string; links: Array<{ label: string; href: string }> }) {
   return (
     <div>
-      <h3 className="mb-4 text-lg font-bold">{title}</h3>
+      <h3 className="mb-4 text-lg font-bold text-[var(--bank-public-navy)]">{title}</h3>
       <ul className="space-y-3">
         {links.map((link) => (
           <li key={`${link.label}-${link.href}`}>
-            <a href={link.href} className="text-primary-foreground/80 transition-colors hover:text-accent">
+            <a href={link.href} className="text-[#4b5563] transition-colors hover:text-[var(--bank-public-navy)]">
               {link.label}
             </a>
           </li>

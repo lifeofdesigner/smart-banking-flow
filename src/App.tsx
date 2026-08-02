@@ -34,6 +34,8 @@ const BillPayments = lazy(() => import("./pages/BillPayments"));
 const CardsPage = lazy(() => import("./pages/Cards"));
 const InvestmentsPage = lazy(() => import("./pages/Investments"));
 const ProductPage = lazy(() => import("./pages/ProductPage"));
+const About = lazy(() => import("./pages/About"));
+const Contact = lazy(() => import("./pages/Contact"));
 const ATMWithdrawal = lazy(() => import("./pages/ATMWithdrawal"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
@@ -126,6 +128,8 @@ const App = () => {
               <Route path="/cards" element={<CardsPage />} />
               <Route path="/investments" element={<InvestmentsPage />} />
               <Route path="/products/:slug" element={<ProductPage />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
               <Route path="/atm-withdrawal" element={<ATMWithdrawal />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

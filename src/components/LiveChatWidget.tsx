@@ -957,7 +957,7 @@ export default function LiveChatWidget({
   }
 
   return (
-    <div className={cn("fixed right-4 z-50 md:bottom-6 md:right-6", isLandingVariant ? "bottom-[76px]" : "bottom-20")}>
+    <div className={cn("fixed right-4 z-50 md:bottom-6 md:right-6", isLandingVariant ? "bottom-6" : "bottom-20")}>
       {!open ? (
         <div className="flex items-center gap-3">
           {showIntroLabel ? (
