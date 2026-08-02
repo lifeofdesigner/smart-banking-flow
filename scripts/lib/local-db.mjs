@@ -291,6 +291,30 @@ END $$;
 `;
 };
 
+export const buildResetPasswordSql = (userId, password) => `
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+DO $$
+DECLARE
+  v_user_id uuid := ${sqlLiteral(userId)}::uuid;
+  v_email text;
+BEGIN
+  SELECT email INTO v_email FROM auth.users WHERE id = v_user_id;
+
+  IF v_email IS NULL THEN
+    RAISE EXCEPTION 'No user found with id %', v_user_id;
+  END IF;
+
+  UPDATE auth.users
+  SET
+    encrypted_password = crypt(${sqlLiteral(password)}, gen_salt('bf')),
+    updated_at = now()
+  WHERE id = v_user_id;
+
+  RAISE NOTICE 'Password reset for % (%)', v_email, v_user_id;
+END $$;
+`;
+
 export const buildDeleteUserSql = (userId) => `
 DO $$
 DECLARE

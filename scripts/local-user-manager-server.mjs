@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import {
   buildCreateUserSql,
   buildDeleteUserSql,
+  buildResetPasswordSql,
   getDatabaseUrl,
   listUsersQuery,
   normalizeEmail,
@@ -84,14 +85,52 @@ const handleCreateUser = async (req, res) => {
   }
 };
 
+const UUID_RE = /^[0-9a-f-]{36}$/i;
+
 const handleDeleteUser = async (req, res) => {
   const body = await readBody(req);
   const id = String(body.id || "");
 
-  if (!/^[0-9a-f-]{36}$/i.test(id)) return sendJson(res, 400, { ok: false, error: "A valid user id is required." });
+  if (!UUID_RE.test(id)) return sendJson(res, 400, { ok: false, error: "A valid user id is required." });
 
   try {
     runPsql(databaseUrl, buildDeleteUserSql(id));
+    sendJson(res, 200, { ok: true });
+  } catch (error) {
+    sendJson(res, 500, { ok: false, error: error.message });
+  }
+};
+
+const handleDeleteUsers = async (req, res) => {
+  const body = await readBody(req);
+  const ids = Array.isArray(body.ids) ? body.ids.map(String) : [];
+  const validIds = ids.filter((id) => UUID_RE.test(id));
+
+  if (validIds.length === 0) return sendJson(res, 400, { ok: false, error: "At least one valid user id is required." });
+
+  const results = [];
+  for (const id of validIds) {
+    try {
+      runPsql(databaseUrl, buildDeleteUserSql(id));
+      results.push({ id, ok: true });
+    } catch (error) {
+      results.push({ id, ok: false, error: error.message });
+    }
+  }
+
+  sendJson(res, 200, { ok: true, results });
+};
+
+const handleResetPassword = async (req, res) => {
+  const body = await readBody(req);
+  const id = String(body.id || "");
+  const password = String(body.password || "");
+
+  if (!UUID_RE.test(id)) return sendJson(res, 400, { ok: false, error: "A valid user id is required." });
+  if (password.length < 8) return sendJson(res, 400, { ok: false, error: "Password must be at least 8 characters." });
+
+  try {
+    runPsql(databaseUrl, buildResetPasswordSql(id, password));
     sendJson(res, 200, { ok: true });
   } catch (error) {
     sendJson(res, 500, { ok: false, error: error.message });
@@ -118,6 +157,8 @@ const server = createServer(async (req, res) => {
     if (req.method === "GET" && req.url === "/api/users") return handleListUsers(req, res);
     if (req.method === "POST" && req.url === "/api/create-user") return handleCreateUser(req, res);
     if (req.method === "POST" && req.url === "/api/delete-user") return handleDeleteUser(req, res);
+    if (req.method === "POST" && req.url === "/api/delete-users") return handleDeleteUsers(req, res);
+    if (req.method === "POST" && req.url === "/api/reset-password") return handleResetPassword(req, res);
 
     sendJson(res, 404, { ok: false, error: "Not found." });
   } catch (error) {

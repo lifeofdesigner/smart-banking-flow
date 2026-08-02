@@ -158,16 +158,24 @@
         <button type="button" id="refresh" class="btn-secondary">Refresh</button>
       </div>
     </div>
+    <div class="toolbar" style="margin-top: 0.75rem;">
+      <label style="display: flex; align-items: center; gap: 0.4rem; margin: 0; font-size: 0.85rem; color: #e2e8f0;">
+        <input type="checkbox" id="select-all" style="width: auto;" />
+        Select all
+      </label>
+      <button type="button" id="delete-selected" class="btn-danger" disabled>Delete selected (0)</button>
+    </div>
     <div id="list-status"></div>
     <table id="users-table">
       <thead>
         <tr>
+          <th></th>
           <th>Name / Email</th>
           <th>Roles</th>
           <th>Accounts</th>
           <th>KYC</th>
           <th>Status</th>
-          <th></th>
+          <th colspan="2"></th>
         </tr>
       </thead>
       <tbody id="users-body"></tbody>
@@ -181,24 +189,43 @@
   const usersBody = document.getElementById("users-body");
   const searchInput = document.getElementById("search");
   const refreshBtn = document.getElementById("refresh");
+  const selectAllCheckbox = document.getElementById("select-all");
+  const deleteSelectedBtn = document.getElementById("delete-selected");
 
   let allUsers = [];
+  const selectedIds = new Set();
 
   const money = (value) => Number(value ?? 0).toLocaleString(undefined, { style: "currency", currency: "USD" });
 
-  const renderUsers = () => {
+  const currentFiltered = () => {
     const filter = searchInput.value.trim().toLowerCase();
-    const filtered = filter
+    return filter
       ? allUsers.filter((u) => (u.full_name || "").toLowerCase().includes(filter) || (u.email || "").toLowerCase().includes(filter))
       : allUsers;
+  };
+
+  const updateBulkControls = () => {
+    deleteSelectedBtn.textContent = `Delete selected (${selectedIds.size})`;
+    deleteSelectedBtn.disabled = selectedIds.size === 0;
+
+    const filtered = currentFiltered();
+    const filteredIds = filtered.map((u) => u.id);
+    selectAllCheckbox.checked = filteredIds.length > 0 && filteredIds.every((id) => selectedIds.has(id));
+    selectAllCheckbox.indeterminate = !selectAllCheckbox.checked && filteredIds.some((id) => selectedIds.has(id));
+  };
+
+  const renderUsers = () => {
+    const filtered = currentFiltered();
+    const knownIds = new Set(allUsers.map((u) => u.id));
+    for (const id of [...selectedIds]) if (!knownIds.has(id)) selectedIds.delete(id);
 
     usersBody.innerHTML = filtered.map((u) => {
       const roles = (u.roles || []).filter(Boolean).map((r) =>
-        \`<span class="badge \${r === "admin" ? "badge-admin" : "badge-user"}">\${r}</span>\`
+        `<span class="badge ${r === "admin" ? "badge-admin" : "badge-user"}">${r}</span>`
       ).join("") || '<span class="muted">none</span>';
 
       const accounts = (u.accounts || []).map((a) =>
-        \`\${a.account_type} \${a.account_number} — \${money(a.balance)}\`
+        `${a.account_type} ${a.account_number} — ${money(a.balance)}`
       ).join("<br/>") || '<span class="muted">no account</span>';
 
       const statusBadges = [
@@ -209,17 +236,21 @@
         u.missing_profile ? '<span class="badge badge-warn">no profile</span>' : "",
       ].filter(Boolean).join("");
 
-      return \`
-        <tr data-id="\${u.id}">
-          <td><strong>\${u.full_name || "(no name)"}</strong><br/><span class="muted">\${u.email}</span></td>
-          <td>\${roles}</td>
-          <td>\${accounts}</td>
-          <td>\${u.kyc_status || "-"}</td>
-          <td>\${statusBadges}</td>
-          <td><button class="btn-danger" data-action="delete" data-id="\${u.id}" data-email="\${u.email}">Delete</button></td>
+      return `
+        <tr data-id="${u.id}">
+          <td><input type="checkbox" class="row-select" data-id="${u.id}" ${selectedIds.has(u.id) ? "checked" : ""} /></td>
+          <td><strong>${u.full_name || "(no name)"}</strong><br/><span class="muted">${u.email}</span></td>
+          <td>${roles}</td>
+          <td>${accounts}</td>
+          <td>${u.kyc_status || "-"}</td>
+          <td>${statusBadges}</td>
+          <td><button class="btn-secondary" data-action="reset-password" data-id="${u.id}" data-email="${u.email}">Reset password</button></td>
+          <td><button class="btn-danger" data-action="delete" data-id="${u.id}" data-email="${u.email}">Delete</button></td>
         </tr>
-      \`;
+      `;
     }).join("");
+
+    updateBulkControls();
   };
 
   const loadUsers = async () => {
@@ -266,37 +297,128 @@
   });
 
   usersBody.addEventListener("click", async (e) => {
-    const btn = e.target.closest('button[data-action="delete"]');
-    if (!btn) return;
+    const deleteBtn = e.target.closest('button[data-action="delete"]');
+    const resetBtn = e.target.closest('button[data-action="reset-password"]');
 
-    const { id, email } = btn.dataset;
-    const typed = prompt(\`Type the email to confirm deleting \${email}:\`);
-    if (typed !== email) {
-      if (typed !== null) alert("Email did not match. Nothing was deleted.");
+    if (deleteBtn) {
+      const { id, email } = deleteBtn.dataset;
+      const typed = prompt(`Type the email to confirm deleting ${email}:`);
+      if (typed !== email) {
+        if (typed !== null) alert("Email did not match. Nothing was deleted.");
+        return;
+      }
+
+      deleteBtn.disabled = true;
+      deleteBtn.textContent = "Deleting…";
+
+      try {
+        const res = await fetch("/api/delete-user", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Failed to delete user");
+        loadUsers();
+      } catch (err) {
+        alert(err.message);
+        deleteBtn.disabled = false;
+        deleteBtn.textContent = "Delete";
+      }
       return;
     }
 
-    btn.disabled = true;
-    btn.textContent = "Deleting…";
+    if (resetBtn) {
+      const { id, email } = resetBtn.dataset;
+      const password = prompt(`New password for ${email} (min 8 chars):`);
+      if (password === null) return;
+      if (password.length < 8) {
+        alert("Password must be at least 8 characters. Nothing was changed.");
+        return;
+      }
 
-    try {
-      const res = await fetch("/api/delete-user", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to delete user");
-      loadUsers();
-    } catch (err) {
-      alert(err.message);
-      btn.disabled = false;
-      btn.textContent = "Delete";
+      resetBtn.disabled = true;
+      resetBtn.textContent = "Saving…";
+
+      try {
+        const res = await fetch("/api/reset-password", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id, password }),
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Failed to reset password");
+        alert(`Password updated for ${email}.`);
+      } catch (err) {
+        alert(err.message);
+      } finally {
+        resetBtn.disabled = false;
+        resetBtn.textContent = "Reset password";
+      }
     }
   });
 
   refreshBtn.addEventListener("click", loadUsers);
   searchInput.addEventListener("input", renderUsers);
+
+  usersBody.addEventListener("change", (e) => {
+    const checkbox = e.target.closest(".row-select");
+    if (!checkbox) return;
+
+    if (checkbox.checked) selectedIds.add(checkbox.dataset.id);
+    else selectedIds.delete(checkbox.dataset.id);
+
+    updateBulkControls();
+  });
+
+  selectAllCheckbox.addEventListener("change", () => {
+    const filteredIds = currentFiltered().map((u) => u.id);
+    if (selectAllCheckbox.checked) filteredIds.forEach((id) => selectedIds.add(id));
+    else filteredIds.forEach((id) => selectedIds.delete(id));
+    renderUsers();
+  });
+
+  deleteSelectedBtn.addEventListener("click", async () => {
+    const ids = [...selectedIds];
+    if (ids.length === 0) return;
+
+    const emails = allUsers.filter((u) => ids.includes(u.id)).map((u) => u.email);
+    const typed = prompt(
+      `Type DELETE to confirm deleting ${ids.length} user(s):\n\n${emails.join("\n")}`
+    );
+    if (typed !== "DELETE") {
+      if (typed !== null) alert("Confirmation text did not match. Nothing was deleted.");
+      return;
+    }
+
+    deleteSelectedBtn.disabled = true;
+    deleteSelectedBtn.textContent = "Deleting…";
+
+    try {
+      const res = await fetch("/api/delete-users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ids }),
+      });
+      const data = await res.json();
+      if (!res.ok || !data.ok) throw new Error(data.error || "Failed to delete users");
+
+      const failed = data.results.filter((r) => !r.ok);
+      selectedIds.clear();
+      loadUsers();
+
+      if (failed.length > 0) {
+        alert(
+          `Deleted ${data.results.length - failed.length} of ${data.results.length}.\n\nFailed:\n`
+          + failed.map((r) => `${r.id}: ${r.error}`).join("\n")
+        );
+      }
+    } catch (err) {
+      alert(err.message);
+    } finally {
+      updateBulkControls();
+    }
+  });
 
   loadUsers();
 </script>
