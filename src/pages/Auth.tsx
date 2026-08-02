@@ -74,6 +74,7 @@ const Auth = () => {
   const supportEmail = siteSettings.support_email || "support@example.com";
   const isAdminLogin = location.pathname === "/admin-login";
   const showAdminDemoLogin = siteSettings.demo_admin_login_enabled !== "false";
+  const showCustomerDemoLogin = siteSettings.demo_customer_login_enabled !== "false";
   const manualRedirectRef = useRef(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -354,15 +355,17 @@ const Auth = () => {
               </Button>
 
               {!isAdminLogin ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="h-12 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
-                  disabled={loading}
-                  onClick={() => handleDemoLogin("customer")}
-                >
-                  Try as Customer (Demo)
-                </Button>
+                showCustomerDemoLogin ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-12 w-full border-indigo-200 text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800"
+                    disabled={loading}
+                    onClick={() => handleDemoLogin("customer")}
+                  >
+                    Try as Customer (Demo)
+                  </Button>
+                ) : null
               ) : showAdminDemoLogin ? (
                 <Button
                   type="button"

@@ -93,6 +93,7 @@ const DEFAULTS: SiteSettingsMap = {
   active_landing: "classic",
   signup_enabled: "true",
   demo_admin_login_enabled: "true",
+  demo_customer_login_enabled: "true",
 };
 
 const LANDING_THEMES = [
@@ -186,6 +187,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
   const registrationOpen = settings.signup_enabled !== "false";
   const demoAdminLoginVisible = settings.demo_admin_login_enabled !== "false";
+  const demoCustomerLoginVisible = settings.demo_customer_login_enabled !== "false";
   const showBrandNameBesideLogo = settings.show_brand_name_beside_logo !== "false";
   const showMobileBrandNameBesideLogo = settings.show_mobile_brand_name_beside_logo !== "false";
 
@@ -284,6 +286,31 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
 
     invalidateSiteSettingsCache();
     toast.success(checked ? "Demo admin login is visible" : "Demo admin login is hidden");
+  };
+
+  const toggleDemoCustomerLogin = async (checked: boolean) => {
+    const previousValue = settings.demo_customer_login_enabled ?? "true";
+    const nextValue = checked ? "true" : "false";
+
+    setSetting("demo_customer_login_enabled", nextValue);
+
+    const { error } = await supabase.from("site_settings").upsert(
+      {
+        key: "demo_customer_login_enabled",
+        value: nextValue,
+        updated_by: adminId ?? null,
+      },
+      { onConflict: "key" }
+    );
+
+    if (error) {
+      setSetting("demo_customer_login_enabled", previousValue);
+      toast.error(error.message);
+      return;
+    }
+
+    invalidateSiteSettingsCache();
+    toast.success(checked ? "Demo customer login is visible" : "Demo customer login is hidden");
   };
 
   const uploadBrandingAsset = async (key: "site_logo_url" | "mobile_logo_url" | "site_favicon_url" | "site_og_image_url", file?: File | null) => {
@@ -685,6 +712,40 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                       id="demo-admin-login-enabled"
                       checked={demoAdminLoginVisible}
                       onCheckedChange={toggleDemoAdminLogin}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
+                <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                  <div className="space-y-1">
+                    <p className="text-sm font-semibold text-[var(--bank-navy)]">Demo Customer Login</p>
+                    <p className="text-sm text-[var(--bank-muted)]">
+                      Show or hide the demo button on the regular customer login page.
+                    </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-xs font-medium text-[var(--bank-muted)]">Current status:</span>
+                      <span
+                        className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                          demoCustomerLoginVisible
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {demoCustomerLoginVisible ? "Visible" : "Hidden"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Label htmlFor="demo-customer-login-enabled" className="text-sm font-medium text-[var(--bank-navy)]">
+                      Show Demo Customer
+                    </Label>
+                    <Switch
+                      id="demo-customer-login-enabled"
+                      checked={demoCustomerLoginVisible}
+                      onCheckedChange={toggleDemoCustomerLogin}
                     />
                   </div>
                 </div>
