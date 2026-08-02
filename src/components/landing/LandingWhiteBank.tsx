@@ -157,32 +157,34 @@ export default function LandingWhiteBank() {
         <img src={heroImg || heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--bank-public-navy)] via-[var(--bank-public-navy)]/90 to-[var(--bank-public-navy)]/40" />
 
-        <div className="relative mx-auto max-w-[1180px] px-4 py-14 md:px-6 md:py-24">
-          <div className="max-w-xl space-y-6 text-white">
-            <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-semibold backdrop-blur-sm">
-              <ShieldCheck className="h-3.5 w-3.5" />
-              {badgeText}
+        <div className="relative mx-auto max-w-[1180px] px-4 py-14 md:px-6 md:py-20 lg:py-24">
+          <div className="md:grid md:grid-cols-[1fr_320px] md:items-center md:gap-10 lg:grid-cols-[1fr_360px] lg:gap-16">
+            <div className="max-w-xl space-y-6 text-white">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1.5 text-xs font-semibold backdrop-blur-sm">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                {badgeText}
+              </div>
+              <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">{title}</h1>
+              <p className="max-w-lg text-base leading-7 text-white/85 md:text-lg">{subtitle}</p>
+              <div className="flex flex-wrap gap-3 pt-2">
+                <a
+                  href="/auth?tab=signup"
+                  className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] shadow-sm transition hover:bg-white/90"
+                >
+                  {ctaPrimary}
+                </a>
+                <a
+                  href="/about"
+                  className="rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                >
+                  {ctaSecondary}
+                </a>
+              </div>
             </div>
-            <h1 className="text-4xl font-bold leading-tight md:text-5xl lg:text-6xl">{title}</h1>
-            <p className="max-w-lg text-base leading-7 text-white/85 md:text-lg">{subtitle}</p>
-            <div className="flex flex-wrap gap-3 pt-2">
-              <a
-                href="/auth?tab=signup"
-                className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] shadow-sm transition hover:bg-white/90"
-              >
-                {ctaPrimary}
-              </a>
-              <a
-                href="/about"
-                className="rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
-              >
-                {ctaSecondary}
-              </a>
-            </div>
-          </div>
 
-          <div className="mt-10 md:mt-14 md:flex md:justify-end">
-            <LoginPanel />
+            <div className="mt-10 md:mt-0 md:justify-self-end">
+              <LoginPanel />
+            </div>
           </div>
         </div>
       </section>
