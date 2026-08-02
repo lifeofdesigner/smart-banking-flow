@@ -16,18 +16,11 @@ export default defineConfig(({ mode }) => ({
     },
   },
   build: {
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (!id.includes("node_modules")) return;
-          if (/[\\/](react|react-dom|react-router-dom|scheduler)[\\/]/.test(id)) return "vendor-react";
-          if (id.includes("@supabase")) return "vendor-supabase";
-          if (id.includes("@radix-ui")) return "vendor-radix";
-          if (id.includes("recharts") || id.includes("d3-")) return "vendor-charts";
-          if (/[\\/](react-hook-form|zod|@hookform)[\\/]/.test(id)) return "vendor-forms";
-          if (id.includes("@tanstack")) return "vendor-query";
-        },
-      },
-    },
+    // Manually splitting vendor deps (react/radix/recharts) into separate
+    // chunks broke chunk load ordering at runtime (blank-page crashes:
+    // "Cannot access 'x' before initialization", "Cannot read properties of
+    // undefined (reading 'forwardRef')"). Rollup's automatic chunking is
+    // safe; just raise the warning threshold instead of fighting it.
+    chunkSizeWarningLimit: 600,
   },
 }));
