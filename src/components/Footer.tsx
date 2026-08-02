@@ -76,7 +76,7 @@ const Footer = () => {
                   <img
                     src={logoUrl}
                     alt={siteName}
-                    style={{ height: "36px", width: "auto", objectFit: "contain" }}
+                    className="h-[var(--logo-height-desktop)] w-auto object-contain"
                   />
                 ) : (
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--bank-public-navy)]">

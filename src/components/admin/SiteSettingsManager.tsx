@@ -8,10 +8,87 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Trash2 } from "lucide-react";
+import { Slider } from "@/components/ui/slider";
+import { Upload, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 type SiteSettingsMap = Record<string, string>;
+
+type FooterLink = { label: string; href: string };
+
+const parseFooterLinks = (json: string): FooterLink[] => {
+  if (!json.trim()) return [];
+  try {
+    const parsed = JSON.parse(json);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item) => item && typeof item === "object")
+      .map((item) => ({ label: String(item.label || ""), href: String(item.href || "") }));
+  } catch {
+    return [];
+  }
+};
+
+function FooterLinksEditor({
+  title,
+  helperText,
+  links,
+  onChange,
+}: {
+  title: string;
+  helperText: string;
+  links: FooterLink[];
+  onChange: (links: FooterLink[]) => void;
+}) {
+  const updateLink = (index: number, field: "label" | "href", value: string) => {
+    onChange(links.map((link, i) => (i === index ? { ...link, [field]: value } : link)));
+  };
+
+  const removeLink = (index: number) => {
+    onChange(links.filter((_, i) => i !== index));
+  };
+
+  const addLink = () => {
+    onChange([...links, { label: "", href: "" }]);
+  };
+
+  return (
+    <div className="space-y-3 rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4">
+      <div>
+        <p className="text-sm font-semibold text-[var(--bank-navy)]">{title}</p>
+        <p className="text-xs text-[var(--bank-muted)]">{helperText}</p>
+      </div>
+      {links.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No links yet — add one below.</p>
+      ) : (
+        <div className="space-y-2">
+          {links.map((link, index) => (
+            <div key={index} className="flex flex-col gap-2 rounded-lg border border-border bg-white p-2.5 sm:flex-row sm:items-center">
+              <Input
+                placeholder="Link text (e.g. Privacy Policy)"
+                value={link.label}
+                onChange={(e) => updateLink(index, "label", e.target.value)}
+                className="sm:w-1/3"
+              />
+              <Input
+                placeholder="Where it goes: /about, /contact, or https://..."
+                value={link.href}
+                onChange={(e) => updateLink(index, "href", e.target.value)}
+                className="flex-1"
+              />
+              <Button type="button" variant="ghost" size="icon" className="text-destructive shrink-0" onClick={() => removeLink(index)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          ))}
+        </div>
+      )}
+      <Button type="button" variant="outline" size="sm" onClick={addLink}>
+        <Plus className="mr-1.5 h-3.5 w-3.5" /> Add Link
+      </Button>
+    </div>
+  );
+}
 
 interface SiteSettingsManagerProps {
   adminId?: string;
@@ -27,6 +104,9 @@ const DEFAULTS: SiteSettingsMap = {
   mobile_logo_url: "",
   show_brand_name_beside_logo: "true",
   show_mobile_brand_name_beside_logo: "true",
+  logo_height_mobile: "32",
+  logo_height_tablet: "40",
+  logo_height_desktop: "44",
   site_favicon_url: "",
   site_og_image_url: "",
   site_twitter_handle: "",
@@ -650,6 +730,53 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                 </div>
               </div>
 
+              <div className="rounded-xl border border-[var(--bank-navy)]/10 bg-[var(--bank-bg)]/70 p-4 space-y-5">
+                <div>
+                  <p className="text-sm font-semibold text-[var(--bank-navy)]">Logo Size</p>
+                  <p className="text-sm text-[var(--bank-muted)]">
+                    Resize the logo shown in the website header and footer for each device size.
+                  </p>
+                </div>
+                {([
+                  ["logo_height_mobile", "Mobile", 20, 56],
+                  ["logo_height_tablet", "Tablet", 24, 64],
+                  ["logo_height_desktop", "Desktop", 28, 72],
+                ] as const).map(([key, label, min, max]) => {
+                  const currentValue = Number(settings[key]) || (key === "logo_height_mobile" ? 32 : key === "logo_height_tablet" ? 40 : 44);
+                  return (
+                    <div key={key} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <Label>{label}</Label>
+                        <span className="text-xs text-muted-foreground">{currentValue}px</span>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <Slider
+                          min={min}
+                          max={max}
+                          step={1}
+                          value={[currentValue]}
+                          onValueChange={([v]) => setSetting(key, String(v))}
+                          className="flex-1"
+                        />
+                        {settings.site_logo_url ? (
+                          <div className="flex h-16 w-20 flex-shrink-0 items-center justify-center rounded border border-border bg-white">
+                            <img src={settings.site_logo_url} alt="Logo size preview" style={{ height: `${currentValue}px` }} className="w-auto object-contain" />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+                  );
+                })}
+                <Button
+                  disabled={saving}
+                  size="sm"
+                  className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                  onClick={() => saveKeys(["logo_height_mobile", "logo_height_tablet", "logo_height_desktop"])}
+                >
+                  {saving ? "Saving..." : "Save Logo Size"}
+                </Button>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="site-name">Bank Name</Label>
@@ -1035,6 +1162,63 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                 ])}
               >
                 {saving ? "Saving..." : "Save Content"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Footer Links</CardTitle>
+              <CardDescription>The link columns shown at the bottom of every page. Use a path like /about or a full https:// URL.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid gap-3 md:grid-cols-3">
+                <div className="space-y-2">
+                  <Label>Quick Links Column Title</Label>
+                  <Input value={settings.footer_quick_links_title} onChange={(e) => setSetting("footer_quick_links_title", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Products Column Title</Label>
+                  <Input value={settings.footer_services_title} onChange={(e) => setSetting("footer_services_title", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Legal Column Title</Label>
+                  <Input value={settings.footer_legal_title} onChange={(e) => setSetting("footer_legal_title", e.target.value)} />
+                </div>
+              </div>
+
+              <FooterLinksEditor
+                title="Quick Links"
+                helperText="e.g. Home, About Us, Contact Us"
+                links={parseFooterLinks(settings.footer_quick_links_json)}
+                onChange={(links) => setSetting("footer_quick_links_json", JSON.stringify(links))}
+              />
+              <FooterLinksEditor
+                title="Products"
+                helperText="e.g. Checking, Savings & CDs, Credit Cards"
+                links={parseFooterLinks(settings.footer_service_links_json)}
+                onChange={(links) => setSetting("footer_service_links_json", JSON.stringify(links))}
+              />
+              <FooterLinksEditor
+                title="Legal"
+                helperText="e.g. Privacy Policy, Terms of Service"
+                links={parseFooterLinks(settings.footer_legal_links_json)}
+                onChange={(links) => setSetting("footer_legal_links_json", JSON.stringify(links))}
+              />
+
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys([
+                  "footer_quick_links_title",
+                  "footer_services_title",
+                  "footer_legal_title",
+                  "footer_quick_links_json",
+                  "footer_service_links_json",
+                  "footer_legal_links_json",
+                ])}
+              >
+                {saving ? "Saving..." : "Save Footer Links"}
               </Button>
             </CardContent>
           </Card>

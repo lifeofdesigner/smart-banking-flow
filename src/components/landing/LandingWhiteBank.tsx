@@ -106,6 +106,8 @@ export default function LandingWhiteBank() {
     "Empowering individuals and businesses with accessible microfinance solutions — from everyday banking to loans, savings, and investing.",
   );
   const [heroImg, setHeroImg] = useState<string | null>(null);
+  const [ctaPrimary, setCtaPrimary] = useState("Open an Account");
+  const [ctaSecondary, setCtaSecondary] = useState("Learn More");
 
   useEffect(() => {
     const loadHero = async () => {
@@ -132,10 +134,14 @@ export default function LandingWhiteBank() {
       const data = result.data as HomepageHeroRow | null;
       const headline = readContentField(data?.content, "headline");
       const subheadline = readContentField(data?.content, "subheadline");
+      const primaryLabel = readContentField(data?.content, "cta_primary");
+      const secondaryLabel = readContentField(data?.content, "cta_secondary");
 
       if (headline || data?.title) setTitle(headline || data?.title || "");
       if (subheadline || data?.subtitle) setSubtitle(subheadline || data?.subtitle || "");
       if (data?.image) setHeroImg(data.image);
+      if (primaryLabel) setCtaPrimary(primaryLabel);
+      if (secondaryLabel) setCtaSecondary(secondaryLabel);
     };
 
     loadHero();
@@ -164,13 +170,13 @@ export default function LandingWhiteBank() {
                 href="/auth?tab=signup"
                 className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] shadow-sm transition hover:bg-white/90"
               >
-                Open an Account
+                {ctaPrimary}
               </a>
               <a
                 href="/about"
                 className="rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
               >
-                Learn More
+                {ctaSecondary}
               </a>
             </div>
           </div>

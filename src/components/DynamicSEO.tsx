@@ -177,6 +177,9 @@ export default function DynamicSEO() {
     applyThemeSetting("--bank-muted", settings.theme_color_muted);
     applyThemeSetting("--bank-public-navy", settings.theme_color_public_primary);
     applyThemeSetting("--bank-public-accent", settings.theme_color_public_accent);
+    applyThemeSetting("--logo-height-mobile", settings.logo_height_mobile ? `${settings.logo_height_mobile}px` : undefined);
+    applyThemeSetting("--logo-height-tablet", settings.logo_height_tablet ? `${settings.logo_height_tablet}px` : undefined);
+    applyThemeSetting("--logo-height-desktop", settings.logo_height_desktop ? `${settings.logo_height_desktop}px` : undefined);
 
     const primaryHsl = hexToHsl(settings.theme_color_primary || "");
     const accentHsl = hexToHsl(settings.theme_color_accent || "");

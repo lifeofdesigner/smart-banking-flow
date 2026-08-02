@@ -74,6 +74,12 @@ All colors MUST be HSL.
     --bank-public-navy: #003478;
     --bank-public-accent: #C41230;
 
+    /* Logo display height per breakpoint, admin-editable via Site Settings >
+       Branding (a slider, not a code field). */
+    --logo-height-mobile: 32px;
+    --logo-height-tablet: 40px;
+    --logo-height-desktop: 44px;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;

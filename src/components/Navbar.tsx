@@ -15,24 +15,38 @@ const navItems = [
   { label: "Contact Us", href: "/contact" },
 ];
 
-function LogoMark({ logoUrl, siteName }: { logoUrl?: string; siteName: string }) {
-  if (logoUrl) {
-    return (
-      <div className="flex min-w-0 items-center gap-2.5">
-        <img src={logoUrl} alt={siteName} className="h-8 max-w-[64px] flex-shrink-0 object-contain md:h-10 md:max-w-[96px]" />
-        <span className="max-w-[150px] truncate text-[15px] font-bold leading-tight text-[var(--bank-public-navy)] md:max-w-[340px] md:text-xl">
-          {siteName}
-        </span>
-      </div>
-    );
-  }
+function LogoMark({
+  logoUrl,
+  siteName,
+  showMobileName = true,
+  showDesktopName = true,
+}: {
+  logoUrl?: string;
+  siteName: string;
+  showMobileName?: boolean;
+  showDesktopName?: boolean;
+}) {
+  const nameVisibilityClass = [
+    showMobileName ? "inline" : "hidden",
+    showDesktopName ? "md:inline" : "md:hidden",
+  ].join(" ");
 
   return (
-    <div className="flex items-center gap-2.5">
-      <div className="grid h-8 w-8 flex-shrink-0 place-items-center rounded bg-[var(--bank-public-navy)] text-sm font-extrabold text-white md:h-10 md:w-10">
-        {siteName.slice(0, 1).toUpperCase()}
-      </div>
-      <span className="max-w-[150px] truncate text-[15px] font-bold leading-tight text-[var(--bank-public-navy)] md:max-w-[340px] md:text-xl">
+    <div className="flex min-w-0 items-center gap-2.5">
+      {logoUrl ? (
+        <img
+          src={logoUrl}
+          alt={siteName}
+          className="h-[var(--logo-height-mobile)] max-w-[64px] flex-shrink-0 object-contain md:h-[var(--logo-height-tablet)] md:max-w-[96px] lg:h-[var(--logo-height-desktop)] lg:max-w-[120px]"
+        />
+      ) : (
+        <div className="grid h-[var(--logo-height-mobile)] w-[var(--logo-height-mobile)] flex-shrink-0 place-items-center rounded bg-[var(--bank-public-navy)] text-sm font-extrabold text-white md:h-[var(--logo-height-tablet)] md:w-[var(--logo-height-tablet)] lg:h-[var(--logo-height-desktop)] lg:w-[var(--logo-height-desktop)]">
+          {siteName.slice(0, 1).toUpperCase()}
+        </div>
+      )}
+      <span
+        className={`max-w-[150px] truncate text-[15px] font-bold leading-tight text-[var(--bank-public-navy)] md:max-w-[340px] md:text-xl ${nameVisibilityClass}`}
+      >
         {siteName}
       </span>
     </div>
@@ -43,6 +57,8 @@ const Navbar = () => {
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings["site_logo_url"];
   const siteName = siteSettings["site_name"] || "Your Bank";
+  const showMobileName = siteSettings.show_mobile_brand_name_beside_logo !== "false";
+  const showDesktopName = siteSettings.show_brand_name_beside_logo !== "false";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -66,7 +82,7 @@ const Navbar = () => {
         </button>
 
         <Link to="/">
-          <LogoMark logoUrl={logoUrl} siteName={siteName} />
+          <LogoMark logoUrl={logoUrl} siteName={siteName} showMobileName={showMobileName} showDesktopName={showDesktopName} />
         </Link>
 
         <Button
@@ -111,7 +127,7 @@ const Navbar = () => {
           }`}
         >
           <div className="flex items-center justify-between">
-            <LogoMark logoUrl={logoUrl} siteName={siteName} />
+            <LogoMark logoUrl={logoUrl} siteName={siteName} showMobileName={showMobileName} showDesktopName={showMobileName} />
             <button
               type="button"
               onClick={() => setIsMenuOpen(false)}

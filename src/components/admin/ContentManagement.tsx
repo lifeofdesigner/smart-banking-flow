@@ -10,12 +10,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Plus, Pencil, Trash2, ArrowUp, ArrowDown, Eye, Image as ImageIcon, Upload } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  ArrowUp,
+  ArrowDown,
+  Eye,
+  Image as ImageIcon,
+  Upload,
+  Award,
+  Briefcase,
+  Building2,
+  CreditCard,
+  DollarSign,
+  HelpCircle,
+  PiggyBank,
+  Target,
+  TrendingUp,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
+import { ImagePicker } from "@/components/admin/ImagePicker";
+
+/** Matches the icon keys DynamicHomepageSections/DynamicProducts know how to render. */
+const ICON_OPTIONS = [
+  { key: "savings", label: "Piggy bank (savings)", Icon: PiggyBank },
+  { key: "dollar", label: "Dollar sign", Icon: DollarSign },
+  { key: "briefcase", label: "Briefcase (business)", Icon: Briefcase },
+  { key: "card", label: "Card", Icon: CreditCard },
+  { key: "investment", label: "Trending up (investing)", Icon: TrendingUp },
+  { key: "users", label: "People", Icon: Users },
+  { key: "building", label: "Building", Icon: Building2 },
+  { key: "award", label: "Award", Icon: Award },
+  { key: "help", label: "Question mark", Icon: HelpCircle },
+  { key: "target", label: "Target (default)", Icon: Target },
+];
 
 type StructuredItem = Record<string, string | number>;
 
-const structuredSectionTypes = ["services", "about", "testimonials", "faq", "faqs", "contact"] as const;
+const structuredSectionTypes = ["hero", "services", "about", "testimonials", "faq", "faqs", "contact"] as const;
 
 const safeParseContent = (content: string): unknown => {
   if (!content.trim()) return null;
@@ -30,6 +64,8 @@ const stringifyContent = (value: unknown) => JSON.stringify(value, null, 2);
 
 const emptyItemForSection = (sectionType: string): StructuredItem => {
   switch (sectionType) {
+    case "hero":
+      return { cta_primary: "Open an Account", cta_secondary: "Learn More" };
     case "contact":
       return { phone: "", email: "", hours: "", address: "" };
     case "faq":
@@ -47,6 +83,14 @@ const emptyItemForSection = (sectionType: string): StructuredItem => {
 
 const getItemsFromContent = (sectionType: string, content: string): StructuredItem[] => {
   const parsed = safeParseContent(content);
+
+  if (sectionType === "hero") {
+    const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+    return [{
+      cta_primary: typeof data.cta_primary === "string" ? data.cta_primary : "Open an Account",
+      cta_secondary: typeof data.cta_secondary === "string" ? data.cta_secondary : "Learn More",
+    }];
+  }
 
   if (sectionType === "contact") {
     const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
@@ -74,6 +118,14 @@ const buildContentFromItems = (sectionType: string, items: StructuredItem[], cur
   const cleanItems = items.map((item) => Object.fromEntries(
     Object.entries(item).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
   ));
+
+  if (sectionType === "hero") {
+    const item = cleanItems[0] || {};
+    return stringifyContent({
+      cta_primary: item.cta_primary || "Open an Account",
+      cta_secondary: item.cta_secondary || "Learn More",
+    });
+  }
 
   if (sectionType === "contact") {
     const item = cleanItems[0] || {};
@@ -452,6 +504,26 @@ export default function ContentManagement() {
 
   const renderHomepageContentFields = () => {
     switch (homepageForm.section_type) {
+      case "hero": {
+        const item = homepageItems[0] || emptyItemForSection("hero");
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div>
+              <Label>Primary Button Text</Label>
+              <p className="mb-1.5 text-xs text-muted-foreground">The main call-to-action button, e.g. "Open an Account".</p>
+              <Input value={String(item.cta_primary || "")} onChange={(e) => updateHomepageItem(0, "cta_primary", e.target.value)} />
+            </div>
+            <div>
+              <Label>Secondary Button Text</Label>
+              <p className="mb-1.5 text-xs text-muted-foreground">The secondary button next to it, e.g. "Learn More".</p>
+              <Input value={String(item.cta_secondary || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary", e.target.value)} />
+            </div>
+            <p className="text-xs text-muted-foreground md:col-span-2">
+              Use the Title field above for the main headline and Subtitle for the supporting text under it.
+            </p>
+          </div>
+        );
+      }
       case "contact": {
         const item = homepageItems[0] || emptyItemForSection("contact");
         return (
@@ -521,7 +593,19 @@ export default function ContentManagement() {
                 </div>
                 <div className="grid gap-3 md:grid-cols-2">
                   <div><Label>Title</Label><Input value={String(item.title || "")} onChange={(e) => updateHomepageItem(index, "title", e.target.value)} /></div>
-                  <div><Label>Icon</Label><Input value={String(item.icon || "")} onChange={(e) => updateHomepageItem(index, "icon", e.target.value)} placeholder="target, savings, credit, briefcase" /></div>
+                  <div>
+                    <Label>Icon</Label>
+                    <Select value={String(item.icon || "target")} onValueChange={(v) => updateHomepageItem(index, "icon", v)}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ICON_OPTIONS.map(({ key, label, Icon }) => (
+                          <SelectItem key={key} value={key}>
+                            <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   <div className="md:col-span-2"><Label>Description</Label><Textarea value={String(item.description || "")} onChange={(e) => updateHomepageItem(index, "description", e.target.value)} rows={3} /></div>
                 </div>
               </div>
@@ -833,10 +917,33 @@ export default function ContentManagement() {
             <div><Label>Slug</Label><Input value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} /></div>
             <div><Label>Short Description</Label><Textarea value={productForm.short_description} onChange={(e) => setProductForm({ ...productForm, short_description: e.target.value })} /></div>
             <div><Label>Full Description</Label><Textarea value={productForm.full_description} onChange={(e) => setProductForm({ ...productForm, full_description: e.target.value })} rows={4} /></div>
-            <div><Label>Hero Image URL</Label><Input value={productForm.hero_image} onChange={(e) => setProductForm({ ...productForm, hero_image: e.target.value })} placeholder="https://..." /></div>
+            <ImagePicker
+              label="Hero Image"
+              value={productForm.hero_image}
+              onChange={(url) => setProductForm({ ...productForm, hero_image: url })}
+              helperText="Shown at the top of this page. Landscape photos work best."
+            />
             <div><Label>Meta Description (SEO)</Label><Input value={productForm.meta_description} onChange={(e) => setProductForm({ ...productForm, meta_description: e.target.value })} /></div>
-            <div><Label>OG Image URL</Label><Input value={productForm.og_image} onChange={(e) => setProductForm({ ...productForm, og_image: e.target.value })} placeholder="https://..." /></div>
-            <div><Label>Icon Key</Label><Input value={productForm.icon} onChange={(e) => setProductForm({ ...productForm, icon: e.target.value })} placeholder="savings, credit, card, investment" /></div>
+            <ImagePicker
+              label="Social Share Image"
+              value={productForm.og_image}
+              onChange={(url) => setProductForm({ ...productForm, og_image: url })}
+              helperText="Shown when this page is shared on social media. If left empty, the hero image is used."
+            />
+            <div>
+              <Label>Icon</Label>
+              <p className="mb-1.5 text-xs text-muted-foreground">The small icon shown next to this product's name.</p>
+              <Select value={productForm.icon || "target"} onValueChange={(v) => setProductForm({ ...productForm, icon: v })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  {ICON_OPTIONS.map(({ key, label, Icon }) => (
+                    <SelectItem key={key} value={key}>
+                      <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
             <div>
               <Label>Status</Label>
               <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
@@ -874,7 +981,12 @@ export default function ContentManagement() {
               </Select>
             </div>
             <div><Label>Title</Label><Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} /></div>
-            <div><Label>Section Image URL</Label><Input value={sectionForm.image} onChange={(e) => setSectionForm({ ...sectionForm, image: e.target.value })} placeholder="https://..." /></div>
+            <ImagePicker
+              label="Section Image"
+              value={sectionForm.image}
+              onChange={(url) => setSectionForm({ ...sectionForm, image: url })}
+              helperText="Optional. Shown alongside this section's content."
+            />
             <div>
               <Label>Content</Label>
               <Textarea
@@ -932,7 +1044,12 @@ export default function ContentManagement() {
             </div>
             <div><Label>Title</Label><Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} /></div>
             <div><Label>Subtitle</Label><Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} /></div>
-            <div><Label>Image URL</Label><Input value={homepageForm.image} onChange={(e) => setHomepageForm({ ...homepageForm, image: e.target.value })} placeholder="https://..." /></div>
+            <ImagePicker
+              label="Section Image"
+              value={homepageForm.image}
+              onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
+              helperText="Optional. Shown alongside this section's content."
+            />
             {renderHomepageContentFields()}
             <div>
               <Label>Status</Label>
