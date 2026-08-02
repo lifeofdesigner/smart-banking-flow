@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Eye, EyeOff, Shield } from "lucide-react";
 import { z } from "zod";
+import { isEmailLike, signInWithIdentifier } from "@/lib/loginIdentifier";
 
 const signupSchema = z.object({
   fullName: z.string().min(2, "Name must be at least 2 characters"),
@@ -17,7 +18,7 @@ const signupSchema = z.object({
 });
 
 const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  identifier: z.string().trim().min(1, "Email or account number is required").max(254),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -73,6 +74,7 @@ const Auth = () => {
   const siteSettings = useSiteSettings();
   const supportEmail = siteSettings.support_email || "support@example.com";
   const isAdminLogin = location.pathname === "/admin-login";
+  const defaultTab = new URLSearchParams(location.search).get("tab") === "signup" ? "signup" : "login";
   const showAdminDemoLogin = siteSettings.demo_admin_login_enabled !== "false";
   const showCustomerDemoLogin = siteSettings.demo_customer_login_enabled !== "false";
   const manualRedirectRef = useRef(false);
@@ -88,7 +90,7 @@ const Auth = () => {
   });
 
   const [loginData, setLoginData] = useState({
-    email: "",
+    identifier: "",
     password: "",
   });
 
@@ -207,10 +209,7 @@ const Auth = () => {
     try {
       const validated = loginSchema.parse(loginData);
 
-      const { error } = await supabase.auth.signInWithPassword({
-        email: validated.email,
-        password: validated.password,
-      });
+      const { error } = await signInWithIdentifier(validated.identifier, validated.password);
 
       if (error) throw error;
 
@@ -309,7 +308,7 @@ const Auth = () => {
           </p>
         </div>
 
-        <Tabs defaultValue="login" className="w-full">
+        <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className={`grid w-full mb-8 ${showSignup ? "grid-cols-2" : "grid-cols-1"}`}>
             <TabsTrigger value="login">Login</TabsTrigger>
             {showSignup ? <TabsTrigger value="signup">Sign Up</TabsTrigger> : null}
@@ -318,12 +317,12 @@ const Auth = () => {
           <TabsContent value="login">
             <form onSubmit={handleLogin} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Email</label>
+                <label className="text-sm font-medium">{isAdminLogin ? "Email" : "Email or Account Number"}</label>
                 <Input
-                  type="email"
-                  placeholder={isAdminLogin ? "admin@example.com" : "your@email.com"}
-                  value={loginData.email}
-                  onChange={(e) => setLoginData({ ...loginData, email: e.target.value })}
+                  type={isAdminLogin ? "email" : "text"}
+                  placeholder={isAdminLogin ? "admin@example.com" : "your@email.com or account number"}
+                  value={loginData.identifier}
+                  onChange={(e) => setLoginData({ ...loginData, identifier: e.target.value })}
                   required
                   className="h-12"
                 />
@@ -382,10 +381,10 @@ const Auth = () => {
                 <button
                   type="button"
                   onClick={async () => {
-                    if (!loginData.email) {
+                    if (!loginData.identifier || !isEmailLike(loginData.identifier)) {
                       toast({
                         title: "Enter your email",
-                        description: "Please enter your email address first, then click Forgot Password.",
+                        description: "Password reset requires your email address (account number won't work here) — enter it above, then click Forgot Password.",
                         variant: "destructive",
                       });
                       return;
@@ -393,7 +392,7 @@ const Auth = () => {
 
                     setLoading(true);
                     try {
-                      const { error } = await supabase.auth.resetPasswordForEmail(loginData.email, {
+                      const { error } = await supabase.auth.resetPasswordForEmail(loginData.identifier, {
                         redirectTo: `${window.location.origin}/reset-password`,
                       });
 
