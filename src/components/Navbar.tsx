@@ -37,7 +37,7 @@ function LogoMark({
         <img
           src={logoUrl}
           alt={siteName}
-          className="h-[var(--logo-height-mobile)] max-w-[64px] flex-shrink-0 object-contain md:h-[var(--logo-height-tablet)] md:max-w-[96px] lg:h-[var(--logo-height-desktop)] lg:max-w-[120px]"
+          className="h-[var(--logo-height-mobile)] w-auto max-w-[180px] flex-shrink-0 object-contain md:h-[var(--logo-height-tablet)] md:max-w-[260px] lg:h-[var(--logo-height-desktop)] lg:max-w-[320px]"
         />
       ) : (
         <div className="grid h-[var(--logo-height-mobile)] w-[var(--logo-height-mobile)] flex-shrink-0 place-items-center rounded bg-[var(--bank-public-navy)] text-sm font-extrabold text-white md:h-[var(--logo-height-tablet)] md:w-[var(--logo-height-tablet)] lg:h-[var(--logo-height-desktop)] lg:w-[var(--logo-height-desktop)]">
