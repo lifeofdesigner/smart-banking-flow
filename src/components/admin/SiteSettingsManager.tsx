@@ -99,9 +99,9 @@ const DEFAULTS: SiteSettingsMap = {
 const LANDING_THEMES = [
   {
     key: "classic",
-    name: "Navy & Gold Classic",
-    description: "Timeless premium banking look",
-    colors: ["#0A1628", "#C9A84C", "#F4F5F7"],
+    name: "White Retail Banking",
+    description: "Dense white banking homepage with login, offers, education, and support sections",
+    colors: ["#ffffff", "#003478", "#c41230"],
   },
   {
     key: "split-screen",

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import { Banknote, BriefcaseBusiness, House, Info, Phone } from "lucide-react";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import LiveChatWidget from "@/components/LiveChatWidget";
-import LandingNavyGold from "@/components/landing/LandingNavyGold";
 import LandingSplitScreen from "@/components/landing/LandingSplitScreen";
 import LandingMagazine from "@/components/landing/LandingMagazine";
 import LandingSoftModern from "@/components/landing/LandingSoftModern";
 import LandingCinematic from "@/components/landing/LandingCinematic";
 import LandingDashboardApp from "@/components/landing/LandingDashboardApp";
 import LandingGeometric from "@/components/landing/LandingGeometric";
+import LandingWhiteBank from "@/components/landing/LandingWhiteBank";
 import { cn } from "@/lib/utils";
 
 const landingSections = [
@@ -114,7 +114,7 @@ const Index = () => {
         return <LandingGeometric />;
       case "classic":
       default:
-        return <LandingNavyGold />;
+        return <LandingWhiteBank />;
     }
   }, [activeLanding]);
 
