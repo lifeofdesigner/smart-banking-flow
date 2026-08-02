@@ -175,6 +175,8 @@ export default function DynamicSEO() {
     applyThemeSetting("--bank-bg", settings.theme_color_background);
     applyThemeSetting("--bank-text", settings.theme_color_text);
     applyThemeSetting("--bank-muted", settings.theme_color_muted);
+    applyThemeSetting("--bank-public-navy", settings.theme_color_public_primary);
+    applyThemeSetting("--bank-public-accent", settings.theme_color_public_accent);
 
     const primaryHsl = hexToHsl(settings.theme_color_primary || "");
     const accentHsl = hexToHsl(settings.theme_color_accent || "");

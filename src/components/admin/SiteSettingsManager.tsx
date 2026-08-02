@@ -22,6 +22,7 @@ const DEFAULTS: SiteSettingsMap = {
   site_tagline: "",
   site_description: "",
   site_keywords: "",
+  deposit_insurer_name: "Deposit Insurance Corporation",
   site_logo_url: "",
   mobile_logo_url: "",
   show_brand_name_beside_logo: "true",
@@ -74,6 +75,8 @@ const DEFAULTS: SiteSettingsMap = {
   theme_color_background: "#F4F5F7",
   theme_color_text: "#1A2332",
   theme_color_muted: "#6B7A8D",
+  theme_color_public_primary: "#003478",
+  theme_color_public_accent: "#C41230",
   hero_badge_text: "",
   hero_primary_cta_label: "",
   hero_secondary_cta_label: "",
@@ -500,6 +503,45 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               </div>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Public Site Colors</CardTitle>
+              <CardDescription>
+                Navy/accent colors for the public marketing site only (homepage, navigation, footer, product pages).
+                Does not affect the internal dashboard/admin theme above.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {[
+                ["theme_color_public_primary", "Public Primary / Navy"],
+                ["theme_color_public_accent", "Public Accent"],
+              ].map(([key, label]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key}>{label}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={key}
+                      type="color"
+                      value={settings[key] || "#000000"}
+                      onChange={(e) => setSetting(key, e.target.value)}
+                      className="h-11 w-16 p-1"
+                    />
+                    <Input value={settings[key] || ""} onChange={(e) => setSetting(key, e.target.value)} />
+                  </div>
+                </div>
+              ))}
+              <div className="md:col-span-2">
+                <Button
+                  disabled={saving}
+                  className="bg-[var(--bank-public-navy)] text-white hover:bg-[var(--bank-public-navy)]/90"
+                  onClick={() => saveKeys(["theme_color_public_primary", "theme_color_public_accent"])}
+                >
+                  {saving ? "Saving..." : "Save Public Site Colors"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         <TabsContent value="branding" className="space-y-4">
@@ -623,6 +665,15 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                     id="site-tagline"
                     value={settings.site_tagline}
                     onChange={(e) => setSetting("site_tagline", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-insurer-name">Deposit Insurer Name</Label>
+                  <Input
+                    id="deposit-insurer-name"
+                    value={settings.deposit_insurer_name}
+                    onChange={(e) => setSetting("deposit_insurer_name", e.target.value)}
+                    placeholder="e.g. FDIC, NDIC, Deposit Insurance Corporation"
                   />
                 </div>
               </div>
@@ -804,6 +855,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                 onClick={() => saveKeys([
                   "site_name",
                   "site_tagline",
+                  "deposit_insurer_name",
                   "site_logo_url",
                   "mobile_logo_url",
                   "site_favicon_url",

@@ -67,6 +67,13 @@ All colors MUST be HSL.
     --bank-text: #1A2332;
     --bank-muted: #6B7A8D;
 
+    /* Public marketing site only (Navbar, Footer, homepage, product/about/contact
+       pages) — deliberately separate from --bank-navy/--bank-gold above so the
+       authenticated dashboard/admin theme is unaffected. Admin-editable via
+       Site Settings > Public Site Colors. */
+    --bank-public-navy: #003478;
+    --bank-public-accent: #C41230;
+
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
