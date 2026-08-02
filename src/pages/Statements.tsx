@@ -243,9 +243,18 @@ export default function Statements() {
                 <div className="flex justify-between items-start border-b pb-6 mb-6">
                   <div>
                     <div className="flex items-center gap-3 mb-2">
-                      <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center">
-                        <span className="text-primary-foreground font-bold">M</span>
-                      </div>
+                      {siteSettings["site_logo_url"] ? (
+                        <img
+                          src={siteSettings["site_logo_url"]}
+                          alt={siteSettings["site_name"] || "Your Bank"}
+                          style={{ height: "40px", width: "auto", objectFit: "contain" }}
+                          className="flex-shrink-0"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+                          <span className="text-primary-foreground font-bold">M</span>
+                        </div>
+                      )}
                       <div>
                         <h2 className="text-xl font-bold">{siteSettings["site_name"] || "Your Bank"}</h2>
                         <p className="text-sm text-muted-foreground">Account Statement</p>
