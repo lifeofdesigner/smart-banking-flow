@@ -185,7 +185,7 @@ const getIcon = (name?: string) => iconMap[(name || "").toLowerCase()] || Target
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string | null }) {
   return (
     <div className="mb-8 max-w-xl md:mx-auto md:mb-14 md:max-w-3xl md:text-center">
-      <h2 className="text-[18px] font-bold text-[var(--bank-navy)] md:text-4xl lg:text-5xl md:text-foreground">
+      <h2 className="text-[18px] font-bold text-[var(--bank-public-navy)] md:text-4xl lg:text-5xl md:text-foreground">
         {title}
       </h2>
       {subtitle ? (
@@ -212,8 +212,8 @@ function ServicesSection({ section }: { section: HomepageSection }) {
             const Icon = getIcon(item.icon);
             return (
               <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-primary/10">
-                  <Icon className="h-6 w-6 text-primary" />
+                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-lg bg-[var(--bank-public-navy)]/10">
+                  <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
                 </div>
                 <h3 className="text-lg font-bold md:text-2xl">{item.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground md:text-base">{item.description}</p>
@@ -268,7 +268,7 @@ export function AboutSection({ section }: { section: HomepageSection }) {
             const Icon = getIcon(item.icon);
             return (
               <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
-                <Icon className="h-6 w-6 text-primary" />
+                <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
                 <h3 className="mt-4 text-lg font-bold md:text-2xl">{item.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-muted-foreground">{item.description}</p>
               </Card>
@@ -295,7 +295,7 @@ function TestimonialsSection({ section }: { section: HomepageSection }) {
             <Card key={`${testimonial.name}-${index}`} className="p-5 md:p-8">
               <div className="mb-4 flex gap-1">
                 {Array.from({ length: Math.max(1, Math.min(5, testimonial.rating || 5)) }).map((_, starIndex) => (
-                  <Star key={starIndex} className="h-4 w-4 fill-accent text-accent" />
+                  <Star key={starIndex} className="h-4 w-4 fill-[var(--bank-public-accent)] text-[var(--bank-public-accent)]" />
                 ))}
               </div>
               <p className="text-sm leading-6 text-muted-foreground md:text-base">"{testimonial.content}"</p>
@@ -370,7 +370,7 @@ export function ContactSection({ section }: { section: HomepageSection }) {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {cards.map((card) => (
             <Card key={card.title} className="p-5">
-              <card.icon className="h-6 w-6 text-primary" />
+              <card.icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
               <h3 className="mt-4 font-bold">{card.title}</h3>
               <div className="mt-2 space-y-1 text-sm text-muted-foreground">
                 {card.values.map((value) => (

@@ -18,9 +18,9 @@ const navItems = [
 function LogoMark({ logoUrl, siteName }: { logoUrl?: string; siteName: string }) {
   if (logoUrl) {
     return (
-      <div className="flex min-w-0 items-center gap-3">
-        <img src={logoUrl} alt={siteName} className="h-9 max-w-[80px] object-contain md:h-11 md:max-w-[120px]" />
-        <span className="max-w-[160px] truncate text-lg font-extrabold leading-tight text-[var(--bank-public-navy)] md:max-w-[260px] md:text-2xl">
+      <div className="flex min-w-0 items-center gap-2.5">
+        <img src={logoUrl} alt={siteName} className="h-8 max-w-[64px] flex-shrink-0 object-contain md:h-10 md:max-w-[96px]" />
+        <span className="max-w-[150px] truncate text-[15px] font-bold leading-tight text-[var(--bank-public-navy)] md:max-w-[340px] md:text-xl">
           {siteName}
         </span>
       </div>
@@ -28,11 +28,11 @@ function LogoMark({ logoUrl, siteName }: { logoUrl?: string; siteName: string })
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="grid h-9 w-9 place-items-center rounded bg-[var(--bank-public-navy)] text-base font-extrabold text-white md:h-11 md:w-11">
+    <div className="flex items-center gap-2.5">
+      <div className="grid h-8 w-8 flex-shrink-0 place-items-center rounded bg-[var(--bank-public-navy)] text-sm font-extrabold text-white md:h-10 md:w-10">
         {siteName.slice(0, 1).toUpperCase()}
       </div>
-      <span className="max-w-[200px] truncate text-lg font-extrabold leading-tight text-[var(--bank-public-navy)] md:max-w-[320px] md:text-2xl">
+      <span className="max-w-[150px] truncate text-[15px] font-bold leading-tight text-[var(--bank-public-navy)] md:max-w-[340px] md:text-xl">
         {siteName}
       </span>
     </div>
