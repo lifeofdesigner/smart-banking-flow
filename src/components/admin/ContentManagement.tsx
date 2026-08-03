@@ -23,13 +23,18 @@ import {
   Award,
   Briefcase,
   Building2,
+  CheckCircle2,
   CreditCard,
   DollarSign,
   HelpCircle,
+  Lock,
   PiggyBank,
+  Shield,
+  Smartphone,
   Target,
   TrendingUp,
   Users,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/admin/ImagePicker";
@@ -45,12 +50,37 @@ const ICON_OPTIONS = [
   { key: "building", label: "Building", Icon: Building2 },
   { key: "award", label: "Award", Icon: Award },
   { key: "help", label: "Question mark", Icon: HelpCircle },
+  { key: "shield", label: "Shield (security)", Icon: Shield },
+  { key: "lock", label: "Lock (security)", Icon: Lock },
+  { key: "zap", label: "Lightning (fast)", Icon: Zap },
+  { key: "smartphone", label: "Smartphone (mobile)", Icon: Smartphone },
+  { key: "check", label: "Checkmark", Icon: CheckCircle2 },
   { key: "target", label: "Target (default)", Icon: Target },
 ];
 
 type StructuredItem = Record<string, string | number>;
 
-const structuredSectionTypes = ["hero", "services", "about", "testimonials", "faq", "faqs", "contact"] as const;
+/** Section types whose content is edited as a repeatable/fixed set of plain
+ * fields (via emptyItemForSection/getItemsFromContent/buildContentFromItems
+ * below), never as raw JSON. Anything not in this list falls back to a
+ * plain text box (see renderHomepageContentFields' default case) — used
+ * today only by "products" (whose real content lives in product_pages) and
+ * "custom". */
+const structuredSectionTypes = [
+  "hero", "services", "about", "testimonials", "faq", "faqs", "contact",
+  "trust_bar", "banking_made_simple", "statistics", "financial_tools",
+  "security", "mobile_banking", "financial_education", "final_cta",
+] as const;
+
+/** Section types whose repeatable list is an icon+title+description card,
+ * same shape as the original "services"/"about" cards. */
+const cardSectionTypes = ["services", "about", "banking_made_simple"];
+/** Section types whose repeatable list is a plain icon+label checklist. */
+const checklistSectionTypes = ["trust_bar", "security", "financial_tools"];
+/** Section types that are a single CTA pair, no repeatable list at all. */
+const singleCtaSectionTypes = ["mobile_banking", "financial_education"];
+/** Section types that are a primary+secondary CTA pair, no repeatable list. */
+const dualCtaSectionTypes = ["hero", "final_cta"];
 
 const safeParseContent = (content: string): unknown => {
   if (!content.trim()) return null;
@@ -63,10 +93,41 @@ const safeParseContent = (content: string): unknown => {
 
 const stringifyContent = (value: unknown) => JSON.stringify(value, null, 2);
 
+/** Real seeded content sometimes wraps its array under a named key (e.g.
+ * { services: [...] }); content saved by this editor writes a bare array.
+ * Mirrors the same-purpose helper in DynamicHomepageSections.tsx so both
+ * sides of the CMS agree on what a section's content can look like. */
+const extractItemsArray = (parsed: unknown, wrapperKeys: string[]): StructuredItem[] | null => {
+  if (Array.isArray(parsed)) return parsed as StructuredItem[];
+
+  if (parsed && typeof parsed === "object") {
+    for (const key of wrapperKeys) {
+      const value = (parsed as Record<string, unknown>)[key];
+      if (Array.isArray(value)) return value as StructuredItem[];
+    }
+  }
+
+  return null;
+};
+
+const asRecord = (parsed: unknown): Record<string, unknown> =>
+  parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
+
 const emptyItemForSection = (sectionType: string): StructuredItem => {
+  if (dualCtaSectionTypes.includes(sectionType)) {
+    return { cta_primary_label: "", cta_primary_link: "", cta_secondary_label: "", cta_secondary_link: "" };
+  }
+  if (singleCtaSectionTypes.includes(sectionType)) {
+    return { cta_primary_label: "", cta_primary_link: "" };
+  }
+  if (checklistSectionTypes.includes(sectionType)) {
+    return { icon: "check", label: "" };
+  }
+  if (cardSectionTypes.includes(sectionType)) {
+    return { icon: "target", title: "", description: "" };
+  }
+
   switch (sectionType) {
-    case "hero":
-      return { cta_primary: "Open an Account", cta_secondary: "Learn More" };
     case "contact":
       return { phone: "", email: "", hours: "", address: "" };
     case "faq":
@@ -74,9 +135,8 @@ const emptyItemForSection = (sectionType: string): StructuredItem => {
       return { question: "", answer: "" };
     case "testimonials":
       return { name: "", role: "", content: "", rating: 5 };
-    case "about":
-    case "services":
-      return { icon: "target", title: "", description: "" };
+    case "statistics":
+      return { value: "", label: "" };
     default:
       return { title: "", description: "" };
   }
@@ -84,28 +144,41 @@ const emptyItemForSection = (sectionType: string): StructuredItem => {
 
 const getItemsFromContent = (sectionType: string, content: string): StructuredItem[] => {
   const parsed = safeParseContent(content);
+  const record = asRecord(parsed);
 
-  if (sectionType === "hero") {
-    const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
+  if (dualCtaSectionTypes.includes(sectionType)) {
     return [{
-      cta_primary: typeof data.cta_primary === "string" ? data.cta_primary : "Open an Account",
-      cta_secondary: typeof data.cta_secondary === "string" ? data.cta_secondary : "Learn More",
+      cta_primary_label: typeof record.cta_primary_label === "string" ? record.cta_primary_label : "",
+      cta_primary_link: typeof record.cta_primary_link === "string" ? record.cta_primary_link : "",
+      cta_secondary_label: typeof record.cta_secondary_label === "string" ? record.cta_secondary_label : "",
+      cta_secondary_link: typeof record.cta_secondary_link === "string" ? record.cta_secondary_link : "",
+    }];
+  }
+
+  if (singleCtaSectionTypes.includes(sectionType)) {
+    return [{
+      cta_primary_label: typeof record.cta_primary_label === "string" ? record.cta_primary_label : "",
+      cta_primary_link: typeof record.cta_primary_link === "string" ? record.cta_primary_link : "",
     }];
   }
 
   if (sectionType === "contact") {
-    const data = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed as Record<string, unknown> : {};
     return [{
-      phone: Array.isArray(data.phone) ? String(data.phone[0] || "") : "",
-      email: Array.isArray(data.email) ? String(data.email[0] || "") : "",
-      hours: Array.isArray(data.hours) ? String(data.hours[0] || "") : "",
-      address: Array.isArray(data.address) ? String(data.address.join("\n")) : "",
+      phone: Array.isArray(record.phone) ? String(record.phone[0] || "") : "",
+      email: Array.isArray(record.email) ? String(record.email[0] || "") : "",
+      hours: Array.isArray(record.hours) ? String(record.hours[0] || "") : "",
+      address: Array.isArray(record.address) ? String(record.address.join("\n")) : "",
     }];
   }
 
-  if (sectionType === "about" && parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-    const cards = (parsed as { cards?: unknown }).cards;
-    return Array.isArray(cards) && cards.length ? cards as StructuredItem[] : [emptyItemForSection(sectionType)];
+  if (cardSectionTypes.includes(sectionType)) {
+    const cards = extractItemsArray(parsed, ["cards", "services", "values"]);
+    return cards && cards.length ? cards : [emptyItemForSection(sectionType)];
+  }
+
+  if (checklistSectionTypes.includes(sectionType) || sectionType === "statistics") {
+    const items = extractItemsArray(parsed, ["items"]);
+    return items && items.length ? items : [emptyItemForSection(sectionType)];
   }
 
   if (Array.isArray(parsed) && parsed.length) {
@@ -115,16 +188,34 @@ const getItemsFromContent = (sectionType: string, content: string): StructuredIt
   return [emptyItemForSection(sectionType)];
 };
 
+/** financial_tools carries both a checklist AND a trailing CTA; the CTA
+ * isn't part of the repeatable items list, so it's read straight off
+ * whatever content is currently loaded rather than through homepageItems. */
+const getFixedContentField = (content: string, key: string): string => {
+  const record = asRecord(safeParseContent(content));
+  return typeof record[key] === "string" ? record[key] : "";
+};
+
 const buildContentFromItems = (sectionType: string, items: StructuredItem[], currentContent: string) => {
   const cleanItems = items.map((item) => Object.fromEntries(
     Object.entries(item).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
   ));
 
-  if (sectionType === "hero") {
+  if (dualCtaSectionTypes.includes(sectionType)) {
     const item = cleanItems[0] || {};
     return stringifyContent({
-      cta_primary: item.cta_primary || "Open an Account",
-      cta_secondary: item.cta_secondary || "Learn More",
+      cta_primary_label: item.cta_primary_label || "",
+      cta_primary_link: item.cta_primary_link || "",
+      cta_secondary_label: item.cta_secondary_label || "",
+      cta_secondary_link: item.cta_secondary_link || "",
+    });
+  }
+
+  if (singleCtaSectionTypes.includes(sectionType)) {
+    const item = cleanItems[0] || {};
+    return stringifyContent({
+      cta_primary_label: item.cta_primary_label || "",
+      cta_primary_link: item.cta_primary_link || "",
     });
   }
 
@@ -144,14 +235,25 @@ const buildContentFromItems = (sectionType: string, items: StructuredItem[], cur
   }
 
   if (sectionType === "about") {
-    const parsed = safeParseContent(currentContent);
-    const body = parsed && typeof parsed === "object" && !Array.isArray(parsed)
-      ? (parsed as { body?: unknown }).body
-      : undefined;
-
+    const record = asRecord(safeParseContent(currentContent));
     return stringifyContent({
-      ...(typeof body === "string" && body.trim() ? { body } : {}),
+      ...(typeof record.cta_primary_label === "string" && record.cta_primary_label.trim() ? { cta_primary_label: record.cta_primary_label } : {}),
+      ...(typeof record.cta_primary_link === "string" && record.cta_primary_link.trim() ? { cta_primary_link: record.cta_primary_link } : {}),
       cards: cleanItems,
+    });
+  }
+
+  if (sectionType === "services" || sectionType === "banking_made_simple") {
+    return stringifyContent({ services: cleanItems });
+  }
+
+  if (checklistSectionTypes.includes(sectionType) || sectionType === "statistics") {
+    const record = asRecord(safeParseContent(currentContent));
+    return stringifyContent({
+      ...(sectionType === "financial_tools" && typeof record.cta_primary_label === "string" && record.cta_primary_label.trim()
+        ? { cta_primary_label: record.cta_primary_label, cta_primary_link: record.cta_primary_link || "" }
+        : {}),
+      items: cleanItems,
     });
   }
 
@@ -202,8 +304,10 @@ interface HomepageSection {
   section_type: string;
   title: string | null;
   subtitle: string | null;
+  description: string | null;
   content: unknown;
   image: string | null;
+  image_alt: string | null;
   display_order: number;
   is_active: boolean;
 }
@@ -246,7 +350,7 @@ export default function ContentManagement() {
   });
   const [sectionForm, setSectionForm] = useState({ section_type: "features", title: "", content: "", image: "", display_order: 0 });
   const [faqForm, setFaqForm] = useState({ question: "", answer: "", display_order: 0 });
-  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", content: "", image: "", is_active: true });
+  const [homepageForm, setHomepageForm] = useState({ section_type: "", title: "", subtitle: "", description: "", content: "", image: "", image_alt: "", is_active: true });
   const [homepageItems, setHomepageItems] = useState<StructuredItem[]>([emptyItemForSection("")]);
 
   useEffect(() => {
@@ -399,11 +503,13 @@ export default function ContentManagement() {
           section_type: section.section_type,
           title: section.title || "",
           subtitle: section.subtitle || "",
+          description: section.description || "",
           content: section.content ? JSON.stringify(section.content) : "",
           image: section.image || "",
+          image_alt: section.image_alt || "",
           is_active: section.is_active,
         }
-      : { section_type: "", title: "", subtitle: "", content: "", image: "", is_active: true };
+      : { section_type: "", title: "", subtitle: "", description: "", content: "", image: "", image_alt: "", is_active: true };
 
     setEditingHomepage(section || null);
     setHomepageForm(form);
@@ -436,6 +542,15 @@ export default function ContentManagement() {
     });
   };
 
+  /** For the handful of fields (About's CTA, Financial Tools' trailing
+   * CTA) that live alongside a repeatable items list rather than inside
+   * it — read/write them straight on homepageForm.content so they survive
+   * independently of whatever the items editor does. */
+  const setFixedContentField = (key: string, value: string) => {
+    const record = asRecord(safeParseContent(homepageForm.content));
+    setHomepageForm((prev) => ({ ...prev, content: stringifyContent({ ...record, [key]: value }) }));
+  };
+
   const saveHomepageSection = async () => {
     const contentString = structuredSectionTypes.includes(homepageForm.section_type as typeof structuredSectionTypes[number])
       ? buildContentFromItems(homepageForm.section_type, homepageItems, homepageForm.content)
@@ -458,7 +573,9 @@ export default function ContentManagement() {
       section_type: homepageForm.section_type,
       title: homepageForm.title,
       subtitle: homepageForm.subtitle,
+      description: homepageForm.description || null,
       image: homepageForm.image,
+      image_alt: homepageForm.image_alt || null,
       is_active: homepageForm.is_active,
       content: parsedContent,
     };
@@ -539,26 +656,139 @@ export default function ContentManagement() {
 
   const renderHomepageContentFields = () => {
     switch (homepageForm.section_type) {
-      case "hero": {
-        const item = homepageItems[0] || emptyItemForSection("hero");
+      case "hero":
+      case "final_cta": {
+        const item = homepageItems[0] || emptyItemForSection(homepageForm.section_type);
         return (
           <div className="grid gap-4 md:grid-cols-2">
             <div>
               <Label>Primary Button Text</Label>
-              <p className="mb-1.5 text-xs text-muted-foreground">The main call-to-action button, e.g. "Open an Account".</p>
-              <Input value={String(item.cta_primary || "")} onChange={(e) => updateHomepageItem(0, "cta_primary", e.target.value)} />
+              <Input value={String(item.cta_primary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_label", e.target.value)} />
+            </div>
+            <div>
+              <Label>Primary Button Link</Label>
+              <Input placeholder="/auth?tab=signup" value={String(item.cta_primary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_link", e.target.value)} />
             </div>
             <div>
               <Label>Secondary Button Text</Label>
-              <p className="mb-1.5 text-xs text-muted-foreground">The secondary button next to it, e.g. "Learn More".</p>
-              <Input value={String(item.cta_secondary || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary", e.target.value)} />
+              <Input value={String(item.cta_secondary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary_label", e.target.value)} />
+            </div>
+            <div>
+              <Label>Secondary Button Link</Label>
+              <Input placeholder="/about" value={String(item.cta_secondary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary_link", e.target.value)} />
             </div>
             <p className="text-xs text-muted-foreground md:col-span-2">
-              Use the Title field above for the main headline and Subtitle for the supporting text under it.
+              Use the Title field above for the main headline, Subtitle for the supporting text, and Description below for a longer paragraph if this style needs one.
             </p>
           </div>
         );
       }
+      case "mobile_banking":
+      case "financial_education": {
+        const item = homepageItems[0] || emptyItemForSection(homepageForm.section_type);
+        return (
+          <div className="grid gap-4 md:grid-cols-2">
+            <div><Label>Button Text</Label><Input value={String(item.cta_primary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_label", e.target.value)} /></div>
+            <div><Label>Button Link</Label><Input placeholder="/help" value={String(item.cta_primary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_link", e.target.value)} /></div>
+          </div>
+        );
+      }
+      case "about": {
+        const ctaLabel = getFixedContentField(homepageForm.content, "cta_primary_label");
+        const ctaLink = getFixedContentField(homepageForm.content, "cta_primary_link");
+        return (
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div><Label>Button Text</Label><Input placeholder="Learn About Us" value={ctaLabel} onChange={(e) => setFixedContentField("cta_primary_label", e.target.value)} /></div>
+              <div><Label>Button Link</Label><Input placeholder="/about" value={ctaLink} onChange={(e) => setFixedContentField("cta_primary_link", e.target.value)} /></div>
+            </div>
+            <div className="space-y-3">
+              <Label>Feature Cards (optional)</Label>
+              {homepageItems.map((item, index) => (
+                <div key={index} className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Feature {index + 1}</p>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div><Label>Title</Label><Input value={String(item.title || "")} onChange={(e) => updateHomepageItem(index, "title", e.target.value)} /></div>
+                    <div>
+                      <Label>Icon</Label>
+                      <Select value={String(item.icon || "target")} onValueChange={(v) => updateHomepageItem(index, "icon", v)}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          {ICON_OPTIONS.map(({ key, label, Icon }) => (
+                            <SelectItem key={key} value={key}>
+                              <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="md:col-span-2"><Label>Description</Label><Textarea value={String(item.description || "")} onChange={(e) => updateHomepageItem(index, "description", e.target.value)} rows={3} /></div>
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Feature</Button>
+            </div>
+          </div>
+        );
+      }
+      case "trust_bar":
+      case "security":
+      case "financial_tools": {
+        const ctaLabel = getFixedContentField(homepageForm.content, "cta_primary_label");
+        const ctaLink = getFixedContentField(homepageForm.content, "cta_primary_link");
+        return (
+          <div className="space-y-3">
+            {homepageItems.map((item, index) => (
+              <div key={index} className="flex items-end gap-3 rounded-lg border p-3">
+                <div className="w-40">
+                  <Label>Icon</Label>
+                  <Select value={String(item.icon || "check")} onValueChange={(v) => updateHomepageItem(index, "icon", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {ICON_OPTIONS.map(({ key, label, Icon }) => (
+                        <SelectItem key={key} value={key}>
+                          <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex-1"><Label>Label</Label><Input value={String(item.label || "")} onChange={(e) => updateHomepageItem(index, "label", e.target.value)} /></div>
+                <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive" onClick={() => removeHomepageItem(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Item</Button>
+            {homepageForm.section_type === "financial_tools" ? (
+              <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
+                <div><Label>Button Text</Label><Input placeholder="Explore Financial Tools" value={ctaLabel} onChange={(e) => setFixedContentField("cta_primary_label", e.target.value)} /></div>
+                <div><Label>Button Link</Label><Input placeholder="/help" value={ctaLink} onChange={(e) => setFixedContentField("cta_primary_link", e.target.value)} /></div>
+              </div>
+            ) : null}
+          </div>
+        );
+      }
+      case "statistics":
+        return (
+          <div className="space-y-3">
+            {homepageItems.map((item, index) => (
+              <div key={index} className="flex items-end gap-3 rounded-lg border p-3">
+                <div className="w-32"><Label>Value</Label><Input placeholder="25+" value={String(item.value || "")} onChange={(e) => updateHomepageItem(index, "value", e.target.value)} /></div>
+                <div className="flex-1"><Label>Label</Label><Input placeholder="Years Serving Communities" value={String(item.label || "")} onChange={(e) => updateHomepageItem(index, "label", e.target.value)} /></div>
+                <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 text-destructive" onClick={() => removeHomepageItem(index)}>
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Statistic</Button>
+          </div>
+        );
       case "contact": {
         const item = homepageItems[0] || emptyItemForSection("contact");
         return (
@@ -615,13 +845,13 @@ export default function ContentManagement() {
           </div>
         );
       case "services":
-      case "about":
+      case "banking_made_simple":
         return (
           <div className="space-y-3">
             {homepageItems.map((item, index) => (
               <div key={index} className="rounded-lg border p-3 space-y-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-medium">{homepageForm.section_type === "about" ? "Feature" : "Service"} {index + 1}</p>
+                  <p className="text-sm font-medium">Item {index + 1}</p>
                   <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
                     <Trash2 className="h-4 w-4" />
                   </Button>
@@ -1121,12 +1351,20 @@ export default function ContentManagement() {
             <Select value={homepageForm.section_type} onValueChange={updateHomepageSectionType}>
               <SelectTrigger><SelectValue placeholder="Choose a section" /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="hero">Hero</SelectItem>
-                <SelectItem value="services">Services</SelectItem>
-                <SelectItem value="products">Products</SelectItem>
-                <SelectItem value="about">About</SelectItem>
+                <SelectItem value="hero">Hero Banner</SelectItem>
+                <SelectItem value="trust_bar">Trust Bar</SelectItem>
+                <SelectItem value="products">Banking Products</SelectItem>
+                <SelectItem value="services">Why Choose Us</SelectItem>
+                <SelectItem value="about">About Us</SelectItem>
+                <SelectItem value="banking_made_simple">Banking Made Simple</SelectItem>
+                <SelectItem value="statistics">Statistics</SelectItem>
+                <SelectItem value="financial_tools">Financial Tools</SelectItem>
                 <SelectItem value="testimonials">Testimonials</SelectItem>
+                <SelectItem value="security">Security</SelectItem>
+                <SelectItem value="mobile_banking">Mobile Banking</SelectItem>
+                <SelectItem value="financial_education">Financial Education</SelectItem>
                 <SelectItem value="faq">FAQ</SelectItem>
+                <SelectItem value="final_cta">Final Call-to-Action</SelectItem>
                 <SelectItem value="contact">Contact</SelectItem>
                 <SelectItem value="custom">Custom</SelectItem>
               </SelectContent>
@@ -1138,6 +1376,9 @@ export default function ContentManagement() {
           <CmsField label="Subtitle">
             <Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} />
           </CmsField>
+          <CmsField label="Description" helperText="A longer paragraph shown below the subtitle, where this section style uses one.">
+            <Textarea rows={4} value={homepageForm.description} onChange={(e) => setHomepageForm({ ...homepageForm, description: e.target.value })} />
+          </CmsField>
         </CmsFormSection>
 
         <CmsFormSection title="Image">
@@ -1147,6 +1388,9 @@ export default function ContentManagement() {
             onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
             helperText="Optional. Shown alongside this section's content."
           />
+          <CmsField label="Image Alt Text" helperText="Describes the image for screen readers and search engines.">
+            <Input value={homepageForm.image_alt} onChange={(e) => setHomepageForm({ ...homepageForm, image_alt: e.target.value })} />
+          </CmsField>
         </CmsFormSection>
 
         <CmsFormSection title="Content">

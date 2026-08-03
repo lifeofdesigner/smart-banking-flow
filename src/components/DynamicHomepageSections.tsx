@@ -14,19 +14,24 @@ import {
   Award,
   Briefcase,
   Building2,
+  CheckCircle2,
   Clock,
   CreditCard,
   DollarSign,
   Eye,
   HelpCircle,
+  Lock,
   Mail,
   MapPin,
   Phone,
   PiggyBank,
+  Shield,
+  Smartphone,
   Star,
   Target,
   TrendingUp,
   Users,
+  Zap,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
@@ -35,8 +40,10 @@ export type HomepageSection = {
   section_type: string;
   title: string | null;
   subtitle: string | null;
+  description?: string | null;
   content: unknown;
   image: string | null;
+  image_alt?: string | null;
   display_order: number;
   is_active: boolean;
 };
@@ -69,16 +76,21 @@ const iconMap: Record<string, LucideIcon> = {
   briefcase: Briefcase,
   building: Building2,
   card: CreditCard,
+  check: CheckCircle2,
   credit: CreditCard,
   dollar: DollarSign,
   eye: Eye,
   help: HelpCircle,
   investment: TrendingUp,
+  lock: Lock,
   piggy: PiggyBank,
   savings: PiggyBank,
+  shield: Shield,
+  smartphone: Smartphone,
   target: Target,
   trending: TrendingUp,
   users: Users,
+  zap: Zap,
 };
 
 const fallbackServices: ServiceItem[] = [
@@ -183,6 +195,186 @@ const extractArray = <T,>(parsed: unknown, wrapperKeys: string[]): T[] | null =>
 
 const getIcon = (name?: string) => iconMap[(name || "").toLowerCase()] || Target;
 
+type CtaContent = {
+  cta_primary_label?: string;
+  cta_primary_link?: string;
+  cta_secondary_label?: string;
+  cta_secondary_link?: string;
+};
+
+const readCta = (parsed: unknown): CtaContent => {
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return {};
+  const record = parsed as Record<string, unknown>;
+  const asString = (key: string) => (typeof record[key] === "string" ? (record[key] as string) : undefined);
+  return {
+    cta_primary_label: asString("cta_primary_label"),
+    cta_primary_link: asString("cta_primary_link"),
+    cta_secondary_label: asString("cta_secondary_label"),
+    cta_secondary_link: asString("cta_secondary_link"),
+  };
+};
+
+function CtaButtons({ cta, align = "start" }: { cta: CtaContent; align?: "start" | "center" }) {
+  if (!cta.cta_primary_label && !cta.cta_secondary_label) return null;
+
+  return (
+    <div className={`flex flex-wrap gap-3 pt-2 ${align === "center" ? "justify-center" : ""}`}>
+      {cta.cta_primary_label ? (
+        <a
+          href={cta.cta_primary_link || "#"}
+          className="rounded-full bg-[var(--bank-public-navy)] px-7 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
+        >
+          {cta.cta_primary_label}
+        </a>
+      ) : null}
+      {cta.cta_secondary_label ? (
+        <a
+          href={cta.cta_secondary_link || "#"}
+          className="rounded-full border border-[var(--bank-public-navy)]/30 px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] transition hover:bg-[var(--bank-public-navy)]/5"
+        >
+          {cta.cta_secondary_label}
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+type ChecklistItem = { icon?: string; label: string };
+
+function ChecklistSection({
+  section,
+  fallbackTitle,
+  columns = "md:grid-cols-2 lg:grid-cols-4",
+}: {
+  section: HomepageSection;
+  fallbackTitle: string;
+  columns?: string;
+}) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
+  const parsed = parseContent(section.content);
+  const items = extractArray<ChecklistItem>(parsed, ["items"]) || [];
+  const cta = readCta(parsed);
+
+  return (
+    <section className="bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
+      <div className="container mx-auto px-4">
+        <SectionHeader
+          title={applySiteName(section.title || fallbackTitle, bankName)}
+          subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : undefined}
+        />
+        {section.description ? (
+          <p className="mx-auto -mt-6 mb-8 max-w-2xl text-center text-sm leading-6 text-muted-foreground md:text-base">
+            {applySiteName(section.description, bankName)}
+          </p>
+        ) : null}
+        <div className={`grid gap-4 ${columns}`}>
+          {items.map((item, index) => {
+            const Icon = getIcon(item.icon);
+            return (
+              <div key={`${item.label}-${index}`} className="flex items-center gap-3 rounded-lg bg-card p-4 shadow-sm">
+                <Icon className="h-5 w-5 shrink-0 text-[var(--bank-public-navy)]" />
+                <span className="text-sm font-medium md:text-base">{applySiteName(item.label, bankName)}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-8 flex justify-center">
+          <CtaButtons cta={cta} align="center" />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+type StatItem = { value: string; label: string };
+
+function StatisticsSection({ section }: { section: HomepageSection }) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
+  const items = extractArray<StatItem>(parseContent(section.content), ["items"]) || [];
+
+  return (
+    <section className="bg-[var(--bank-public-navy)] py-12 md:py-20">
+      <div className="container mx-auto px-4">
+        <h2 className="mb-8 text-center text-[18px] font-bold text-white md:mb-14 md:text-4xl">
+          {applySiteName(section.title || "Banking You Can Trust", bankName)}
+        </h2>
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-8">
+          {items.map((item, index) => (
+            <div key={`${item.label}-${index}`} className="text-center">
+              <p className="text-3xl font-bold text-[var(--bank-public-accent)] md:text-5xl">{item.value}</p>
+              <p className="mt-2 text-xs text-white/80 md:text-base">{item.label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/** Shared by mobile_banking / financial_education / final_cta — a title, an
+ * optional paragraph, and up to two CTA buttons, no repeatable items.
+ * `variant="banner"` gives the closing final_cta section a distinct, more
+ * prominent dark banner treatment instead of blending in with the plain
+ * mid-page sections around it. */
+function SimpleCtaSection({
+  section,
+  center = false,
+  variant = "plain",
+}: {
+  section: HomepageSection;
+  center?: boolean;
+  variant?: "plain" | "banner";
+}) {
+  const siteSettings = useSiteSettings();
+  const bankName = siteSettings.site_name || "Your Bank";
+  const parsed = parseContent(section.content);
+  const cta = readCta(parsed);
+  const isBanner = variant === "banner";
+
+  return (
+    <section className={isBanner ? "bg-[var(--bank-public-navy)] py-14 md:py-24" : "bg-background py-12 md:py-24"}>
+      <div className="container mx-auto px-4">
+        <div className={`mx-auto max-w-3xl ${center ? "text-center" : ""}`}>
+          <h2 className={`text-[18px] font-bold md:text-4xl ${isBanner ? "text-white" : "text-[var(--bank-public-navy)]"}`}>
+            {applySiteName(section.title || "", bankName)}
+          </h2>
+          {section.description ? (
+            <p className={`mt-4 text-sm leading-6 md:text-lg ${isBanner ? "text-white/85" : "text-muted-foreground"}`}>
+              {applySiteName(section.description, bankName)}
+            </p>
+          ) : null}
+          <div className={center ? "flex justify-center" : ""}>
+            {isBanner ? (
+              <div className={`flex flex-wrap gap-3 pt-6 ${center ? "justify-center" : ""}`}>
+                {cta.cta_primary_label ? (
+                  <a
+                    href={cta.cta_primary_link || "#"}
+                    className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] shadow-sm transition hover:bg-white/90"
+                  >
+                    {cta.cta_primary_label}
+                  </a>
+                ) : null}
+                {cta.cta_secondary_label ? (
+                  <a
+                    href={cta.cta_secondary_link || "#"}
+                    className="rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+                  >
+                    {cta.cta_secondary_label}
+                  </a>
+                ) : null}
+              </div>
+            ) : (
+              <CtaButtons cta={cta} align={center ? "center" : "start"} />
+            )}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 function SectionHeader({ title, subtitle }: { title: string; subtitle?: string | null }) {
   return (
     <div className="mb-8 max-w-xl md:mx-auto md:mb-14 md:max-w-3xl md:text-center">
@@ -234,24 +426,41 @@ export function AboutSection({ section }: { section: HomepageSection }) {
   const bankName = siteSettings.site_name || "Your Bank";
   const parsed = parseContent(section.content);
   const record = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
-  const cards = extractArray<ServiceItem>(parsed, ["cards", "values"]) || fallbackAbout.cards || [];
-  const body = typeof record.body === "string" ? record.body : typeof record.description === "string" ? record.description : undefined;
+  // No `|| fallbackAbout.cards` here: an admin-authored row with zero cards
+  // means zero cards, not "show the hardcoded Mission/Vision/Licensed
+  // placeholder." The true no-data-at-all scenario is handled separately
+  // below, where fallbackAbout's own cards are injected directly.
+  const cards = extractArray<ServiceItem>(parsed, ["cards", "values"]) || [];
+  const body = section.description || (typeof record.body === "string" ? record.body : typeof record.description === "string" ? record.description : undefined);
   const mission = typeof record.mission === "string" ? record.mission : undefined;
   const vision = typeof record.vision === "string" ? record.vision : undefined;
+  const cta = readCta(parsed);
 
   const title = section.title ? applySiteName(section.title, bankName) : `About ${bankName}`;
 
   return (
     <section id="about" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
-        <SectionHeader title={title} subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : body ? applySiteName(body, bankName) : undefined} />
+        <SectionHeader title={title} subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : undefined} />
+        {body ? (
+          <div className="mx-auto mb-8 max-w-3xl space-y-4 text-center text-sm leading-7 text-muted-foreground md:text-base">
+            {applySiteName(body, bankName)
+              .split(/\n\n+/)
+              .map((paragraph, index) => (
+                <p key={index}>{paragraph}</p>
+              ))}
+          </div>
+        ) : null}
         {section.image ? (
           <img
             src={section.image}
-            alt={title}
+            alt={section.image_alt || title}
             className="mx-auto mb-8 max-h-[380px] w-full max-w-5xl rounded-lg object-cover"
           />
         ) : null}
+        <div className="mb-8 flex justify-center">
+          <CtaButtons cta={cta} align="center" />
+        </div>
         {mission || vision ? (
           <div className="mb-8 grid gap-4 md:grid-cols-2">
             {mission ? (
@@ -268,18 +477,20 @@ export function AboutSection({ section }: { section: HomepageSection }) {
             ) : null}
           </div>
         ) : null}
-        <div className="grid gap-4 md:grid-cols-3">
-          {cards.map((item, index) => {
-            const Icon = getIcon(item.icon);
-            return (
-              <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
-                <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
-                <h3 className="mt-4 text-lg font-bold md:text-2xl">{applySiteName(item.title, bankName)}</h3>
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">{applySiteName(item.description, bankName)}</p>
-              </Card>
-            );
-          })}
-        </div>
+        {cards.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-3">
+            {cards.map((item, index) => {
+              const Icon = getIcon(item.icon);
+              return (
+                <Card key={`${item.title}-${index}`} className="p-5 md:p-8">
+                  <Icon className="h-6 w-6 text-[var(--bank-public-navy)]" />
+                  <h3 className="mt-4 text-lg font-bold md:text-2xl">{applySiteName(item.title, bankName)}</h3>
+                  <p className="mt-2 text-sm leading-6 text-muted-foreground">{applySiteName(item.description, bankName)}</p>
+                </Card>
+              );
+            })}
+          </div>
+        ) : null}
       </div>
     </section>
   );
@@ -409,7 +620,7 @@ function CustomSection({ section }: { section: HomepageSection }) {
         <div className="mx-auto max-w-4xl">
           <SectionHeader title={title} subtitle={section.subtitle ? applySiteName(section.subtitle, bankName) : undefined} />
           {section.image ? (
-            <img src={section.image} alt={title} className="mb-6 max-h-[420px] w-full rounded-lg object-cover" />
+            <img src={section.image} alt={section.image_alt || title} className="mb-6 max-h-[420px] w-full rounded-lg object-cover" />
           ) : null}
           {bodyText ? <p className="whitespace-pre-line text-base leading-8 text-muted-foreground">{applySiteName(bodyText, bankName)}</p> : null}
         </div>
@@ -423,6 +634,7 @@ const renderSection = (section: HomepageSection) => {
     case "products":
       return <DynamicProducts key={section.id} />;
     case "services":
+    case "banking_made_simple":
       return <ServicesSection key={section.id} section={section} />;
     case "about":
       return <AboutSection key={section.id} section={section} />;
@@ -433,6 +645,19 @@ const renderSection = (section: HomepageSection) => {
       return <FaqSection key={section.id} section={section} />;
     case "contact":
       return <ContactSection key={section.id} section={section} />;
+    case "trust_bar":
+      return <ChecklistSection key={section.id} section={section} fallbackTitle="Trusted Every Day" columns="md:grid-cols-2 lg:grid-cols-4" />;
+    case "financial_tools":
+      return <ChecklistSection key={section.id} section={section} fallbackTitle="Financial Tools" columns="md:grid-cols-2 lg:grid-cols-3" />;
+    case "security":
+      return <ChecklistSection key={section.id} section={section} fallbackTitle="Your Security Is Our Priority" columns="md:grid-cols-2" />;
+    case "statistics":
+      return <StatisticsSection key={section.id} section={section} />;
+    case "mobile_banking":
+    case "financial_education":
+      return <SimpleCtaSection key={section.id} section={section} center />;
+    case "final_cta":
+      return <SimpleCtaSection key={section.id} section={section} center variant="banner" />;
     case "hero":
       return null;
     default:
@@ -450,7 +675,7 @@ export default function DynamicHomepageSections() {
     const fetchSections = async () => {
       const { data, error } = await supabase
         .from("homepage_sections")
-        .select("id, section_type, title, subtitle, content, image, display_order, is_active")
+        .select("id, section_type, title, subtitle, description, content, image, image_alt, display_order, is_active")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
 

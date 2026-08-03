@@ -14,6 +14,7 @@ type HomepageHeroRow = {
   title?: string | null;
   subtitle?: string | null;
   image?: string | null;
+  image_alt?: string | null;
   content?: unknown;
 };
 
@@ -46,7 +47,11 @@ function LoginPanel() {
         return;
       }
 
-      navigate("/dashboard", { replace: true });
+      // Route through /auth rather than straight to /dashboard: that page's
+      // own session-check decides whether this account still owes a
+      // sign-in PIN and shows that step, instead of duplicating the check
+      // here and risking it drifting out of sync.
+      navigate("/auth", { replace: true });
     } finally {
       setLoading(false);
     }
@@ -106,14 +111,17 @@ export default function LandingWhiteBank() {
     "Empowering individuals and businesses with accessible microfinance solutions — from everyday banking to loans, savings, and investing.",
   );
   const [heroImg, setHeroImg] = useState<string | null>(null);
+  const [heroImgAlt, setHeroImgAlt] = useState("");
   const [ctaPrimary, setCtaPrimary] = useState("Open an Account");
-  const [ctaSecondary, setCtaSecondary] = useState("Learn More");
+  const [ctaPrimaryLink, setCtaPrimaryLink] = useState("/auth?tab=signup");
+  const [ctaSecondary, setCtaSecondary] = useState("Explore Banking Products");
+  const [ctaSecondaryLink, setCtaSecondaryLink] = useState("/#products");
 
   useEffect(() => {
     const loadHero = async () => {
       let result = await supabase
         .from("homepage_sections")
-        .select("title, subtitle, image, content")
+        .select("title, subtitle, image, image_alt, content")
         .eq("section_type", "hero")
         .eq("is_active", true)
         .order("display_order", { ascending: true })
@@ -134,14 +142,22 @@ export default function LandingWhiteBank() {
       const data = result.data as HomepageHeroRow | null;
       const headline = readContentField(data?.content, "headline");
       const subheadline = readContentField(data?.content, "subheadline");
-      const primaryLabel = readContentField(data?.content, "cta_primary");
-      const secondaryLabel = readContentField(data?.content, "cta_secondary");
+      // cta_primary_label/cta_primary_link are the current field names;
+      // cta_primary/cta_secondary are kept as a fallback for any hero row
+      // seeded before link targets became editable.
+      const primaryLabel = readContentField(data?.content, "cta_primary_label") || readContentField(data?.content, "cta_primary");
+      const primaryLink = readContentField(data?.content, "cta_primary_link");
+      const secondaryLabel = readContentField(data?.content, "cta_secondary_label") || readContentField(data?.content, "cta_secondary");
+      const secondaryLink = readContentField(data?.content, "cta_secondary_link");
 
       if (headline || data?.title) setTitle(headline || data?.title || "");
       if (subheadline || data?.subtitle) setSubtitle(subheadline || data?.subtitle || "");
       if (data?.image) setHeroImg(data.image);
+      if (data?.image_alt) setHeroImgAlt(data.image_alt);
       if (primaryLabel) setCtaPrimary(primaryLabel);
+      if (primaryLink) setCtaPrimaryLink(primaryLink);
       if (secondaryLabel) setCtaSecondary(secondaryLabel);
+      if (secondaryLink) setCtaSecondaryLink(secondaryLink);
     };
 
     loadHero();
@@ -154,7 +170,7 @@ export default function LandingWhiteBank() {
       <Navbar />
 
       <section className="relative overflow-hidden bg-[var(--bank-public-navy)]">
-        <img src={heroImg || heroImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-90" />
+        <img src={heroImg || heroImage} alt={heroImgAlt} className="absolute inset-0 h-full w-full object-cover opacity-90" />
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--bank-public-navy)] via-[var(--bank-public-navy)]/90 to-[var(--bank-public-navy)]/40" />
 
         <div className="relative mx-auto max-w-[1180px] px-4 py-14 md:px-6 md:py-20 lg:py-24">
@@ -168,13 +184,13 @@ export default function LandingWhiteBank() {
               <p className="max-w-lg text-base leading-7 text-white/85 md:text-lg">{subtitle}</p>
               <div className="flex flex-wrap gap-3 pt-2">
                 <a
-                  href="/auth?tab=signup"
+                  href={ctaPrimaryLink}
                   className="rounded-full bg-white px-7 py-3 text-sm font-semibold text-[var(--bank-public-navy)] shadow-sm transition hover:bg-white/90"
                 >
                   {ctaPrimary}
                 </a>
                 <a
-                  href="/about"
+                  href={ctaSecondaryLink}
                   className="rounded-full border border-white/40 px-7 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
                 >
                   {ctaSecondary}

@@ -51,6 +51,33 @@ const isNetworkError = (error: unknown) => {
     || message.includes("err_name_not_resolved");
 };
 
+type PinGateResult = "proceed" | "pin_step" | "blocked";
+
+/**
+ * Single source of truth for "has this signed-in session cleared the
+ * sign-in PIN requirement" — used by handleLogin's own submit AND by the
+ * mount-time session check below, so a session created anywhere else (e.g.
+ * the login panel embedded in the homepage hero) is routed the same way
+ * the moment it lands here instead of needing its own copy of this logic.
+ */
+const resolvePinGate = async (): Promise<PinGateResult> => {
+  const { data: pinStatusData, error: pinStatusError } = await supabase.rpc("my_login_pin_status");
+  if (pinStatusError) throw pinStatusError;
+
+  const pinStatus = pinStatusData as { pin_set: boolean; pin_verified: boolean };
+
+  if (!pinStatus.pin_set) {
+    await supabase.auth.signOut();
+    return "blocked";
+  }
+
+  if (!pinStatus.pin_verified) {
+    return "pin_step";
+  }
+
+  return "proceed";
+};
+
 const isAdminUser = async () => {
   const {
     data: { user },
@@ -142,20 +169,62 @@ const Auth = () => {
   }, [isAdminLogin]);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate(isAdminLogin ? "/admin" : "/dashboard");
+    let isMounted = true;
+
+    // Routes any session that lands here — from this page's own login
+    // form, the homepage hero's embedded login panel, or a stale tab — the
+    // same way: straight through if admin or already PIN-verified, into
+    // the PIN step if not, or signed back out if no PIN was ever assigned.
+    const routeExistingSession = async () => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session || !isMounted) return;
+
+      if (isAdminLogin) {
+        navigate("/admin", { replace: true });
+        return;
       }
-    });
+
+      try {
+        const gate = await resolvePinGate();
+        if (!isMounted) return;
+
+        if (gate === "blocked") {
+          toast({
+            title: "Sign-in PIN required",
+            description: "Your account doesn't have a sign-in PIN yet. Please contact support to get one.",
+            variant: "destructive",
+          });
+          return;
+        }
+
+        if (gate === "pin_step") {
+          manualRedirectRef.current = true;
+          setPinStep(true);
+          return;
+        }
+
+        navigate("/dashboard", { replace: true });
+      } catch {
+        if (isMounted) navigate("/dashboard", { replace: true });
+      }
+    };
+
+    void routeExistingSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session && !manualRedirectRef.current) {
-        navigate(isAdminLogin ? "/admin" : "/dashboard");
+        void routeExistingSession();
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [isAdminLogin, navigate]);
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, [isAdminLogin, navigate, toast]);
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -252,18 +321,13 @@ const Auth = () => {
       // Admins are exempt (checked above and already returned); every other
       // account needs its admin-assigned sign-in PIN verified for this
       // login before reaching the dashboard.
-      const { data: pinStatusData, error: pinStatusError } = await supabase.rpc("my_login_pin_status");
+      const gate = await resolvePinGate();
 
-      if (pinStatusError) throw pinStatusError;
-
-      const pinStatus = pinStatusData as { pin_set: boolean; pin_verified: boolean };
-
-      if (!pinStatus.pin_set) {
-        await supabase.auth.signOut();
+      if (gate === "blocked") {
         throw new Error("Your account doesn't have a sign-in PIN yet. Please contact support to get one.");
       }
 
-      if (!pinStatus.pin_verified) {
+      if (gate === "pin_step") {
         setPinStep(true);
         return;
       }
@@ -401,15 +465,23 @@ const Auth = () => {
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/10 via-background to-accent/10 p-4">
       <Card className="w-full max-w-md p-8 shadow-2xl">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
-            <Shield className="w-8 h-8 text-primary-foreground" />
-          </div>
+          {siteSettings.site_logo_url ? (
+            <img
+              src={siteSettings.site_logo_url}
+              alt={siteSettings.site_name || "Bank logo"}
+              className="mx-auto mb-4 h-16 w-16 rounded-2xl object-contain"
+            />
+          ) : (
+            <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
+              <Shield className="w-8 h-8 text-primary-foreground" />
+            </div>
+          )}
           <h1 className="text-3xl font-bold mb-2">
             {pinStep ? "Enter Your PIN" : isAdminLogin ? "Admin Portal" : "Internet Banking"}
           </h1>
           <p className="text-muted-foreground">
             {pinStep
-              ? "Enter the 6-digit sign-in PIN issued to you by an administrator."
+              ? "Enter the 6-digit sign-in PIN issued to you."
               : isAdminLogin
                 ? "Administrative access only"
                 : "Secure access to your account"}
