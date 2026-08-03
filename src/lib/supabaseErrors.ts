@@ -13,5 +13,8 @@ export const isMissingWireTransferAccessColumnError = (error: unknown) => {
       : "";
 
   return code === "42703"
-    || (message.includes("can_initiate_wire_transfer") && message.includes("does not exist"));
+    || (
+      message.includes("can_initiate_wire_transfer")
+      && (message.includes("does not exist") || message.includes("schema cache"))
+    );
 };
