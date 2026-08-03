@@ -304,3 +304,7 @@ All colors MUST be HSL.
     --ring: 213 94% 56%;
   }
 }
+
+body.input-focused .mobile-bottom-nav {
+  display: none;
+}

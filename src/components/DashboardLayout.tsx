@@ -242,6 +242,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, []);
 
   useEffect(() => {
+    const onFocus = () => document.body.classList.add('input-focused');
+    const onBlur = () => document.body.classList.remove('input-focused');
+
+    const inputs = document.querySelectorAll('input, textarea');
+    inputs.forEach(input => {
+      input.addEventListener('focus', onFocus);
+      input.addEventListener('blur', onBlur);
+    });
+
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('focus', onFocus);
+        input.removeEventListener('blur', onBlur);
+      });
+    };
+  }, [location.pathname]); // Re-run when location changes to attach to new inputs
+
+  useEffect(() => {
     if (!currentUserId || !canViewLiveChatSupport) {
       setLiveChatNotificationCount(0);
       return;
