@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getSessionUserId } from "@/lib/supabaseSession";
 
 type FormRole = "user" | "admin";
 type AccountTypeOption = "savings" | "current";
@@ -76,11 +77,11 @@ export default function AdminCreateUser() {
 
     try {
       const {
-        data: { user },
-        error: userError,
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = getSessionUserId(session);
 
-      if (userError || !user) {
+      if (!userId) {
         navigate("/admin-login");
         return;
       }
@@ -88,7 +89,7 @@ export default function AdminCreateUser() {
       const { data: roles, error: rolesError } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       if (rolesError) {
         throw rolesError;

@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown, Copy, Loader2, RefreshCw, UserPlus, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
-import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from "@supabase/supabase-js";
+import { getSessionUserId } from "@/lib/supabaseSession";
 
 type Role = "user" | "admin";
 
@@ -33,6 +33,65 @@ interface ManagedUser {
   status: string;
   can_initiate_wire_transfer: boolean;
 }
+
+const toErrorMessage = (error: unknown, fallback: string) => {
+  if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
+    return (error as { message: string }).message;
+  }
+
+  return fallback;
+};
+
+const buildUsers = (
+  profileRows: Array<{
+    id: string;
+    full_name: string | null;
+    email: string | null;
+    created_at: string | null;
+    can_initiate_wire_transfer: boolean | null;
+  }>,
+  roleRows: Array<{ user_id: string; role: string }>,
+  accountRows: Array<{ user_id: string; status: string | null }>,
+  search: string,
+  roleFilter: "all" | Role,
+) => {
+  const rolesByUserId = new Map<string, string[]>();
+  for (const roleRow of roleRows) {
+    const roles = rolesByUserId.get(roleRow.user_id) || [];
+    if (!roles.includes(roleRow.role)) roles.push(roleRow.role);
+    rolesByUserId.set(roleRow.user_id, roles);
+  }
+
+  const accountStatusByUserId = new Map<string, string | null>();
+  for (const accountRow of accountRows) {
+    if (!accountStatusByUserId.has(accountRow.user_id)) {
+      accountStatusByUserId.set(accountRow.user_id, accountRow.status);
+    }
+  }
+
+  const query = search.trim().toLowerCase();
+
+  return profileRows
+    .map<ManagedUser>((profile) => ({
+      id: profile.id,
+      full_name: profile.full_name || "User",
+      email: profile.email || "",
+      roles: rolesByUserId.get(profile.id) || ["user"],
+      created_at: profile.created_at,
+      status: accountStatusByUserId.get(profile.id) || "pending",
+      can_initiate_wire_transfer: profile.can_initiate_wire_transfer ?? true,
+    }))
+    .filter((user) => {
+      if (roleFilter !== "all" && !user.roles.includes(roleFilter)) return false;
+      if (!query) return true;
+      return user.email.toLowerCase().includes(query) || user.full_name.toLowerCase().includes(query);
+    })
+    .sort((a, b) => {
+      const ad = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bd = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bd - ad;
+    });
+};
 
 export default function AdminUsersManagement() {
   const navigate = useNavigate();
@@ -54,119 +113,65 @@ export default function AdminUsersManagement() {
     role: "user" as Role,
   });
 
-  const handleUpdateAccountStatus = async (userId: string, newStatus: 'active' | 'frozen' | 'closed') => {
+  const handleUpdateAccountStatus = async (userId: string, newStatus: "active" | "frozen" | "closed") => {
     try {
-      const { error } = await supabase.rpc('admin_update_user_account_status', {
+      const { error } = await supabase.rpc("admin_update_user_account_status", {
         p_user_id: userId,
         p_status: newStatus,
       });
+
       if (error) throw error;
       toast.success(`User account has been ${newStatus}.`);
-      await fetchUsers(); // Refresh the user list
+      await fetchUsers();
     } catch (error) {
-      toast.error(`Failed to update account status: ${error.message}`);
+      toast.error(`Failed to update account status: ${toErrorMessage(error, "Unknown error")}`);
     }
   };
 
   const handleToggleWireTransfer = async (user: ManagedUser) => {
     const canTransfer = !user.can_initiate_wire_transfer;
+
     try {
-      const { error } = await supabase.rpc('admin_toggle_wire_transfer_access', {
+      const { error } = await supabase.rpc("admin_toggle_wire_transfer_access", {
         p_user_id: user.id,
         p_can_transfer: canTransfer,
       });
+
       if (error) throw error;
-      toast.success(`Wire transfers have been ${canTransfer ? 'unblocked' : 'blocked'} for the user.`);
-      await fetchUsers(); // Refresh the user list
+      toast.success(`Wire transfers have been ${canTransfer ? "unblocked" : "blocked"} for the user.`);
+      await fetchUsers();
     } catch (error) {
-      toast.error(`Failed to toggle wire transfer access: ${error.message}`);
+      toast.error(`Failed to toggle wire transfer access: ${toErrorMessage(error, "Unknown error")}`);
     }
-  };
-
-  const extractFunctionPayloadError = (value: unknown) => {
-    if (!value || typeof value !== "object") return null;
-
-    if ("error" in value && typeof value.error === "string" && value.error.trim()) {
-      return value.error;
-    }
-
-    if ("message" in value && typeof value.message === "string" && value.message.trim()) {
-      return value.message;
-    }
-
-    return null;
-  };
-
-  const getSafeFunctionErrorMessage = async (error: unknown, fallback: string) => {
-    if (error instanceof FunctionsHttpError) {
-      const response = error.context;
-      const jsonResponse = response.clone();
-      const textResponse = response.clone();
-
-      try {
-        const body = await jsonResponse.json();
-        const bodyMessage = extractFunctionPayloadError(body);
-        if (bodyMessage) {
-          return bodyMessage;
-        }
-      } catch {
-        // ignore parse errors and fall back to text/status
-      }
-
-      try {
-        const rawText = await textResponse.text();
-        if (rawText.trim()) {
-          return rawText.trim();
-        }
-      } catch {
-        // ignore read errors and fall back
-      }
-
-      if (response.status === 403) {
-        return "Forbidden: elevated admin role required";
-      }
-
-      if (response.status) {
-        return `Request failed (${response.status}${response.statusText ? ` ${response.statusText}` : ""})`;
-      }
-
-      return fallback;
-    }
-
-    if (error instanceof FunctionsRelayError || error instanceof FunctionsFetchError) {
-      return error.message || fallback;
-    }
-
-    if (error && typeof error === "object" && "message" in error && typeof (error as unknown).message === "string") {
-      return (error as unknown).message;
-    }
-
-    return fallback;
   };
 
   useEffect(() => {
-    checkAccess();
+    void checkAccess();
   }, []);
 
   const checkAccess = async () => {
     setLoadingAuth(true);
+
     try {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } = await supabase.auth.getSession();
+      const userId = getSessionUserId(session);
 
-      if (!user) {
+      if (!userId) {
         navigate("/admin-login");
         return;
       }
 
-      const { data: roleRow } = await supabase
+      const { data: roleRow, error } = await supabase
         .from("user_roles")
         .select("id")
-        .eq("user_id", user.id)
+        .eq("user_id", userId)
         .eq("role", "admin")
         .limit(1)
         .maybeSingle();
+
+      if (error) throw error;
 
       if (!roleRow) {
         toast.error("Access denied: elevated admin privileges required");
@@ -176,7 +181,8 @@ export default function AdminUsersManagement() {
 
       setIsAdmin(true);
       await fetchUsers("");
-    } catch {
+    } catch (error) {
+      toast.error(toErrorMessage(error, "Failed to load user management"));
       navigate("/dashboard");
     } finally {
       setLoadingAuth(false);
@@ -185,33 +191,52 @@ export default function AdminUsersManagement() {
 
   const fetchUsers = async (overrideSearch?: string) => {
     setLoadingUsers(true);
+
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
+      const [{ data: profileRows, error: profileError }, { data: roleRows, error: roleError }, { data: accountRows, error: accountError }] =
+        await Promise.all([
+          supabase
+            .from("profiles")
+            .select("id, full_name, email, created_at, can_initiate_wire_transfer")
+            .order("created_at", { ascending: false }),
+          supabase.from("user_roles").select("user_id, role"),
+          supabase.from("accounts").select("user_id, status"),
+        ]);
 
-      const effectiveSearch = (overrideSearch ?? search).trim();
-      const { data, error } = await supabase.functions.invoke("admin-user-management", {
-        body: {
-          action: "list_users",
-          search: effectiveSearch,
-          role: roleFilter,
-        },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
-      });
+      if (profileError) throw profileError;
+      if (roleError) throw roleError;
+      if (accountError) throw accountError;
 
-      if (error) throw error;
-      const payloadError = extractFunctionPayloadError(data);
-      if (payloadError) throw new Error(payloadError);
-      setUsers((data?.data || []) as ManagedUser[]);
+      setUsers(buildUsers(
+        (profileRows || []) as Array<{
+          id: string;
+          full_name: string | null;
+          email: string | null;
+          created_at: string | null;
+          can_initiate_wire_transfer: boolean | null;
+        }>,
+        (roleRows || []) as Array<{ user_id: string; role: string }>,
+        (accountRows || []) as Array<{ user_id: string; status: string | null }>,
+        overrideSearch ?? search,
+        roleFilter,
+      ));
     } catch (error) {
-      toast.error(await getSafeFunctionErrorMessage(error, "Failed to load users"));
+      toast.error(toErrorMessage(error, "Failed to load users"));
       setUsers([]);
     } finally {
       setLoadingUsers(false);
     }
   };
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const timer = setTimeout(() => {
+      void fetchUsers();
+    }, 350);
+
+    return () => clearTimeout(timer);
+  }, [search, roleFilter, isAdmin]);
 
   const openCreateUser = () => {
     setForm({ full_name: "", email: "", password: "", role: "user" });
@@ -244,45 +269,31 @@ export default function AdminUsersManagement() {
     }
 
     setSubmitting(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("Not authenticated");
 
-      const { data, error } = await supabase.functions.invoke("admin-user-management", {
-        body: {
-          action: "create_user",
-          full_name: form.full_name.trim(),
-          email: form.email.trim(),
-          password: form.password,
-          role: form.role,
-        },
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`
-        }
+    try {
+      const { error } = await supabase.rpc("admin_create_user", {
+        p_full_name: form.full_name.trim(),
+        p_email: form.email.trim().toLowerCase(),
+        p_password: form.password,
+        p_role: form.role,
+        p_account_type: "savings",
+        p_opening_balance: 0,
       });
 
       if (error) throw error;
-      const payloadError = extractFunctionPayloadError(data);
-      if (payloadError) throw new Error(payloadError);
 
       toast.success(form.role === "admin" ? "Admin created successfully" : "User created successfully");
       setForm({ full_name: "", email: "", password: "", role: "user" });
       setDialogOpen(false);
       await fetchUsers();
     } catch (error) {
-      toast.error(await getSafeFunctionErrorMessage(error, "Failed to create user"));
+      toast.error(toErrorMessage(error, "Failed to create user"));
     } finally {
       setSubmitting(false);
     }
   };
 
-  useEffect(() => {
-    if (!isAdmin) return;
-    const timer = setTimeout(() => {
-      fetchUsers();
-    }, 350);
-    return () => clearTimeout(timer);
-  }, [search, roleFilter, isAdmin]);
+  const openTempPasswordCopy = async () => copyTempPassword();
 
   const emptyMessage = useMemo(() => {
     if (search.trim()) return "No users match your search.";
@@ -311,7 +322,7 @@ export default function AdminUsersManagement() {
               <div>
                 <CardTitle className="admin-premium-heading text-[var(--bank-navy)]">Admin User Management</CardTitle>
                 <CardDescription className="text-[var(--bank-muted)]">
-                  Create platform users and admins securely using server-side privileged operations.
+                  Create platform users and admins securely using privileged database operations.
                 </CardDescription>
               </div>
 
@@ -406,12 +417,18 @@ export default function AdminUsersManagement() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent>
-                              {user.status !== 'active' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'active')}>Activate</DropdownMenuItem>}
-                              {user.status !== 'frozen' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'frozen')}>Hold/Lock</DropdownMenuItem>}
-                              {user.status !== 'closed' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'closed')}>Close Account</DropdownMenuItem>}
+                              {user.status !== "active" && (
+                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "active")}>Activate</DropdownMenuItem>
+                              )}
+                              {user.status !== "frozen" && (
+                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "frozen")}>Hold/Lock</DropdownMenuItem>
+                              )}
+                              {user.status !== "closed" && (
+                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "closed")}>Close Account</DropdownMenuItem>
+                              )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem onClick={() => handleToggleWireTransfer(user)}>
-                                  {user.can_initiate_wire_transfer ? 'Block Wire' : 'Un-block Wire'}
+                                {user.can_initiate_wire_transfer ? "Block Wire" : "Un-block Wire"}
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
@@ -431,7 +448,7 @@ export default function AdminUsersManagement() {
           <DialogHeader>
             <DialogTitle>{form.role === "admin" ? "Create Admin" : "Create User"}</DialogTitle>
             <DialogDescription>
-              Creates a new auth account, profile record, and required roles using the secure admin Edge Function.
+              Creates a new auth account, profile record, and required roles using secure database privileges.
             </DialogDescription>
           </DialogHeader>
 
@@ -467,7 +484,7 @@ export default function AdminUsersManagement() {
                   onChange={(e) => setForm((prev) => ({ ...prev, password: e.target.value }))}
                   placeholder="Set temporary password"
                 />
-                <Button type="button" variant="outline" onClick={copyTempPassword}>
+                <Button type="button" variant="outline" onClick={openTempPasswordCopy}>
                   <Copy className="h-4 w-4" />
                 </Button>
               </div>
@@ -501,4 +518,3 @@ export default function AdminUsersManagement() {
     </DashboardLayout>
   );
 }
-

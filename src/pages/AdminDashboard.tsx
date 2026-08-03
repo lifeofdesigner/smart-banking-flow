@@ -39,6 +39,7 @@ import AdminTransactionsTab from "@/components/admin/AdminTransactionsTab";
 import AdminBeneficiariesTab from "@/components/admin/AdminBeneficiariesTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import { canAccessLiveChatSupport } from "@/lib/live-chat";
+import { getSessionUserId } from "@/lib/supabaseSession";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -69,8 +70,9 @@ export default function AdminDashboard() {
 
   const checkAdmin = async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data: { session } } = await supabase.auth.getSession();
+      const userId = getSessionUserId(session);
+      if (!userId) {
         navigate("/admin-login");
         return;
       }
@@ -78,7 +80,7 @@ export default function AdminDashboard() {
       const { data: roles } = await supabase
         .from("user_roles")
         .select("role")
-        .eq("user_id", user.id);
+        .eq("user_id", userId);
 
       const hasAdminRole = roles?.some(r => r.role === "admin");
       const hasDirectUserManagementAccess = roles?.some(r => r.role === "admin") || false;
@@ -92,7 +94,7 @@ export default function AdminDashboard() {
 
       setCanManageUsers(hasDirectUserManagementAccess);
       setCanOpenLiveChat(canAccessChatSupport);
-      setAdminId(user.id);
+      setAdminId(userId);
       setIsAdmin(true);
       await fetchData();
     } catch (error) {
@@ -158,7 +160,10 @@ export default function AdminDashboard() {
 
   const updateKycStatus = async (userId: string, status: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const adminUserId = getSessionUserId(session);
       const { error } = await supabase
         .from("profiles")
         .update({ kyc_status: status })
@@ -169,7 +174,7 @@ export default function AdminDashboard() {
       // Audit log
       await (supabase as unknown).from("audit_logs").insert({
         action: "admin.kyc_status_change",
-        user_id: user?.id,
+        user_id: adminUserId,
         metadata: { target_user_id: userId, new_status: status },
       });
 
@@ -183,7 +188,10 @@ export default function AdminDashboard() {
 
   const updateAccountStatus = async (accountId: string, status: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      const adminUserId = getSessionUserId(session);
       const { error } = await supabase
         .from("accounts")
         .update({ status })
@@ -194,7 +202,7 @@ export default function AdminDashboard() {
       // Audit log
       await (supabase as unknown).from("audit_logs").insert({
         action: status === "suspended" ? "admin.account_freeze" : "admin.account_status_change",
-        user_id: user?.id,
+        user_id: adminUserId,
         metadata: { account_id: accountId, new_status: status },
       });
 

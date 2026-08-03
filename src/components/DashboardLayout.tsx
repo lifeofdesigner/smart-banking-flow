@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, ReactNode, useMemo } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { getSessionUserId } from "@/lib/supabaseSession";
 import {
   SidebarProvider,
   SidebarTrigger,
@@ -181,22 +182,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
 
       const {
-        data: { user },
+        data: { session },
         error,
-      } = await supabase.auth.getUser();
+      } = await supabase.auth.getSession();
+      const userId = getSessionUserId(session);
 
       if (!isMounted) return;
 
-      if (error || !user) {
+      if (error || !userId) {
         resetAuthState();
         navigate(authRedirectPath);
         return;
       }
 
       const [{ data: profileData }, { data: roles }, { data: accountsData }] = await Promise.all([
-        supabase.from("profiles").select("full_name, email, avatar_url").eq("id", user.id).single(),
-        supabase.from("user_roles").select("role").eq("user_id", user.id),
-        supabase.from("accounts").select("status").eq("user_id", user.id),
+        supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+        supabase.from("accounts").select("status").eq("user_id", userId),
       ]);
 
       if (!isMounted) return;
@@ -210,10 +212,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         setAccountClosed(true);
       }
 
-      syncedUserIdRef.current = user.id;
+      syncedUserIdRef.current = userId;
       const resolvedRoles = (roles ?? []).map((roleRow) => roleRow.role);
       setProfile(profileData ?? null);
-      setCurrentUserId(user.id);
+      setCurrentUserId(userId);
       setUserRoles(resolvedRoles);
       setIsAdmin(resolvedRoles.some((role) => isPrivilegedRole(role)));
       setLoading(false);
@@ -226,13 +228,15 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
     } = supabase.auth.onAuthStateChange((event, session) => {
       if (!isMounted) return;
 
-      if (event === "SIGNED_OUT" || !session?.user) {
+      const sessionUserId = getSessionUserId(session);
+
+      if (event === "SIGNED_OUT" || !sessionUserId) {
         resetAuthState();
         navigate(authRedirectPath);
         return;
       }
 
-      const userChanged = session.user.id !== syncedUserIdRef.current;
+      const userChanged = sessionUserId !== syncedUserIdRef.current;
 
       if ((event === "SIGNED_IN" && userChanged) || event === "USER_UPDATED") {
         void syncAuthState();
