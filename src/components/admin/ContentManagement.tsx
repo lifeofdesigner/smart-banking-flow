@@ -9,7 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { CmsEditorSheet, CmsFormSection, CmsField } from "@/components/admin/CmsEditorSheet";
 import {
   Plus,
   Pencil,
@@ -906,168 +906,224 @@ export default function ContentManagement() {
         </TabsContent>
       </Tabs>
 
-      {/* Product Dialog */}
-      <Dialog open={productDialogOpen} onOpenChange={setProductDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{selectedProduct && productForm.product_name ? "Edit Product" : "New Product"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div><Label>Product Name</Label><Input value={productForm.product_name} onChange={(e) => setProductForm({ ...productForm, product_name: e.target.value })} /></div>
-            <div><Label>Slug</Label><Input value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} /></div>
-            <div><Label>Short Description</Label><Textarea value={productForm.short_description} onChange={(e) => setProductForm({ ...productForm, short_description: e.target.value })} /></div>
-            <div><Label>Full Description</Label><Textarea value={productForm.full_description} onChange={(e) => setProductForm({ ...productForm, full_description: e.target.value })} rows={4} /></div>
-            <ImagePicker
-              label="Hero Image"
-              value={productForm.hero_image}
-              onChange={(url) => setProductForm({ ...productForm, hero_image: url })}
-              helperText="Shown at the top of this page. Landscape photos work best."
-            />
-            <div><Label>Meta Description (SEO)</Label><Input value={productForm.meta_description} onChange={(e) => setProductForm({ ...productForm, meta_description: e.target.value })} /></div>
-            <ImagePicker
-              label="Social Share Image"
-              value={productForm.og_image}
-              onChange={(url) => setProductForm({ ...productForm, og_image: url })}
-              helperText="Shown when this page is shared on social media. If left empty, the hero image is used."
-            />
-            <div>
-              <Label>Icon</Label>
-              <p className="mb-1.5 text-xs text-muted-foreground">The small icon shown next to this product's name.</p>
-              <Select value={productForm.icon || "target"} onValueChange={(v) => setProductForm({ ...productForm, icon: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {ICON_OPTIONS.map(({ key, label, Icon }) => (
-                    <SelectItem key={key} value={key}>
-                      <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label>Status</Label>
-              <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="published">Published</SelectItem>
-                  <SelectItem value="draft">Draft</SelectItem>
-                  <SelectItem value="archived">Archived</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button className="w-full" onClick={saveProduct}>Save Product</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Product Editor */}
+      <CmsEditorSheet
+        open={productDialogOpen}
+        onOpenChange={setProductDialogOpen}
+        title={selectedProduct && productForm.product_name ? "Edit Product" : "New Product"}
+        description="Everything shown on this product's public page, from its headline to its SEO details."
+        onSave={saveProduct}
+        saveLabel="Save Product"
+      >
+        <CmsFormSection title="Basic Information" description="The name and short summary shown in lists and previews.">
+          <CmsField label="Product Name">
+            <Input value={productForm.product_name} onChange={(e) => setProductForm({ ...productForm, product_name: e.target.value })} placeholder="e.g. Everyday Chequing" />
+          </CmsField>
+          <CmsField label="Slug" helperText="The web address for this page, e.g. /products/everyday-chequing.">
+            <Input value={productForm.slug} onChange={(e) => setProductForm({ ...productForm, slug: e.target.value })} placeholder="everyday-chequing" />
+          </CmsField>
+          <CmsField label="Short Description" helperText="A one-sentence summary shown on cards and in the product list.">
+            <Textarea value={productForm.short_description} onChange={(e) => setProductForm({ ...productForm, short_description: e.target.value })} rows={3} />
+          </CmsField>
+        </CmsFormSection>
 
-      {/* Section Dialog */}
-      <Dialog open={sectionDialogOpen} onOpenChange={setSectionDialogOpen}>
-        <DialogContent className="max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingSection ? "Edit Section" : "Add Section"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Section Type</Label>
-              <Select value={sectionForm.section_type} onValueChange={(v) => setSectionForm({ ...sectionForm, section_type: v })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="description">Description</SelectItem>
-                  <SelectItem value="features">Features</SelectItem>
-                  <SelectItem value="benefits">Benefits</SelectItem>
-                  <SelectItem value="how_it_works">How It Works</SelectItem>
-                  <SelectItem value="content">Custom Content</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Title</Label><Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} /></div>
-            <ImagePicker
-              label="Section Image"
-              value={sectionForm.image}
-              onChange={(url) => setSectionForm({ ...sectionForm, image: url })}
-              helperText="Optional. Shown alongside this section's content."
-            />
-            <div>
-              <Label>Content</Label>
-              <Textarea
-                value={sectionForm.content}
-                onChange={(e) => setSectionForm({ ...sectionForm, content: e.target.value })}
-                rows={6}
-                placeholder={
-                  isListSectionType(sectionForm.section_type)
-                    ? "One item per line"
-                    : "Plain text paragraph"
-                }
-              />
-            </div>
-            <Button className="w-full" onClick={saveSection}>Save Section</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <CmsFormSection title="Full Description" description="The longer description shown in the page's description section.">
+          <Textarea
+            value={productForm.full_description}
+            onChange={(e) => setProductForm({ ...productForm, full_description: e.target.value })}
+            rows={14}
+            className="min-h-[280px] resize-y"
+            placeholder="Describe this product in full detail..."
+          />
+        </CmsFormSection>
 
-      {/* FAQ Dialog */}
-      <Dialog open={faqDialogOpen} onOpenChange={setFaqDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingFaq ? "Edit FAQ" : "Add FAQ"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div><Label>Question</Label><Input value={faqForm.question} onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })} /></div>
-            <div><Label>Answer</Label><Textarea value={faqForm.answer} onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })} rows={4} /></div>
-            <Button className="w-full" onClick={saveFaq}>Save FAQ</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+        <CmsFormSection title="Images">
+          <ImagePicker
+            label="Hero Image"
+            value={productForm.hero_image}
+            onChange={(url) => setProductForm({ ...productForm, hero_image: url })}
+            helperText="Shown at the top of this page. Landscape photos work best."
+          />
+          <ImagePicker
+            label="Social Share Image"
+            value={productForm.og_image}
+            onChange={(url) => setProductForm({ ...productForm, og_image: url })}
+            helperText="Shown when this page is shared on social media. If left empty, the hero image is used."
+          />
+        </CmsFormSection>
 
-      {/* Homepage Section Dialog */}
-      <Dialog open={homepageDialogOpen} onOpenChange={setHomepageDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingHomepage ? "Edit Homepage Section" : "Add Homepage Section"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label>Section Type</Label>
-              <Select value={homepageForm.section_type} onValueChange={updateHomepageSectionType}>
-                <SelectTrigger><SelectValue placeholder="Choose a section" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="hero">Hero</SelectItem>
-                  <SelectItem value="services">Services</SelectItem>
-                  <SelectItem value="products">Products</SelectItem>
-                  <SelectItem value="about">About</SelectItem>
-                  <SelectItem value="testimonials">Testimonials</SelectItem>
-                  <SelectItem value="faq">FAQ</SelectItem>
-                  <SelectItem value="contact">Contact</SelectItem>
-                  <SelectItem value="custom">Custom</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div><Label>Title</Label><Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} /></div>
-            <div><Label>Subtitle</Label><Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} /></div>
-            <ImagePicker
-              label="Section Image"
-              value={homepageForm.image}
-              onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
-              helperText="Optional. Shown alongside this section's content."
+        <CmsFormSection title="SEO & Metadata">
+          <CmsField label="Meta Description" helperText="Shown in search engine results. Aim for 150-160 characters.">
+            <Textarea value={productForm.meta_description} onChange={(e) => setProductForm({ ...productForm, meta_description: e.target.value })} rows={2} />
+          </CmsField>
+        </CmsFormSection>
+
+        <CmsFormSection title="Display Settings">
+          <CmsField label="Icon" helperText="The small icon shown next to this product's name.">
+            <Select value={productForm.icon || "target"} onValueChange={(v) => setProductForm({ ...productForm, icon: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {ICON_OPTIONS.map(({ key, label, Icon }) => (
+                  <SelectItem key={key} value={key}>
+                    <span className="flex items-center gap-2"><Icon className="h-4 w-4" /> {label}</span>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </CmsField>
+          <CmsField label="Status" helperText="Only Published pages are visible to customers.">
+            <Select value={productForm.status} onValueChange={(v) => setProductForm({ ...productForm, status: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="published">Published</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="archived">Archived</SelectItem>
+              </SelectContent>
+            </Select>
+          </CmsField>
+        </CmsFormSection>
+      </CmsEditorSheet>
+
+      {/* Product Section Editor */}
+      <CmsEditorSheet
+        open={sectionDialogOpen}
+        onOpenChange={setSectionDialogOpen}
+        title={editingSection ? "Edit Section" : "Add Section"}
+        description="A content block on this product's page, such as its feature list or description."
+        onSave={saveSection}
+        saveLabel="Save Section"
+      >
+        <CmsFormSection title="Section Details">
+          <CmsField label="Section Type">
+            <Select value={sectionForm.section_type} onValueChange={(v) => setSectionForm({ ...sectionForm, section_type: v })}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="description">Description</SelectItem>
+                <SelectItem value="features">Features</SelectItem>
+                <SelectItem value="benefits">Benefits</SelectItem>
+                <SelectItem value="how_it_works">How It Works</SelectItem>
+                <SelectItem value="content">Custom Content</SelectItem>
+              </SelectContent>
+            </Select>
+          </CmsField>
+          <CmsField label="Title">
+            <Input value={sectionForm.title} onChange={(e) => setSectionForm({ ...sectionForm, title: e.target.value })} />
+          </CmsField>
+        </CmsFormSection>
+
+        <CmsFormSection title="Image">
+          <ImagePicker
+            label="Section Image"
+            value={sectionForm.image}
+            onChange={(url) => setSectionForm({ ...sectionForm, image: url })}
+            helperText="Optional. Shown alongside this section's content."
+          />
+        </CmsFormSection>
+
+        <CmsFormSection title="Content">
+          <CmsField
+            label="Content"
+            helperText={
+              isListSectionType(sectionForm.section_type)
+                ? "One item per line — each line becomes a separate bullet point."
+                : "A plain text paragraph."
+            }
+          >
+            <Textarea
+              value={sectionForm.content}
+              onChange={(e) => setSectionForm({ ...sectionForm, content: e.target.value })}
+              rows={12}
+              className="min-h-[240px] resize-y"
+              placeholder={
+                isListSectionType(sectionForm.section_type)
+                  ? "One item per line"
+                  : "Plain text paragraph"
+              }
             />
-            {renderHomepageContentFields()}
-            <div>
-              <Label>Status</Label>
-              <Select
-                value={homepageForm.is_active ? "active" : "inactive"}
-                onValueChange={(v) => setHomepageForm({ ...homepageForm, is_active: v === "active" })}
-              >
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Active</SelectItem>
-                  <SelectItem value="inactive">Inactive</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Button className="w-full" onClick={saveHomepageSection}>Save Section</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+          </CmsField>
+        </CmsFormSection>
+      </CmsEditorSheet>
+
+      {/* FAQ Editor */}
+      <CmsEditorSheet
+        open={faqDialogOpen}
+        onOpenChange={setFaqDialogOpen}
+        title={editingFaq ? "Edit FAQ" : "Add FAQ"}
+        description="A question and answer shown on this product's page."
+        onSave={saveFaq}
+        saveLabel="Save FAQ"
+      >
+        <CmsFormSection title="Question & Answer">
+          <CmsField label="Question">
+            <Input value={faqForm.question} onChange={(e) => setFaqForm({ ...faqForm, question: e.target.value })} placeholder="e.g. Is there a minimum balance requirement?" />
+          </CmsField>
+          <CmsField label="Answer">
+            <Textarea value={faqForm.answer} onChange={(e) => setFaqForm({ ...faqForm, answer: e.target.value })} rows={8} className="min-h-[180px] resize-y" />
+          </CmsField>
+        </CmsFormSection>
+      </CmsEditorSheet>
+
+      {/* Homepage Section Editor */}
+      <CmsEditorSheet
+        open={homepageDialogOpen}
+        onOpenChange={setHomepageDialogOpen}
+        title={editingHomepage ? "Edit Homepage Section" : "Add Homepage Section"}
+        description="A block of content shown on the public homepage, in the order sections appear here."
+        onSave={saveHomepageSection}
+        saveLabel="Save Section"
+      >
+        <CmsFormSection title="Section Basics">
+          <CmsField label="Section Type">
+            <Select value={homepageForm.section_type} onValueChange={updateHomepageSectionType}>
+              <SelectTrigger><SelectValue placeholder="Choose a section" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="hero">Hero</SelectItem>
+                <SelectItem value="services">Services</SelectItem>
+                <SelectItem value="products">Products</SelectItem>
+                <SelectItem value="about">About</SelectItem>
+                <SelectItem value="testimonials">Testimonials</SelectItem>
+                <SelectItem value="faq">FAQ</SelectItem>
+                <SelectItem value="contact">Contact</SelectItem>
+                <SelectItem value="custom">Custom</SelectItem>
+              </SelectContent>
+            </Select>
+          </CmsField>
+          <CmsField label="Title">
+            <Input value={homepageForm.title} onChange={(e) => setHomepageForm({ ...homepageForm, title: e.target.value })} />
+          </CmsField>
+          <CmsField label="Subtitle">
+            <Input value={homepageForm.subtitle} onChange={(e) => setHomepageForm({ ...homepageForm, subtitle: e.target.value })} />
+          </CmsField>
+        </CmsFormSection>
+
+        <CmsFormSection title="Image">
+          <ImagePicker
+            label="Section Image"
+            value={homepageForm.image}
+            onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
+            helperText="Optional. Shown alongside this section's content."
+          />
+        </CmsFormSection>
+
+        <CmsFormSection title="Content">
+          {renderHomepageContentFields()}
+        </CmsFormSection>
+
+        <CmsFormSection title="Visibility">
+          <CmsField label="Status" helperText="Inactive sections are hidden from the public homepage.">
+            <Select
+              value={homepageForm.is_active ? "active" : "inactive"}
+              onValueChange={(v) => setHomepageForm({ ...homepageForm, is_active: v === "active" })}
+            >
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="active">Active</SelectItem>
+                <SelectItem value="inactive">Inactive</SelectItem>
+              </SelectContent>
+            </Select>
+          </CmsField>
+        </CmsFormSection>
+      </CmsEditorSheet>
     </div>
   );
 }
