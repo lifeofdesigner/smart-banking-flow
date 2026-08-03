@@ -165,7 +165,7 @@ export default function DynamicProducts() {
             >
               <div className="flex h-full flex-col">
                 <h3 className="text-sm font-semibold text-[var(--bank-navy)]">{product.product_name}</h3>
-                <p className="mt-2 line-clamp-3 text-[10px] leading-5 text-[var(--bank-muted)]">
+                <p className="mt-2 text-[10px] leading-5 text-[var(--bank-muted)]">
                   {applySiteName(product.short_description || "", bankName)}
                 </p>
                 <button
@@ -191,7 +191,7 @@ export default function DynamicProducts() {
                 <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
                   {product.product_name}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed line-clamp-3">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {applySiteName(product.short_description || "", bankName)}
                 </p>
                 <Button variant="ghost" size="sm" className="p-0 h-auto text-primary hover:text-primary/80">
