@@ -2228,6 +2228,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_toggle_wire_transfer_access: {
+        Args: { p_can_transfer: boolean; p_user_id: string }
+        Returns: void
+      }
+      admin_update_user_account_status: {
+        Args: { p_status: string; p_user_id: string }
+        Returns: void
+      }
       admin_create_user: {
         Args: {
           p_account_type?: string
