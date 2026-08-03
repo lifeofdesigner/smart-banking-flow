@@ -111,6 +111,47 @@ const applyThemeSetting = (name: string, value?: string) => {
   document.documentElement.style.setProperty(name, value);
 };
 
+let lastManifestObjectUrl: string | null = null;
+
+/**
+ * The static public/manifest.json ships sensible defaults, but the PWA
+ * manifest is otherwise a plain static file the browser fetches once —
+ * it can't reflect admin-edited branding on its own. Rebuild it in memory
+ * from live site_settings and swap the <link rel="manifest"> to a Blob URL
+ * so an installed app's name/theme color stay in sync with the CMS.
+ */
+function updateManifest(siteName: string, themeColor: string) {
+  const link = document.getElementById("pwa-manifest-link") as HTMLLinkElement | null;
+  if (!link) return;
+
+  const manifest = {
+    name: siteName,
+    short_name: siteName.length > 20 ? siteName.slice(0, 17) + "..." : siteName,
+    description: `Secure online banking from ${siteName}.`,
+    start_url: "/dashboard",
+    id: "/dashboard",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#F4F5F7",
+    theme_color: themeColor,
+    icons: [
+      { src: "/pwa-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+      { src: "/pwa-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+      { src: "/pwa-icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+      { src: "/pwa-icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+    ],
+  };
+
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+  const nextUrl = URL.createObjectURL(blob);
+  link.setAttribute("href", nextUrl);
+
+  if (lastManifestObjectUrl) {
+    URL.revokeObjectURL(lastManifestObjectUrl);
+  }
+  lastManifestObjectUrl = nextUrl;
+}
+
 export default function DynamicSEO() {
   const settings = useSiteSettings();
 
@@ -191,6 +232,8 @@ export default function DynamicSEO() {
     applyThemeSetting("--accent", accentHsl);
     applyThemeSetting("--background", backgroundHsl);
     applyThemeSetting("--foreground", textHsl);
+
+    updateManifest(siteName, settings.theme_color_primary || "#0A1628");
   }, [settings]);
 
   return null;

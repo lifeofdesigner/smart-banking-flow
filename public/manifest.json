@@ -1,0 +1,37 @@
+{
+  "name": "Unity Microfinance Bank Canada",
+  "short_name": "Unity Bank",
+  "description": "Secure online banking from Unity Microfinance Bank Canada — accounts, transfers, bill payments, and more.",
+  "start_url": "/dashboard",
+  "id": "/dashboard",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#F4F5F7",
+  "theme_color": "#0A1628",
+  "icons": [
+    {
+      "src": "/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa-icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/pwa-icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}

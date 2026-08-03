@@ -9,6 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { ImagePicker } from "@/components/admin/ImagePicker";
 import { Upload, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -177,6 +179,24 @@ const DEFAULTS: SiteSettingsMap = {
   signup_enabled: "true",
   demo_admin_login_enabled: "true",
   demo_customer_login_enabled: "true",
+  pwa_prompt_enabled: "false",
+  pwa_prompt_style: "bottom_sheet",
+  pwa_prompt_position: "bottom-right",
+  pwa_prompt_trigger: "first_visit",
+  pwa_prompt_visit_threshold: "3",
+  pwa_prompt_reappear_days: "7",
+  pwa_prompt_icon_url: "",
+  pwa_prompt_title: "Install Our App",
+  pwa_prompt_subtitle: "Bank smarter, faster",
+  pwa_prompt_description: "Add our app to your home screen for instant access to your accounts, with a faster, more secure, native app-like experience.",
+  pwa_prompt_benefit_1: "Faster access to your accounts",
+  pwa_prompt_benefit_2: "Enhanced security with biometric login",
+  pwa_prompt_benefit_3: "Works like a native app, right from your home screen",
+  pwa_prompt_primary_label: "Install App",
+  pwa_prompt_secondary_label: "Not Now",
+  pwa_prompt_cta_url: "",
+  pwa_prompt_bg_color: "#0A1628",
+  pwa_prompt_accent_color: "#C9A84C",
 };
 
 const LANDING_THEMES = [
@@ -447,6 +467,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
           <TabsTrigger value="markets">Markets</TabsTrigger>
+          <TabsTrigger value="pwa">Mobile App</TabsTrigger>
         </TabsList>
 
         <TabsContent value="themes" className="space-y-4">
@@ -1449,6 +1470,230 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               >
                 {saving ? "Saving..." : "Save Market Widget"}
               </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* MOBILE APP (PWA INSTALL PROMPT) TAB */}
+        <TabsContent value="pwa" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Install App Prompt</CardTitle>
+              <CardDescription>
+                Invite visitors to install this site as an app on their phone or computer. Never shown to visitors who already installed it.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <p className="text-sm font-semibold">Show Install Prompt</p>
+                  <p className="text-sm text-muted-foreground">Turn the install prompt on or off for all visitors.</p>
+                </div>
+                <Switch
+                  checked={settings.pwa_prompt_enabled === "true"}
+                  onCheckedChange={(checked) => setSetting("pwa_prompt_enabled", checked ? "true" : "false")}
+                />
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Display Style</Label>
+                  <p className="text-xs text-muted-foreground">How the prompt appears on screen.</p>
+                  <Select value={settings.pwa_prompt_style} onValueChange={(v) => setSetting("pwa_prompt_style", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="modal">Modal (center of screen)</SelectItem>
+                      <SelectItem value="bottom_sheet">Bottom Sheet</SelectItem>
+                      <SelectItem value="floating_banner">Floating Banner</SelectItem>
+                      <SelectItem value="notification_card">Notification Card</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Position</Label>
+                  <p className="text-xs text-muted-foreground">Used by the Floating Banner and Notification Card styles.</p>
+                  <Select value={settings.pwa_prompt_position} onValueChange={(v) => setSetting("pwa_prompt_position", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="bottom-right">Bottom Right</SelectItem>
+                      <SelectItem value="bottom-left">Bottom Left</SelectItem>
+                      <SelectItem value="top">Top of Screen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Show Prompt</Label>
+                  <Select value={settings.pwa_prompt_trigger} onValueChange={(v) => setSetting("pwa_prompt_trigger", v)}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="first_visit">On the visitor's first visit</SelectItem>
+                      <SelectItem value="after_visits">After a number of visits</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>Visits Before Showing</Label>
+                  <p className="text-xs text-muted-foreground">Only used when "After a number of visits" is selected.</p>
+                  <Input
+                    type="number"
+                    min={1}
+                    value={settings.pwa_prompt_visit_threshold}
+                    onChange={(e) => setSetting("pwa_prompt_visit_threshold", e.target.value)}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Reappear After Dismissal</Label>
+                  <p className="text-xs text-muted-foreground">Days to wait before showing the prompt again after a visitor dismisses it.</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    value={settings.pwa_prompt_reappear_days}
+                    onChange={(e) => setSetting("pwa_prompt_reappear_days", e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys([
+                  "pwa_prompt_enabled",
+                  "pwa_prompt_style",
+                  "pwa_prompt_position",
+                  "pwa_prompt_trigger",
+                  "pwa_prompt_visit_threshold",
+                  "pwa_prompt_reappear_days",
+                ])}
+              >
+                {saving ? "Saving..." : "Save Install Prompt Settings"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Install Prompt Content</CardTitle>
+              <CardDescription>Everything shown inside the install prompt. Keep it short — this is a small card, not a full page.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <ImagePicker
+                label="Icon"
+                value={settings.pwa_prompt_icon_url}
+                onChange={(url) => setSetting("pwa_prompt_icon_url", url)}
+                helperText="Shown at the top of the prompt. If left empty, your site logo is used."
+              />
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Title</Label>
+                  <Input value={settings.pwa_prompt_title} onChange={(e) => setSetting("pwa_prompt_title", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Subtitle</Label>
+                  <Input value={settings.pwa_prompt_subtitle} onChange={(e) => setSetting("pwa_prompt_subtitle", e.target.value)} />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Description</Label>
+                <Textarea
+                  value={settings.pwa_prompt_description}
+                  onChange={(e) => setSetting("pwa_prompt_description", e.target.value)}
+                  rows={3}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Benefits</Label>
+                <p className="text-xs text-muted-foreground">Up to three short reasons to install, shown as a checklist.</p>
+                <Input
+                  className="mb-2"
+                  placeholder="e.g. Faster access to your accounts"
+                  value={settings.pwa_prompt_benefit_1}
+                  onChange={(e) => setSetting("pwa_prompt_benefit_1", e.target.value)}
+                />
+                <Input
+                  className="mb-2"
+                  placeholder="e.g. Enhanced security with biometric login"
+                  value={settings.pwa_prompt_benefit_2}
+                  onChange={(e) => setSetting("pwa_prompt_benefit_2", e.target.value)}
+                />
+                <Input
+                  placeholder="e.g. Works like a native app, right from your home screen"
+                  value={settings.pwa_prompt_benefit_3}
+                  onChange={(e) => setSetting("pwa_prompt_benefit_3", e.target.value)}
+                />
+              </div>
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label>Primary Button Label</Label>
+                  <Input value={settings.pwa_prompt_primary_label} onChange={(e) => setSetting("pwa_prompt_primary_label", e.target.value)} />
+                </div>
+                <div className="space-y-2">
+                  <Label>Secondary Button Label</Label>
+                  <Input value={settings.pwa_prompt_secondary_label} onChange={(e) => setSetting("pwa_prompt_secondary_label", e.target.value)} />
+                </div>
+                <div className="space-y-2 md:col-span-2">
+                  <Label>Primary Button Link (optional)</Label>
+                  <p className="text-xs text-muted-foreground">
+                    Leave empty so the primary button installs the app directly. Set this only to send visitors somewhere else instead (like an app store page).
+                  </p>
+                  <Input
+                    placeholder="https://..."
+                    value={settings.pwa_prompt_cta_url}
+                    onChange={(e) => setSetting("pwa_prompt_cta_url", e.target.value)}
+                  />
+                </div>
+              </div>
+              <Button
+                disabled={saving}
+                className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                onClick={() => saveKeys([
+                  "pwa_prompt_icon_url",
+                  "pwa_prompt_title",
+                  "pwa_prompt_subtitle",
+                  "pwa_prompt_description",
+                  "pwa_prompt_benefit_1",
+                  "pwa_prompt_benefit_2",
+                  "pwa_prompt_benefit_3",
+                  "pwa_prompt_primary_label",
+                  "pwa_prompt_secondary_label",
+                  "pwa_prompt_cta_url",
+                ])}
+              >
+                {saving ? "Saving..." : "Save Prompt Content"}
+              </Button>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Install Prompt Colors</CardTitle>
+            </CardHeader>
+            <CardContent className="grid gap-4 md:grid-cols-2">
+              {[
+                ["pwa_prompt_bg_color", "Background"],
+                ["pwa_prompt_accent_color", "Accent"],
+              ].map(([key, label]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={key}>{label}</Label>
+                  <div className="flex gap-2">
+                    <Input
+                      id={key}
+                      type="color"
+                      value={settings[key] || "#000000"}
+                      onChange={(e) => setSetting(key, e.target.value)}
+                      className="h-11 w-16 p-1"
+                    />
+                    <Input value={settings[key] || ""} onChange={(e) => setSetting(key, e.target.value)} />
+                  </div>
+                </div>
+              ))}
+              <div className="md:col-span-2">
+                <Button
+                  disabled={saving}
+                  className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-navy)]/90"
+                  onClick={() => saveKeys(["pwa_prompt_bg_color", "pwa_prompt_accent_color"])}
+                >
+                  {saving ? "Saving..." : "Save Colors"}
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

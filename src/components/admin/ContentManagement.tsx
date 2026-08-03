@@ -17,6 +17,7 @@ import {
   ArrowUp,
   ArrowDown,
   Eye,
+  EyeOff,
   Image as ImageIcon,
   Upload,
   Award,
@@ -283,35 +284,44 @@ export default function ContentManagement() {
     fetchProductDetails(p.id);
   };
 
-  // Product CRUD
+  // Product CRUD — all mutations apply to local state immediately (optimistic),
+  // then reconcile with the server; a failed write reverts the local change.
   const saveProduct = async () => {
     if (selectedProduct) {
+      const previous = products;
+      setProducts(products.map((p) => (p.id === selectedProduct.id ? { ...p, ...productForm } : p)));
       const { error } = await supabase.from("product_pages").update(productForm).eq("id", selectedProduct.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { setProducts(previous); toast.error(error.message); return; }
       toast.success("Product updated");
     } else {
-      const { error } = await supabase.from("product_pages").insert({ ...productForm, display_order: products.length });
+      const { data, error } = await supabase
+        .from("product_pages")
+        .insert({ ...productForm, display_order: products.length })
+        .select()
+        .single();
       if (error) { toast.error(error.message); return; }
+      setProducts([...products, data]);
       toast.success("Product created");
     }
     setProductDialogOpen(false);
-    fetchAll();
   };
 
   const deleteProduct = async (id: string) => {
-    const { error } = await supabase.from("product_pages").delete().eq("id", id);
-    if (error) { toast.error(error.message); return; }
-    toast.success("Product deleted");
+    const previous = products;
+    setProducts(products.filter((p) => p.id !== id));
     if (selectedProduct?.id === id) { setSelectedProduct(null); setSections([]); setFaqs([]); }
-    fetchAll();
+    const { error } = await supabase.from("product_pages").delete().eq("id", id);
+    if (error) { setProducts(previous); toast.error(error.message); return; }
+    toast.success("Product deleted");
   };
 
   const toggleProductStatus = async (p: ProductPage) => {
     const newStatus = p.status === "published" ? "draft" : "published";
+    const previous = products;
+    setProducts(products.map((item) => (item.id === p.id ? { ...item, status: newStatus } : item)));
     const { error } = await supabase.from("product_pages").update({ status: newStatus }).eq("id", p.id);
-    if (error) { toast.error(error.message); return; }
+    if (error) { setProducts(previous); toast.error(error.message); return; }
     toast.success(`Product ${newStatus === "published" ? "published" : "unpublished"}`);
-    fetchAll();
   };
 
   // Section CRUD
@@ -454,23 +464,39 @@ export default function ContentManagement() {
     };
 
     if (editingHomepage) {
+      setHomepageSections(homepageSections.map((s) => (s.id === editingHomepage.id ? { ...s, ...normalizedHomepageForm } : s)));
       const { error } = await supabase.from("homepage_sections").update(normalizedHomepageForm).eq("id", editingHomepage.id);
-      if (error) { toast.error(error.message); return; }
+      if (error) { fetchAll(); toast.error(error.message); return; }
       toast.success("Section updated");
     } else {
-      const { error } = await supabase.from("homepage_sections").insert({ ...normalizedHomepageForm, display_order: homepageSections.length });
+      const { data, error } = await supabase
+        .from("homepage_sections")
+        .insert({ ...normalizedHomepageForm, display_order: homepageSections.length })
+        .select()
+        .single();
       if (error) { toast.error(error.message); return; }
+      setHomepageSections([...homepageSections, data]);
       toast.success("Section added");
     }
     setHomepageDialogOpen(false);
     setEditingHomepage(null);
-    fetchAll();
   };
 
   const deleteHomepageSection = async (id: string) => {
-    await supabase.from("homepage_sections").delete().eq("id", id);
+    const previous = homepageSections;
+    setHomepageSections(homepageSections.filter((s) => s.id !== id));
+    const { error } = await supabase.from("homepage_sections").delete().eq("id", id);
+    if (error) { setHomepageSections(previous); toast.error(error.message); return; }
     toast.success("Section deleted");
-    fetchAll();
+  };
+
+  /** One-click show/hide — the primary way admins gate a homepage section without opening the full editor. */
+  const toggleHomepageSectionActive = async (sec: HomepageSection) => {
+    const previous = homepageSections;
+    setHomepageSections(homepageSections.map((s) => (s.id === sec.id ? { ...s, is_active: !s.is_active } : s)));
+    const { error } = await supabase.from("homepage_sections").update({ is_active: !sec.is_active }).eq("id", sec.id);
+    if (error) { setHomepageSections(previous); toast.error(error.message); return; }
+    toast.success(sec.is_active ? "Section hidden from homepage" : "Section now visible on homepage");
   };
 
   // Media upload
@@ -483,23 +509,32 @@ export default function ContentManagement() {
     const { error: uploadError } = await supabase.storage.from("cms-media").upload(path, file);
     if (uploadError) { toast.error(uploadError.message); setUploading(false); return; }
     const { data: urlData } = supabase.storage.from("cms-media").getPublicUrl(path);
-    const { error: dbError } = await supabase.from("media_library").insert({
-      file_name: file.name,
-      file_url: urlData.publicUrl,
-      file_type: file.type.startsWith("image") ? "image" : "document",
-    });
-    if (dbError) toast.error(dbError.message);
-    else toast.success("File uploaded");
+    const { data: mediaRow, error: dbError } = await supabase
+      .from("media_library")
+      .insert({
+        file_name: file.name,
+        file_url: urlData.publicUrl,
+        file_type: file.type.startsWith("image") ? "image" : "document",
+      })
+      .select()
+      .single();
+    if (dbError) {
+      toast.error(dbError.message);
+    } else {
+      setMedia([mediaRow, ...media]);
+      toast.success("File uploaded");
+    }
     setUploading(false);
-    fetchAll();
   };
 
   const deleteMedia = async (item: MediaItem) => {
+    const previous = media;
+    setMedia(media.filter((m) => m.id !== item.id));
     const path = item.file_url.split("/cms-media/")[1];
     if (path) await supabase.storage.from("cms-media").remove([path]);
-    await supabase.from("media_library").delete().eq("id", item.id);
+    const { error } = await supabase.from("media_library").delete().eq("id", item.id);
+    if (error) { setMedia(previous); toast.error(error.message); return; }
     toast.success("Media deleted");
-    fetchAll();
   };
 
   const renderHomepageContentFields = () => {
@@ -845,6 +880,15 @@ export default function ContentManagement() {
                       <TableCell><Badge variant={sec.is_active ? "default" : "secondary"}>{sec.is_active ? "active" : "inactive"}</Badge></TableCell>
                       <TableCell>
                         <div className="flex gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7"
+                            title={sec.is_active ? "Hide from homepage" : "Show on homepage"}
+                            onClick={() => toggleHomepageSectionActive(sec)}
+                          >
+                            {sec.is_active ? <Eye className="w-3 h-3" /> : <EyeOff className="w-3 h-3" />}
+                          </Button>
                           <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => {
                             openHomepageDialog(sec);
                           }}><Pencil className="w-3 h-3" /></Button>

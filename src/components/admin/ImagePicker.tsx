@@ -45,11 +45,14 @@ export function ImagePicker({
       if (uploadError) throw uploadError;
 
       const { data } = supabase.storage.from("cms-media").getPublicUrl(path);
-      await supabase.from("media_library").insert({
+      const { error: libraryError } = await supabase.from("media_library").insert({
         file_name: file.name,
         file_url: data.publicUrl,
         file_type: file.type.startsWith("image") ? "image" : "document",
       });
+      if (libraryError) {
+        console.warn("Failed to save upload to media library:", libraryError.message);
+      }
 
       onChange(data.publicUrl);
       toast.success("Image uploaded");
