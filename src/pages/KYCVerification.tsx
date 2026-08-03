@@ -27,6 +27,7 @@ import {
   Info,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useRequireLoginPin } from "@/hooks/useRequireLoginPin";
 
 type KycStatus = "pending" | "under_review" | "approved" | "rejected" | null;
 
@@ -51,6 +52,7 @@ const DOC_TYPES = [
 export default function KYCVerification() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  useRequireLoginPin("/auth");
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);

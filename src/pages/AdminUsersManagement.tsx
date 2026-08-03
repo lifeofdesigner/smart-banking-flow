@@ -33,6 +33,8 @@ interface ManagedUser {
   created_at: string | null;
   status: string;
   can_initiate_wire_transfer: boolean;
+  pin_set: boolean;
+  pin_locked: boolean;
 }
 
 const toErrorMessage = (error: unknown, fallback: string) => {
@@ -53,6 +55,7 @@ const buildUsers = (
   }>,
   roleRows: Array<{ user_id: string; role: string }>,
   accountRows: Array<{ user_id: string; status: string | null }>,
+  pinStatusRows: Array<{ user_id: string; pin_set: boolean; locked_until: string | null }>,
   search: string,
   roleFilter: "all" | Role,
 ) => {
@@ -70,6 +73,14 @@ const buildUsers = (
     }
   }
 
+  const pinStatusByUserId = new Map<string, { pin_set: boolean; pin_locked: boolean }>();
+  for (const row of pinStatusRows) {
+    pinStatusByUserId.set(row.user_id, {
+      pin_set: row.pin_set,
+      pin_locked: Boolean(row.locked_until) && new Date(row.locked_until as string) > new Date(),
+    });
+  }
+
   const query = search.trim().toLowerCase();
 
   return profileRows
@@ -81,6 +92,8 @@ const buildUsers = (
       created_at: profile.created_at,
       status: accountStatusByUserId.get(profile.id) || "pending",
       can_initiate_wire_transfer: profile.can_initiate_wire_transfer ?? true,
+      pin_set: pinStatusByUserId.get(profile.id)?.pin_set ?? false,
+      pin_locked: pinStatusByUserId.get(profile.id)?.pin_locked ?? false,
     }))
     .filter((user) => {
       if (roleFilter !== "all" && !user.roles.includes(roleFilter)) return false;
@@ -114,6 +127,36 @@ export default function AdminUsersManagement() {
     password: "",
     role: "user" as Role,
   });
+  const [generatedPin, setGeneratedPin] = useState<{ email: string; pin: string } | null>(null);
+  const [generatingPinFor, setGeneratingPinFor] = useState<string | null>(null);
+
+  const handleGenerateLoginPin = async (user: ManagedUser) => {
+    setGeneratingPinFor(user.id);
+
+    try {
+      const { data, error } = await supabase.rpc("admin_generate_login_pin", { p_user_id: user.id });
+
+      if (error) throw error;
+
+      setGeneratedPin({ email: user.email, pin: data as string });
+      await fetchUsers();
+    } catch (error) {
+      toast.error(`Failed to generate PIN: ${toErrorMessage(error, "Unknown error")}`);
+    } finally {
+      setGeneratingPinFor(null);
+    }
+  };
+
+  const copyGeneratedPin = async () => {
+    if (!generatedPin) return;
+
+    try {
+      await navigator.clipboard.writeText(generatedPin.pin);
+      toast.success("PIN copied");
+    } catch {
+      toast.error("Failed to copy PIN");
+    }
+  };
 
   const handleUpdateAccountStatus = async (userId: string, newStatus: "active" | "frozen" | "closed") => {
     try {
@@ -225,13 +268,19 @@ export default function AdminUsersManagement() {
         profileRows = fallbackProfiles.data;
       }
 
-      const [{ data: roleRows, error: roleError }, { data: accountRows, error: accountError }] = await Promise.all([
+      const [
+        { data: roleRows, error: roleError },
+        { data: accountRows, error: accountError },
+        { data: pinStatusRows, error: pinStatusError },
+      ] = await Promise.all([
         supabase.from("user_roles").select("user_id, role"),
         supabase.from("accounts").select("user_id, status"),
+        supabase.rpc("admin_list_login_pin_status"),
       ]);
 
       if (roleError) throw roleError;
       if (accountError) throw accountError;
+      if (pinStatusError) throw pinStatusError;
 
       setWireTransferAccessSupported(accessSupported);
 
@@ -245,6 +294,7 @@ export default function AdminUsersManagement() {
         }>,
         (roleRows || []) as Array<{ user_id: string; role: string }>,
         (accountRows || []) as Array<{ user_id: string; status: string | null }>,
+        (pinStatusRows || []) as Array<{ user_id: string; pin_set: boolean; locked_until: string | null }>,
         overrideSearch ?? search,
         roleFilter,
       ));
@@ -400,19 +450,20 @@ export default function AdminUsersManagement() {
                     <TableHead>Roles</TableHead>
                     <TableHead>Created Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Sign-In PIN</TableHead>
                     <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loadingUsers ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                         Loading users...
                       </TableCell>
                     </TableRow>
                   ) : users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={7} className="py-8 text-center text-muted-foreground">
                         {emptyMessage}
                       </TableCell>
                     </TableRow>
@@ -437,6 +488,11 @@ export default function AdminUsersManagement() {
                         <TableCell>{user.created_at ? new Date(user.created_at).toLocaleString() : "-"}</TableCell>
                         <TableCell>
                           <Badge variant={user.status === "active" ? "default" : "secondary"}>{user.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={user.pin_locked ? "destructive" : user.pin_set ? "default" : "secondary"}>
+                            {user.pin_locked ? "Locked" : user.pin_set ? "Set" : "Not set"}
+                          </Badge>
                         </TableCell>
                         <TableCell>
                           <DropdownMenu>
@@ -464,6 +520,13 @@ export default function AdminUsersManagement() {
                                  {user.can_initiate_wire_transfer ? "Block Wire" : "Un-block Wire"}
                                </DropdownMenuItem>
                               )}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                disabled={generatingPinFor === user.id}
+                                onClick={() => handleGenerateLoginPin(user)}
+                              >
+                                {user.pin_set ? "Regenerate Sign-In PIN" : "Generate Sign-In PIN"}
+                              </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
@@ -546,6 +609,29 @@ export default function AdminUsersManagement() {
               {submitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
               {form.role === "admin" ? "Create Admin" : "Create User"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={Boolean(generatedPin)} onOpenChange={(open) => { if (!open) setGeneratedPin(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign-In PIN Generated</DialogTitle>
+            <DialogDescription>
+              Share this PIN with {generatedPin?.email} now — it will not be shown again. They'll need it, along
+              with their password, every time they sign in.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="flex items-center gap-2">
+            <Input readOnly value={generatedPin?.pin || ""} className="text-center text-2xl font-mono tracking-[0.5em]" />
+            <Button type="button" variant="outline" onClick={copyGeneratedPin}>
+              <Copy className="h-4 w-4" />
+            </Button>
+          </div>
+
+          <DialogFooter>
+            <Button onClick={() => setGeneratedPin(null)}>Done</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

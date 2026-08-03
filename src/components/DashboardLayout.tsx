@@ -29,6 +29,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { PROFILE_AVATAR_CHANGED_EVENT, type ProfileAvatarChangedDetail } from "@/lib/profileAvatar";
 import { canAccessLiveChatSupport, chatSupabase, isPrivilegedRole } from "@/lib/live-chat";
 import { isAccountUsable } from "@/lib/accountStatus";
+import { useRequireLoginPin } from "@/hooks/useRequireLoginPin";
 import { AccountRestrictionBanner } from "@/components/AccountRestrictionBanner";
 import type { UserAccount } from "@/hooks/useUserAccounts";
 import {
@@ -123,6 +124,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   )
     ? "/admin-login"
     : "/auth";
+
+  useRequireLoginPin(authRedirectPath);
   const pageTitle = useMemo(() => {
     const pageMap: Record<string, string> = {
       "/dashboard": "Home",

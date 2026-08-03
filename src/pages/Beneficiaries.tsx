@@ -45,6 +45,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { useRequireLoginPin } from "@/hooks/useRequireLoginPin";
 import { AccountRestrictionBanner } from "@/components/AccountRestrictionBanner";
 
 interface Beneficiary {
@@ -75,6 +76,7 @@ const Beneficiaries = () => {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [userAccountNumbers, setUserAccountNumbers] = useState<string[]>([]);
   const { hasUsableAccount, restrictedAccounts } = useUserAccounts(userId);
+  useRequireLoginPin("/auth");
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);

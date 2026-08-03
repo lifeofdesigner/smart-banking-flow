@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
 import { useToast } from "@/hooks/use-toast";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Eye, EyeOff, Shield } from "lucide-react";
@@ -26,6 +27,11 @@ const demoCredentials = {
   customer: { email: "customer@halverixbank.com", password: "DemoCustomer123!" },
   admin: { email: "admin@halverixbank.com", password: "DemoAdmin123!" },
 } as const;
+
+// Publicly known is fine here — it's the same demo account whose password
+// is already hardcoded in this bundle. Seeded by
+// supabase/migrations/20260803110000_seed_demo_customer_login_pin.sql.
+const DEMO_CUSTOMER_PIN = "123456";
 
 const getErrorMessage = (error: unknown, fallback: string) => {
   if (error && typeof error === "object" && "message" in error && typeof (error as { message?: unknown }).message === "string") {
@@ -82,6 +88,9 @@ const Auth = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [signupEnabled, setSignupEnabled] = useState(true);
   const [registrationReady, setRegistrationReady] = useState(false);
+  const [pinStep, setPinStep] = useState(false);
+  const [pinValue, setPinValue] = useState("");
+  const [verifyingPin, setVerifyingPin] = useState(false);
 
   const [signupData, setSignupData] = useState({
     fullName: "",
@@ -153,6 +162,7 @@ const Auth = () => {
     if (isAdminLogin) return;
 
     setLoading(true);
+    manualRedirectRef.current = true;
 
     try {
       const validated = signupSchema.parse(signupData);
@@ -171,12 +181,21 @@ const Auth = () => {
       if (error) throw error;
 
       if (data.user) {
+        // A brand-new account has no sign-in PIN yet, so there's nothing to
+        // verify — sign out immediately rather than let the auto-redirect
+        // effect send them to a dashboard the login-PIN backstop will just
+        // bounce them from.
+        await supabase.auth.signOut();
+        manualRedirectRef.current = false;
+
         toast({
-          title: "Account created successfully!",
-          description: `Welcome to ${siteSettings["site_name"] || "Your Bank"}. Redirecting to your dashboard...`,
+          title: "Account created!",
+          description: `Welcome to ${siteSettings["site_name"] || "Your Bank"}. An administrator will contact you with your sign-in PIN before you can log in.`,
         });
       }
     } catch (error: unknown) {
+      manualRedirectRef.current = false;
+
       if (error instanceof z.ZodError) {
         toast({
           title: "Validation Error",
@@ -220,14 +239,41 @@ const Auth = () => {
           await supabase.auth.signOut();
           throw new Error("Admin privileges are required for this portal.");
         }
+
+        toast({
+          title: "Login successful!",
+          description: "Welcome back to the admin portal.",
+        });
+
+        navigate("/admin", { replace: true });
+        return;
+      }
+
+      // Admins are exempt (checked above and already returned); every other
+      // account needs its admin-assigned sign-in PIN verified for this
+      // login before reaching the dashboard.
+      const { data: pinStatusData, error: pinStatusError } = await supabase.rpc("my_login_pin_status");
+
+      if (pinStatusError) throw pinStatusError;
+
+      const pinStatus = pinStatusData as { pin_set: boolean; pin_verified: boolean };
+
+      if (!pinStatus.pin_set) {
+        await supabase.auth.signOut();
+        throw new Error("Your account doesn't have a sign-in PIN yet. Please contact support to get one.");
+      }
+
+      if (!pinStatus.pin_verified) {
+        setPinStep(true);
+        return;
       }
 
       toast({
         title: "Login successful!",
-        description: isAdminLogin ? "Welcome back to the admin portal." : "Welcome back to your account.",
+        description: "Welcome back to your account.",
       });
 
-      navigate(isAdminLogin ? "/admin" : "/dashboard", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (error: unknown) {
       manualRedirectRef.current = false;
 
@@ -255,6 +301,53 @@ const Auth = () => {
     }
   };
 
+  const handleVerifyPin = async () => {
+    setVerifyingPin(true);
+
+    try {
+      const { data, error } = await supabase.rpc("verify_login_pin", { p_pin: pinValue });
+
+      if (error) throw error;
+
+      const result = data as { ok: boolean; locked?: boolean; remaining?: number };
+
+      if (!result.ok) {
+        setPinValue("");
+        toast({
+          title: result.locked ? "Account locked" : "Incorrect PIN",
+          description: result.locked
+            ? "Too many incorrect attempts. Please contact support to reset your PIN."
+            : `${result.remaining} attempt(s) remaining.`,
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Login successful!",
+        description: "Welcome back to your account.",
+      });
+
+      navigate("/dashboard", { replace: true });
+    } catch (error: unknown) {
+      setPinValue("");
+      toast({
+        title: "Verification failed",
+        description: getErrorMessage(error, "Could not verify your PIN."),
+        variant: "destructive",
+      });
+    } finally {
+      setVerifyingPin(false);
+    }
+  };
+
+  const cancelPinStep = async () => {
+    await supabase.auth.signOut();
+    manualRedirectRef.current = false;
+    setPinStep(false);
+    setPinValue("");
+  };
+
   const handleDemoLogin = async (variant: "customer" | "admin") => {
     setLoading(true);
     manualRedirectRef.current = true;
@@ -272,6 +365,15 @@ const Auth = () => {
         if (!hasAdminRole) {
           await supabase.auth.signOut();
           throw new Error("Demo admin account does not have admin privileges.");
+        }
+      } else {
+        // Keep the one-click demo frictionless: satisfy the same
+        // sign-in-PIN requirement a real customer would hit, using the
+        // well-known demo PIN, instead of showing the interactive PIN step.
+        const { data: pinResult, error: pinError } = await supabase.rpc("verify_login_pin", { p_pin: DEMO_CUSTOMER_PIN });
+        if (pinError) throw pinError;
+        if (!(pinResult as { ok: boolean }).ok) {
+          throw new Error("Demo customer PIN is out of sync — run the seed migration again.");
         }
       }
 
@@ -302,12 +404,53 @@ const Auth = () => {
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-primary mb-4">
             <Shield className="w-8 h-8 text-primary-foreground" />
           </div>
-          <h1 className="text-3xl font-bold mb-2">{isAdminLogin ? "Admin Portal" : "Internet Banking"}</h1>
+          <h1 className="text-3xl font-bold mb-2">
+            {pinStep ? "Enter Your PIN" : isAdminLogin ? "Admin Portal" : "Internet Banking"}
+          </h1>
           <p className="text-muted-foreground">
-            {isAdminLogin ? "Administrative access only" : "Secure access to your account"}
+            {pinStep
+              ? "Enter the 6-digit sign-in PIN issued to you by an administrator."
+              : isAdminLogin
+                ? "Administrative access only"
+                : "Secure access to your account"}
           </p>
         </div>
 
+        {pinStep ? (
+          <div className="space-y-6">
+            <div className="flex justify-center">
+              <InputOTP maxLength={6} value={pinValue} onChange={setPinValue}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+            </div>
+
+            <Button
+              type="button"
+              className="w-full h-12"
+              disabled={verifyingPin || pinValue.length !== 6}
+              onClick={handleVerifyPin}
+            >
+              {verifyingPin ? "Verifying..." : "Verify & Sign In"}
+            </Button>
+
+            <div className="text-center">
+              <button
+                type="button"
+                onClick={cancelPinStep}
+                className="text-sm text-muted-foreground hover:underline"
+              >
+                Not you? Sign out
+              </button>
+            </div>
+          </div>
+        ) : (
         <Tabs defaultValue={defaultTab} className="w-full">
           <TabsList className={`grid w-full mb-8 ${showSignup ? "grid-cols-2" : "grid-cols-1"}`}>
             <TabsTrigger value="login">Login</TabsTrigger>
@@ -488,6 +631,7 @@ const Auth = () => {
             </TabsContent>
           ) : null}
         </Tabs>
+        )}
 
         <div className="mt-8 pt-6 border-t border-border text-center">
           <a href="/" className="text-sm text-primary hover:underline">
