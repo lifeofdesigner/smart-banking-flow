@@ -59,6 +59,20 @@ function parseText(content: unknown): string {
   return "";
 }
 
+function ParagraphText({ children, className }: { children: string; className?: string }) {
+  return (
+    <div className={className}>
+      {children
+        .split(/\n{2,}/)
+        .map((paragraph) => paragraph.trim())
+        .filter(Boolean)
+        .map((paragraph) => (
+          <p key={paragraph}>{paragraph}</p>
+        ))}
+    </div>
+  );
+}
+
 export default function ProductPageView() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -134,6 +148,8 @@ export default function ProductPageView() {
   const featuresSection = sections.find((s) => s.section_type === "features");
   const benefitsSection = sections.find((s) => s.section_type === "benefits");
   const howItWorksSection = sections.find((s) => s.section_type === "how_it_works");
+  const fullDescription = applySiteName(product.full_description || "", bankName).trim();
+  const sectionDescription = applySiteName(parseText(descSection?.content), bankName).trim();
 
   const features = parseJsonArray(featuresSection?.content);
   const benefits = parseJsonArray(benefitsSection?.content);
@@ -178,13 +194,30 @@ export default function ProductPageView() {
         </div>
       </section>
 
+      {fullDescription && (
+        <section className="py-16 bg-background">
+          <div className="container mx-auto px-4">
+            <div className="max-w-3xl mx-auto space-y-5 text-center">
+              <h2 className="text-3xl lg:text-4xl font-bold">About {product.product_name}</h2>
+              <ParagraphText
+                className="space-y-4 text-lg text-muted-foreground leading-relaxed"
+              >
+                {fullDescription}
+              </ParagraphText>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Description Section */}
-      {descSection && (
+      {descSection && sectionDescription && (
         <section className="py-20 bg-secondary/30">
           <div className="container mx-auto px-4">
             <div className="max-w-3xl mx-auto text-center space-y-6">
               <h2 className="text-3xl lg:text-4xl font-bold">{applySiteName(descSection.title || "", bankName)}</h2>
-              <p className="text-lg text-muted-foreground leading-relaxed">{applySiteName(parseText(descSection.content), bankName)}</p>
+              <ParagraphText className="space-y-4 text-lg text-muted-foreground leading-relaxed">
+                {sectionDescription}
+              </ParagraphText>
             </div>
           </div>
         </section>

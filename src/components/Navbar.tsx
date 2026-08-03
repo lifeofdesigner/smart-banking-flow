@@ -1,8 +1,9 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { supabase } from "@/integrations/supabase/client";
 
 const navItems = [
   { label: "Checking", href: "/products/checking" },
@@ -54,12 +55,39 @@ function LogoMark({
 }
 
 const Navbar = () => {
+  const navigate = useNavigate();
   const siteSettings = useSiteSettings();
   const logoUrl = siteSettings["site_logo_url"];
   const siteName = siteSettings["site_name"] || "Your Bank";
   const showMobileName = siteSettings.show_mobile_brand_name_beside_logo !== "false";
   const showDesktopName = siteSettings.show_brand_name_beside_logo !== "false";
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    supabase.auth.getUser().then(({ data }) => {
+      if (isMounted) setIsLoggedIn(!!data.user);
+    });
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      if (isMounted) setIsLoggedIn(!!session?.user);
+    });
+
+    return () => {
+      isMounted = false;
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setIsMenuOpen(false);
+    navigate("/");
+  };
 
   return (
     <header className="sticky top-0 z-50 border-b border-[#d8dde6] bg-white">
@@ -88,22 +116,29 @@ const Navbar = () => {
         <Button
           type="button"
           className="rounded-full bg-[var(--bank-public-navy)] px-4 py-2 text-xs font-semibold text-white hover:opacity-90 md:hidden"
-          onClick={() => {
-            window.location.href = "/auth";
-          }}
+          onClick={() => navigate(isLoggedIn ? "/dashboard" : "/auth")}
         >
-          Login
+          {isLoggedIn ? "Dashboard" : "Login"}
         </Button>
 
-        <Button
-          type="button"
-          className="hidden rounded-full bg-[var(--bank-public-navy)] px-6 py-2 text-sm font-semibold text-white hover:opacity-90 md:inline-flex"
-          onClick={() => {
-            window.location.href = "/auth";
-          }}
-        >
-          Login
-        </Button>
+        <div className="hidden items-center gap-3 md:flex">
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="text-sm font-medium text-[#4b5563] transition hover:text-[var(--bank-public-navy)]"
+            >
+              Log out
+            </button>
+          ) : null}
+          <Button
+            type="button"
+            className="rounded-full bg-[var(--bank-public-navy)] px-6 py-2 text-sm font-semibold text-white hover:opacity-90"
+            onClick={() => navigate(isLoggedIn ? "/dashboard" : "/auth")}
+          >
+            {isLoggedIn ? "Go to Dashboard" : "Login"}
+          </Button>
+        </div>
       </div>
 
       <nav className="mx-auto hidden max-w-[1180px] items-center gap-6 overflow-x-auto border-t border-[#e6eaf0] px-4 py-3 text-sm font-medium text-[#334155] md:flex">
@@ -155,11 +190,21 @@ const Navbar = () => {
             type="button"
             className="mt-4 h-12 w-full rounded-full bg-[var(--bank-public-navy)] text-sm font-semibold text-white"
             onClick={() => {
-              window.location.href = "/auth";
+              setIsMenuOpen(false);
+              navigate(isLoggedIn ? "/dashboard" : "/auth");
             }}
           >
-            Login
+            {isLoggedIn ? "Go to Dashboard" : "Login"}
           </Button>
+          {isLoggedIn ? (
+            <button
+              type="button"
+              onClick={handleLogout}
+              className="mt-3 h-11 w-full text-sm font-semibold text-[#4b5563]"
+            >
+              Log out
+            </button>
+          ) : null}
         </div>
       </div>
     </header>
