@@ -1,4 +1,5 @@
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2.43.4";
+import { jwtVerify, createRemoteJWKSet } from "https://deno.land/x/jose@v5.4.0/index.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -21,7 +22,21 @@ type CreateUserPayload = {
   role: AppRole;
 };
 
-type Payload = ListUsersPayload | CreateUserPayload;
+
+type UpdateAccountStatusPayload = {
+  action: "update_account_status";
+  userId: string;
+  status: "active" | "frozen" | "closed";
+};
+
+type ToggleWireTransferPayload = {
+  action: "toggle_wire_transfer";
+  userId: string;
+  canTransfer: boolean;
+};
+
+
+type Payload = ListUsersPayload | CreateUserPayload | UpdateAccountStatusPayload | ToggleWireTransferPayload;
 
 type ProfileRow = {
   id: string;
@@ -80,30 +95,54 @@ Deno.serve(async (req: Request) => {
 
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+  const jwtSecret = Deno.env.get("SUPABASE_JWT_SECRET");
 
-  if (!supabaseUrl || !serviceRoleKey) {
+
+  if (!supabaseUrl || !serviceRoleKey || !supabaseAnonKey) {
     return json({ error: "Server configuration error" }, 500);
   }
 
   const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey);
+  const projectRef = new URL(supabaseUrl).hostname.split(".")[0];
+  const jwksUrl = new URL(`/auth/v1/.well-known/jwks.json`, `https://${projectRef}.supabase.co`);
 
   try {
     const token = parseAuthToken(req.headers.get("Authorization"));
     if (!token) return json({ error: "Unauthorized" }, 401);
 
-    const {
-      data: { user: caller },
-      error: callerError,
-    } = await supabaseAdmin.auth.getUser(token);
+    let callerId: string | null = null;
+    try {
+       const { payload } = await jwtVerify(token, createRemoteJWKSet(jwksUrl), { algorithms: ['HS256', 'RS256', 'EdDSA'] });
+       callerId = payload.sub ?? null;
+    } catch (e) {
+      // Fallback for older tokens that might be signed with HS256
+      if (jwtSecret && (e instanceof Error) && e.message.includes("Unsupported ")){
+         try {
+            const {
+               data: { user: caller },
+            } = await supabaseAdmin.auth.getUser(token);
+            if(caller) callerId = caller.id;
+         } catch {
+            // ignore fallback error
+         }
+      }
 
-    if (callerError || !caller) {
+      if(!callerId){
+         console.error("JWT verification failed:", e.message);
+         return json({ error: "Unauthorized: Invalid token" }, 401);
+      }
+    }
+
+
+    if (!callerId) {
       return json({ error: "Unauthorized" }, 401);
     }
 
     const { data: adminRole, error: adminRoleError } = await supabaseAdmin
       .from("user_roles")
       .select("id")
-      .eq("user_id", caller.id)
+      .eq("user_id", callerId)
       .in("role", [...privilegedRoles])
       .limit(1)
       .maybeSingle();
@@ -132,24 +171,32 @@ Deno.serve(async (req: Request) => {
 
       let profiles: ProfileRow[] = [];
       let roles: RoleRow[] = [];
+      let profileDetails: any[] = [];
 
       if (userIds.length) {
         const { data: profileRows } = await supabaseAdmin
           .from("profiles")
-          .select("id, full_name, email, created_at")
+          .select("id, full_name, email, created_at, can_initiate_wire_transfer")
           .in("id", userIds);
 
         const { data: roleRows } = await supabaseAdmin
           .from("user_roles")
           .select("user_id, role")
           .in("user_id", userIds);
+        
+        const { data: accountRows } = await supabaseAdmin
+          .from("accounts")
+          .select("user_id, status")
+          .in("user_id", userIds);
 
         profiles = (profileRows || []) as ProfileRow[];
         roles = (roleRows || []) as RoleRow[];
+        profileDetails = (accountRows || []);
       }
 
-      const profileById = new Map(profiles.map((p) => [p.id, p]));
+      const profileById = new Map(profiles.map((p: any) => [p.id, p]));
       const rolesByUserId = new Map<string, string[]>();
+      const accountsByUserId = new Map(profileDetails.map((p: any) => [p.user_id, p]));
 
       for (const roleRow of roles) {
         const list = rolesByUserId.get(roleRow.user_id) || [];
@@ -160,10 +207,14 @@ Deno.serve(async (req: Request) => {
       const rows = authUsers
         .map((u) => {
           const profile = profileById.get(u.id);
+          const account = accountsByUserId.get(u.id);
           const userRoles = rolesByUserId.get(u.id) || [];
           const bannedUntil = u.banned_until ? new Date(u.banned_until) : null;
           const isBanned = bannedUntil ? bannedUntil.getTime() > Date.now() : false;
-          const status = isBanned ? "banned" : u.email_confirmed_at ? "active" : "pending";
+          let status = isBanned ? "banned" : u.email_confirmed_at ? "active" : "pending";
+          if(account?.status) status = account.status;
+
+
           const metadataFullName =
             u.user_metadata && typeof u.user_metadata.full_name === "string"
               ? u.user_metadata.full_name
@@ -176,6 +227,7 @@ Deno.serve(async (req: Request) => {
             roles: userRoles,
             created_at: profile?.created_at || u.created_at || null,
             status,
+            can_initiate_wire_transfer: profile?.can_initiate_wire_transfer ?? true,
           };
         })
         .filter((u: { roles: string[]; email: string; full_name: string }) => {
@@ -266,9 +318,37 @@ Deno.serve(async (req: Request) => {
       });
     }
 
+    if(payload.action === 'update_account_status'){
+      const { error } = await supabaseAdmin
+        .from('accounts')
+        .update({ status: payload.status })
+        .eq('user_id', payload.userId);
+
+      if (error) {
+        console.error('Failed to update account status:', error.message);
+        return json({ error: `Failed to update account status: ${error.message}` }, 500);
+      }
+      return json({ data: { success: true } });
+    }
+
+    if(payload.action === 'toggle_wire_transfer'){
+      const { error } = await supabaseAdmin
+        .from('profiles')
+        .update({ can_initiate_wire_transfer: payload.canTransfer })
+        .eq('id', payload.userId);
+
+      if (error) {
+        console.error('Failed to toggle wire transfer access:', error.message);
+        return json({ error: `Failed to toggle wire transfer access: ${error.message}` }, 500);
+      }
+      return json({ data: { success: true } });
+    }
+
     return json({ error: "Invalid action" }, 400);
-  } catch {
+  } catch(e) {
+    console.error('Unexpected server error:', e.message);
     return json({ error: "Unexpected server error" }, 500);
   }
 });
+
 
