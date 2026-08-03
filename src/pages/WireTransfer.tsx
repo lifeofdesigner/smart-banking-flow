@@ -48,10 +48,10 @@ const WireTransfer = () => {
   });
 
   useEffect(() => {
-    checkAuthAndLoadAccount();
+    loadInitialData();
   }, []);
 
-  const checkAuthAndLoadAccount = async () => {
+  const loadInitialData = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
     
     if (error || !user) {
@@ -68,6 +68,44 @@ const WireTransfer = () => {
 
     if (accountData) {
       setAccountId(accountData.id);
+    }
+    
+    // Check for pending wire transfer
+    const { data: pendingTransfer } = await supabase
+      .from("wire_transfers")
+      .select("*")
+      .eq("user_id", user.id)
+      .in("status", ["awaiting_cot", "awaiting_imf", "awaiting_tax", "awaiting_levy", "awaiting_fin"])
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .single();
+
+    if (pendingTransfer) {
+      setWireTransferId(pendingTransfer.id);
+      setTransferData({
+        beneficiaryName: pendingTransfer.beneficiary_name,
+        beneficiaryAccount: pendingTransfer.beneficiary_account,
+        beneficiaryBank: pendingTransfer.beneficiary_bank,
+        beneficiaryCountry: pendingTransfer.beneficiary_country,
+        swiftCode: pendingTransfer.swift_code || "",
+        amount: String(pendingTransfer.amount),
+        purpose: pendingTransfer.purpose || "",
+      });
+
+      const statusToStep: { [key: string]: number } = {
+        "awaiting_cot": 1,
+        "awaiting_imf": 2,
+        "awaiting_tax": 3,
+        "awaiting_levy": 4,
+        "awaiting_fin": 5,
+      };
+
+      setCurrentStep(statusToStep[pendingTransfer.status] || 0);
+      
+      toast({
+        title: "Pending Transfer Found",
+        description: "Continuing with your pending wire transfer.",
+      });
     }
   };
 
