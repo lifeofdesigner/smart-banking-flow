@@ -22,9 +22,10 @@ import NotificationToaster from "@/components/NotificationToaster";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import LiveChatWidget from "@/components/LiveChatWidget";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { PROFILE_AVATAR_CHANGED_EVENT, type ProfileAvatarChangedDetail } from "@/lib/profileAvatar";
 import { canAccessLiveChatSupport, chatSupabase, isPrivilegedRole } from "@/lib/live-chat";
 import {
   LayoutDashboard,
@@ -59,6 +60,7 @@ interface DashboardLayoutProps {
 interface Profile {
   full_name: string;
   email: string;
+  avatar_url: string | null;
 }
 
 const mainNavItems = [
@@ -188,7 +190,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       }
 
       const [{ data: profileData }, { data: roles }] = await Promise.all([
-        supabase.from("profiles").select("full_name, email").eq("id", user.id).single(),
+        supabase.from("profiles").select("full_name, email, avatar_url").eq("id", user.id).single(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
       ]);
 
@@ -228,6 +230,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       subscription.unsubscribe();
     };
   }, [authRedirectPath, navigate]);
+
+  useEffect(() => {
+    const handleAvatarChanged = (event: Event) => {
+      const detail = (event as CustomEvent<ProfileAvatarChangedDetail>).detail;
+      setProfile((prev) => (prev ? { ...prev, avatar_url: detail.avatarUrl } : prev));
+    };
+
+    window.addEventListener(PROFILE_AVATAR_CHANGED_EVENT, handleAvatarChanged);
+    return () => window.removeEventListener(PROFILE_AVATAR_CHANGED_EVENT, handleAvatarChanged);
+  }, []);
 
   useEffect(() => {
     if (!currentUserId || !canViewLiveChatSupport) {
@@ -408,6 +420,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <SidebarFooter className="border-t border-border p-4">
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
+                {profile?.avatar_url ? <AvatarImage src={profile.avatar_url} alt="" /> : null}
                 <AvatarFallback className="bg-primary text-primary-foreground text-xs">
                   {profile?.full_name ? getInitials(profile.full_name) : "U"}
                 </AvatarFallback>
@@ -465,10 +478,16 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                   <SheetTrigger asChild>
                     <button
                       type="button"
-                      className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-[#C9A84C] text-[12px] font-semibold text-[#0A1628] shadow-sm"
+                      className="inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-[#C9A84C] text-[12px] font-semibold text-[#0A1628] shadow-sm"
                       aria-label="Open profile menu"
                     >
-                      {profile?.full_name ? getInitials(profile.full_name) : "U"}
+                      {profile?.avatar_url ? (
+                        <img src={profile.avatar_url} alt="" className="h-full w-full object-cover" />
+                      ) : profile?.full_name ? (
+                        getInitials(profile.full_name)
+                      ) : (
+                        "U"
+                      )}
                     </button>
                   </SheetTrigger>
                   <SheetContent

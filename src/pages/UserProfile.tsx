@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -8,20 +8,26 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ArrowLeft, User, Mail, Phone, MapPin, Shield } from "lucide-react";
+import { ArrowLeft, User, Mail, Phone, MapPin, Shield, Camera } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
+import { dispatchProfileAvatarChanged } from "@/lib/profileAvatar";
+
+const MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
 
 export default function UserProfile() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
+  const avatarInputRef = useRef<HTMLInputElement>(null);
   const [profile, setProfile] = useState({
     full_name: "",
     email: "",
     phone: "",
     address: "",
-    kyc_status: "pending"
+    kyc_status: "pending",
+    avatar_url: "" as string | null,
   });
 
   useEffect(() => {
@@ -78,6 +84,54 @@ export default function UserProfile() {
       toast.error("Failed to update profile");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please choose an image file");
+      return;
+    }
+    if (file.size > MAX_AVATAR_SIZE_BYTES) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+
+    setUploadingAvatar(true);
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const extension = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const path = `${user.id}/${Date.now()}.${extension}`;
+
+      const { error: uploadError } = await supabase.storage.from("avatars").upload(path, file, {
+        upsert: true,
+        contentType: file.type,
+      });
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage.from("avatars").getPublicUrl(path);
+      const avatarUrl = publicUrlData.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+      if (updateError) throw updateError;
+
+      setProfile((prev) => ({ ...prev, avatar_url: avatarUrl }));
+      dispatchProfileAvatarChanged(avatarUrl);
+      toast.success("Profile photo updated");
+    } catch (error) {
+      console.error("Error uploading avatar:", error);
+      toast.error("Failed to upload profile photo");
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -144,11 +198,36 @@ export default function UserProfile() {
           Back to Dashboard
         </Button>
 
+        <input
+          ref={avatarInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleAvatarChange}
+        />
+
         <div className="space-y-6">
           <div className="md:hidden rounded-[28px] bg-[#0A1628] px-5 py-6 text-center">
-            <div className="mx-auto flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#C9A84C] text-xl font-bold text-[#0A1628]">
-              {initials}
-            </div>
+            <button
+              type="button"
+              onClick={() => avatarInputRef.current?.click()}
+              disabled={uploadingAvatar}
+              className="relative mx-auto flex h-[60px] w-[60px] items-center justify-center rounded-full bg-[#C9A84C] text-xl font-bold text-[#0A1628] disabled:opacity-70"
+              aria-label="Change profile photo"
+            >
+              {profile.avatar_url ? (
+                <img src={profile.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+              ) : (
+                initials
+              )}
+              <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#0A1628] bg-white text-[#0A1628] shadow">
+                {uploadingAvatar ? (
+                  <span className="h-2.5 w-2.5 animate-spin rounded-full border-2 border-[#0A1628] border-t-transparent" />
+                ) : (
+                  <Camera className="h-3 w-3" />
+                )}
+              </span>
+            </button>
             <p className="mt-4 text-xl font-semibold text-white">{profile.full_name || "Unnamed User"}</p>
             <p className="mt-1 text-sm text-white/60">{profile.email}</p>
           </div>
@@ -162,9 +241,26 @@ export default function UserProfile() {
             <CardHeader className="hidden md:block">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4">
-                  <div className="h-20 w-20 rounded-full bg-[var(--bank-navy)] text-[var(--bank-gold)] flex items-center justify-center text-2xl font-bold">
-                    {initials}
-                  </div>
+                  <button
+                    type="button"
+                    onClick={() => avatarInputRef.current?.click()}
+                    disabled={uploadingAvatar}
+                    className="relative h-20 w-20 rounded-full bg-[var(--bank-navy)] text-[var(--bank-gold)] flex items-center justify-center text-2xl font-bold disabled:opacity-70"
+                    aria-label="Change profile photo"
+                  >
+                    {profile.avatar_url ? (
+                      <img src={profile.avatar_url} alt="" className="h-full w-full rounded-full object-cover" />
+                    ) : (
+                      initials
+                    )}
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-7 w-7 items-center justify-center rounded-full border-2 border-white bg-[var(--bank-navy)] text-white shadow">
+                      {uploadingAvatar ? (
+                        <span className="h-3 w-3 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <Camera className="h-3.5 w-3.5" />
+                      )}
+                    </span>
+                  </button>
                   <div>
                     <CardTitle className="text-2xl text-[var(--bank-navy)]" style={{ fontFamily: "'Playfair Display', serif" }}>
                       {profile.full_name || "Unnamed User"}
