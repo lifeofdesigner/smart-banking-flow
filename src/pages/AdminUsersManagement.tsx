@@ -21,6 +21,7 @@ import {
 import { ChevronDown, Copy, Loader2, RefreshCw, UserPlus, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { getSessionUserId } from "@/lib/supabaseSession";
+import { isMissingWireTransferAccessColumnError } from "@/lib/supabaseErrors";
 
 type Role = "user" | "admin";
 
@@ -100,6 +101,7 @@ export default function AdminUsersManagement() {
 
   const [loadingUsers, setLoadingUsers] = useState(false);
   const [users, setUsers] = useState<ManagedUser[]>([]);
+  const [wireTransferAccessSupported, setWireTransferAccessSupported] = useState(true);
 
   const [search, setSearch] = useState("");
   const [roleFilter, setRoleFilter] = useState<"all" | Role>("all");
@@ -193,19 +195,45 @@ export default function AdminUsersManagement() {
     setLoadingUsers(true);
 
     try {
-      const [{ data: profileRows, error: profileError }, { data: roleRows, error: roleError }, { data: accountRows, error: accountError }] =
-        await Promise.all([
-          supabase
-            .from("profiles")
-            .select("id, full_name, email, created_at, can_initiate_wire_transfer")
-            .order("created_at", { ascending: false }),
-          supabase.from("user_roles").select("user_id, role"),
-          supabase.from("accounts").select("user_id, status"),
-        ]);
+      const profileQuery = supabase
+        .from("profiles")
+        .select("id, full_name, email, created_at, can_initiate_wire_transfer")
+        .order("created_at", { ascending: false });
+      const {
+        data: profileRowsWithAccess,
+        error: profileError,
+      } = await profileQuery;
 
-      if (profileError) throw profileError;
+      let profileRows = profileRowsWithAccess;
+      let accessSupported = true;
+
+      if (profileError) {
+        if (!isMissingWireTransferAccessColumnError(profileError)) {
+          throw profileError;
+        }
+
+        accessSupported = false;
+        const fallbackProfiles = await supabase
+          .from("profiles")
+          .select("id, full_name, email, created_at")
+          .order("created_at", { ascending: false });
+
+        if (fallbackProfiles.error) {
+          throw fallbackProfiles.error;
+        }
+
+        profileRows = fallbackProfiles.data;
+      }
+
+      const [{ data: roleRows, error: roleError }, { data: accountRows, error: accountError }] = await Promise.all([
+        supabase.from("user_roles").select("user_id, role"),
+        supabase.from("accounts").select("user_id, status"),
+      ]);
+
       if (roleError) throw roleError;
       if (accountError) throw accountError;
+
+      setWireTransferAccessSupported(accessSupported);
 
       setUsers(buildUsers(
         (profileRows || []) as Array<{
@@ -213,7 +241,7 @@ export default function AdminUsersManagement() {
           full_name: string | null;
           email: string | null;
           created_at: string | null;
-          can_initiate_wire_transfer: boolean | null;
+          can_initiate_wire_transfer?: boolean | null;
         }>,
         (roleRows || []) as Array<{ user_id: string; role: string }>,
         (accountRows || []) as Array<{ user_id: string; status: string | null }>,
@@ -221,6 +249,7 @@ export default function AdminUsersManagement() {
         roleFilter,
       ));
     } catch (error) {
+      setWireTransferAccessSupported(false);
       toast.error(toErrorMessage(error, "Failed to load users"));
       setUsers([]);
     } finally {
@@ -427,9 +456,11 @@ export default function AdminUsersManagement() {
                                 <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "closed")}>Close Account</DropdownMenuItem>
                               )}
                               <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleToggleWireTransfer(user)}>
-                                {user.can_initiate_wire_transfer ? "Block Wire" : "Un-block Wire"}
-                              </DropdownMenuItem>
+                              {wireTransferAccessSupported && (
+                               <DropdownMenuItem onClick={() => handleToggleWireTransfer(user)}>
+                                 {user.can_initiate_wire_transfer ? "Block Wire" : "Un-block Wire"}
+                               </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
