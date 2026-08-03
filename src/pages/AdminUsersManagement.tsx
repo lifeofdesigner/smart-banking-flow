@@ -11,7 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Copy, Loader2, RefreshCw, UserPlus, UserRoundCog } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { ChevronDown, Copy, Loader2, RefreshCw, UserPlus, UserRoundCog } from "lucide-react";
 import { toast } from "sonner";
 import { FunctionsHttpError, FunctionsRelayError, FunctionsFetchError } from "@supabase/supabase-js";
 
@@ -47,18 +54,17 @@ export default function AdminUsersManagement() {
     role: "user" as Role,
   });
 
-  const handleToggleAccountStatus = async (user: ManagedUser) => {
-    const newStatus = user.status === 'frozen' ? 'active' : 'frozen';
+  const handleUpdateAccountStatus = async (userId: string, newStatus: 'active' | 'frozen' | 'closed') => {
     try {
       const { error } = await supabase.rpc('admin_update_user_account_status', {
-        p_user_id: user.id,
+        p_user_id: userId,
         p_status: newStatus,
       });
       if (error) throw error;
       toast.success(`User account has been ${newStatus}.`);
       await fetchUsers(); // Refresh the user list
     } catch (error) {
-      toast.error(error.message);
+      toast.error(`Failed to update account status: ${error.message}`);
     }
   };
 
@@ -73,7 +79,7 @@ export default function AdminUsersManagement() {
       toast.success(`Wire transfers have been ${canTransfer ? 'unblocked' : 'blocked'} for the user.`);
       await fetchUsers(); // Refresh the user list
     } catch (error) {
-      toast.error(error.message);
+      toast.error(`Failed to toggle wire transfer access: ${error.message}`);
     }
   };
 
@@ -393,22 +399,22 @@ export default function AdminUsersManagement() {
                           <Badge variant={user.status === "active" ? "default" : "secondary"}>{user.status}</Badge>
                         </TableCell>
                         <TableCell>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleAccountStatus(user)}
-                            >
-                              {user.status === 'frozen' ? 'Un-hold Account' : 'Hold Account'}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleToggleWireTransfer(user)}
-                            >
-                              {user.can_initiate_wire_transfer ? 'Block Wire' : 'Un-block Wire'}
-                            </Button>
-                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                Actions <ChevronDown className="ml-2 h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent>
+                              {user.status !== 'active' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'active')}>Activate</DropdownMenuItem>}
+                              {user.status !== 'frozen' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'frozen')}>Hold/Lock</DropdownMenuItem>}
+                              {user.status !== 'closed' && <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, 'closed')}>Close Account</DropdownMenuItem>}
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleToggleWireTransfer(user)}>
+                                  {user.can_initiate_wire_transfer ? 'Block Wire' : 'Un-block Wire'}
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     ))

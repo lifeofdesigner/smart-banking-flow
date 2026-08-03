@@ -110,6 +110,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [accountFrozen, setAccountFrozen] = useState(false);
+  const [accountClosed, setAccountClosed] = useState(false);
   const [liveChatNotificationCount, setLiveChatNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
@@ -167,6 +168,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setUserRoles([]);
       setIsAdmin(false);
       setAccountFrozen(false);
+      setAccountClosed(false);
       setLiveChatNotificationCount(0);
       setLoading(false);
     };
@@ -202,6 +204,10 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       const isFrozen = accountsData?.some(acc => acc.status === 'frozen');
       if (isFrozen) {
         setAccountFrozen(true);
+      }
+      const isClosed = accountsData?.some(acc => acc.status === 'closed');
+      if (isClosed) {
+        setAccountClosed(true);
       }
 
       syncedUserIdRef.current = user.id;
@@ -370,7 +376,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
-    {accountFrozen && (
+      {accountClosed && (
+        <div className="bg-gray-800 text-white text-center p-2">
+            Your account has been closed. Please contact support for assistance.
+        </div>
+      )}
+      {accountFrozen && (
         <div className="bg-red-500 text-white text-center p-2">
           Your account is on hold. Please contact support for assistance.
         </div>
@@ -583,4 +594,4 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       </div>
     </SidebarProvider>
   );
-}
+  }
