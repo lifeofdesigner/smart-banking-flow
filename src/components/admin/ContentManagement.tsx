@@ -81,7 +81,7 @@ const checklistSectionTypes = ["trust_bar", "security", "financial_tools"];
 /** Section types that are a single CTA pair, no repeatable list at all. */
 const singleCtaSectionTypes = ["mobile_banking", "financial_education"];
 /** Section types that are a primary+secondary CTA pair, no repeatable list. */
-const dualCtaSectionTypes = ["hero", "final_cta"];
+const dualCtaSectionTypes = ["final_cta"];
 
 const safeParseContent = (content: string): unknown => {
   if (!content.trim()) return null;
@@ -115,6 +115,9 @@ const asRecord = (parsed: unknown): Record<string, unknown> =>
   parsed && typeof parsed === "object" && !Array.isArray(parsed) ? (parsed as Record<string, unknown>) : {};
 
 const emptyItemForSection = (sectionType: string): StructuredItem => {
+  if (sectionType === "hero") {
+    return { image: "", image_alt: "" };
+  }
   if (dualCtaSectionTypes.includes(sectionType)) {
     return { cta_primary_label: "", cta_primary_link: "", cta_secondary_label: "", cta_secondary_link: "" };
   }
@@ -146,6 +149,11 @@ const emptyItemForSection = (sectionType: string): StructuredItem => {
 const getItemsFromContent = (sectionType: string, content: string): StructuredItem[] => {
   const parsed = safeParseContent(content);
   const record = asRecord(parsed);
+
+  if (sectionType === "hero") {
+    const slides = extractItemsArray(parsed, ["slides"]);
+    return slides && slides.length ? slides : [emptyItemForSection(sectionType)];
+  }
 
   if (dualCtaSectionTypes.includes(sectionType)) {
     return [{
@@ -201,6 +209,18 @@ const buildContentFromItems = (sectionType: string, items: StructuredItem[], cur
   const cleanItems = items.map((item) => Object.fromEntries(
     Object.entries(item).map(([key, value]) => [key, typeof value === "string" ? value.trim() : value]),
   ));
+
+  if (sectionType === "hero") {
+    const record = asRecord(safeParseContent(currentContent));
+    const keepField = (key: string) => (typeof record[key] === "string" && (record[key] as string).trim() ? { [key]: record[key] } : {});
+    return stringifyContent({
+      ...keepField("cta_primary_label"),
+      ...keepField("cta_primary_link"),
+      ...keepField("cta_secondary_label"),
+      ...keepField("cta_secondary_link"),
+      slides: cleanItems,
+    });
+  }
 
   if (dualCtaSectionTypes.includes(sectionType)) {
     const item = cleanItems[0] || {};
@@ -657,7 +677,58 @@ export default function ContentManagement() {
 
   const renderHomepageContentFields = () => {
     switch (homepageForm.section_type) {
-      case "hero":
+      case "hero": {
+        const ctaPrimaryLabel = getFixedContentField(homepageForm.content, "cta_primary_label");
+        const ctaPrimaryLink = getFixedContentField(homepageForm.content, "cta_primary_link");
+        const ctaSecondaryLabel = getFixedContentField(homepageForm.content, "cta_secondary_label");
+        const ctaSecondaryLink = getFixedContentField(homepageForm.content, "cta_secondary_link");
+        return (
+          <div className="space-y-5">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div>
+                <Label>Primary Button Text</Label>
+                <Input value={ctaPrimaryLabel} onChange={(e) => setFixedContentField("cta_primary_label", e.target.value)} />
+              </div>
+              <PageLinkPicker label="Primary Button Link" value={ctaPrimaryLink} onChange={(v) => setFixedContentField("cta_primary_link", v)} />
+              <div>
+                <Label>Secondary Button Text</Label>
+                <Input value={ctaSecondaryLabel} onChange={(e) => setFixedContentField("cta_secondary_label", e.target.value)} />
+              </div>
+              <PageLinkPicker label="Secondary Button Link" value={ctaSecondaryLink} onChange={(v) => setFixedContentField("cta_secondary_link", v)} />
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Use the Title field above for the main headline and Subtitle for the supporting text under it.
+            </p>
+
+            <div className="space-y-3 border-t pt-4">
+              <Label>Hero Background Images</Label>
+              <p className="text-xs text-muted-foreground">
+                Add one image for a static background, or several to fade between automatically on the homepage.
+              </p>
+              {homepageItems.map((item, index) => (
+                <div key={index} className="rounded-lg border p-3 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Image {index + 1}</p>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive" onClick={() => removeHomepageItem(index)}>
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <ImagePicker
+                    label="Image"
+                    value={String(item.image || "")}
+                    onChange={(url) => updateHomepageItem(index, "image", url)}
+                  />
+                  <div>
+                    <Label>Alt Text</Label>
+                    <Input value={String(item.image_alt || "")} onChange={(e) => updateHomepageItem(index, "image_alt", e.target.value)} />
+                  </div>
+                </div>
+              ))}
+              <Button type="button" variant="outline" onClick={addHomepageItem}><Plus className="mr-2 h-4 w-4" /> Add Image</Button>
+            </div>
+          </div>
+        );
+      }
       case "final_cta": {
         const item = homepageItems[0] || emptyItemForSection(homepageForm.section_type);
         return (
@@ -1376,17 +1447,19 @@ export default function ContentManagement() {
           </CmsField>
         </CmsFormSection>
 
-        <CmsFormSection title="Image">
-          <ImagePicker
-            label="Section Image"
-            value={homepageForm.image}
-            onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
-            helperText="Optional. Shown alongside this section's content."
-          />
-          <CmsField label="Image Alt Text" helperText="Describes the image for screen readers and search engines.">
-            <Input value={homepageForm.image_alt} onChange={(e) => setHomepageForm({ ...homepageForm, image_alt: e.target.value })} />
-          </CmsField>
-        </CmsFormSection>
+        {homepageForm.section_type !== "hero" ? (
+          <CmsFormSection title="Image">
+            <ImagePicker
+              label="Section Image"
+              value={homepageForm.image}
+              onChange={(url) => setHomepageForm({ ...homepageForm, image: url })}
+              helperText="Optional. Shown alongside this section's content."
+            />
+            <CmsField label="Image Alt Text" helperText="Describes the image for screen readers and search engines.">
+              <Input value={homepageForm.image_alt} onChange={(e) => setHomepageForm({ ...homepageForm, image_alt: e.target.value })} />
+            </CmsField>
+          </CmsFormSection>
+        ) : null}
 
         <CmsFormSection title="Content">
           {renderHomepageContentFields()}

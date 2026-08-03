@@ -24,6 +24,58 @@ const readContentField = (content: unknown, key: string) => {
   return typeof value === "string" ? value : "";
 };
 
+type HeroSlide = { image: string; alt: string };
+
+const readContentSlides = (content: unknown): HeroSlide[] => {
+  if (!content || typeof content !== "object") return [];
+  const value = (content as Record<string, unknown>).slides;
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((item): item is Record<string, unknown> => Boolean(item) && typeof item === "object")
+    .map((item) => ({
+      image: typeof item.image === "string" ? item.image : "",
+      alt: typeof item.image_alt === "string" ? item.image_alt : "",
+    }))
+    .filter((slide) => slide.image);
+};
+
+const SLIDE_INTERVAL_MS = 6000;
+
+/** Crossfades between one or more background images. A single slide (or
+ * none yet, before the DB fetch resolves) just renders as a static image —
+ * no timer, no visible transition. */
+function HeroSlideshow({ slides }: { slides: HeroSlide[] }) {
+  const [activeIndex, setActiveIndex] = useState(0);
+  const resolvedSlides = slides.length > 0 ? slides : [{ image: heroImage, alt: "" }];
+
+  useEffect(() => {
+    setActiveIndex(0);
+    if (resolvedSlides.length < 2) return;
+
+    const timer = setInterval(() => {
+      setActiveIndex((current) => (current + 1) % resolvedSlides.length);
+    }, SLIDE_INTERVAL_MS);
+
+    return () => clearInterval(timer);
+  }, [resolvedSlides.length]);
+
+  return (
+    <>
+      {resolvedSlides.map((slide, index) => (
+        <img
+          key={`${slide.image}-${index}`}
+          src={slide.image}
+          alt={slide.alt}
+          className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-1000 ease-in-out ${
+            index === activeIndex ? "opacity-90" : "opacity-0"
+          }`}
+        />
+      ))}
+    </>
+  );
+}
+
 function LoginPanel() {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -110,8 +162,7 @@ export default function LandingWhiteBank() {
   const [subtitle, setSubtitle] = useState(
     "Empowering individuals and businesses with accessible microfinance solutions — from everyday banking to loans, savings, and investing.",
   );
-  const [heroImg, setHeroImg] = useState<string | null>(null);
-  const [heroImgAlt, setHeroImgAlt] = useState("");
+  const [slides, setSlides] = useState<HeroSlide[]>([]);
   const [ctaPrimary, setCtaPrimary] = useState("Open an Account");
   const [ctaPrimaryLink, setCtaPrimaryLink] = useState("/auth?tab=signup");
   const [ctaSecondary, setCtaSecondary] = useState("Explore Banking Products");
@@ -152,8 +203,17 @@ export default function LandingWhiteBank() {
 
       if (headline || data?.title) setTitle(headline || data?.title || "");
       if (subheadline || data?.subtitle) setSubtitle(subheadline || data?.subtitle || "");
-      if (data?.image) setHeroImg(data.image);
-      if (data?.image_alt) setHeroImgAlt(data.image_alt);
+
+      // content.slides is the current field for one-or-more fade slides;
+      // the row's own image/image_alt columns are kept as a fallback for
+      // any hero seeded before multi-image support existed.
+      const contentSlides = readContentSlides(data?.content);
+      if (contentSlides.length > 0) {
+        setSlides(contentSlides);
+      } else if (data?.image) {
+        setSlides([{ image: data.image, alt: data.image_alt || "" }]);
+      }
+
       if (primaryLabel) setCtaPrimary(primaryLabel);
       if (primaryLink) setCtaPrimaryLink(primaryLink);
       if (secondaryLabel) setCtaSecondary(secondaryLabel);
@@ -170,7 +230,7 @@ export default function LandingWhiteBank() {
       <Navbar />
 
       <section className="relative overflow-hidden bg-[var(--bank-public-navy)]">
-        <img src={heroImg || heroImage} alt={heroImgAlt} className="absolute inset-0 h-full w-full object-cover opacity-90" />
+        <HeroSlideshow slides={slides} />
         <div className="absolute inset-0 bg-gradient-to-r from-[var(--bank-public-navy)] via-[var(--bank-public-navy)]/90 to-[var(--bank-public-navy)]/40" />
 
         <div className="relative mx-auto max-w-[1180px] px-4 py-14 md:px-6 md:py-20 lg:py-24">
