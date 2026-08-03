@@ -10,6 +10,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
 import { z } from "zod";
 import DashboardLayout from "@/components/DashboardLayout";
+import { isMissingWireTransferAccessColumnError } from "@/lib/supabaseErrors";
 
 const wireTransferSchema = z.object({
   beneficiaryName: z.string().min(2, "Name must be at least 2 characters"),
@@ -60,7 +61,15 @@ const WireTransfer = () => {
       return;
     }
 
-    const { data: profile } = await supabase.from("profiles").select("can_initiate_wire_transfer").eq("id", user.id).single();
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("can_initiate_wire_transfer")
+      .eq("id", user.id)
+      .single();
+
+    if (profileError && !isMissingWireTransferAccessColumnError(profileError)) {
+      throw profileError;
+    }
 
     if (profile && !profile.can_initiate_wire_transfer) {
         setIsBlocked(true);
