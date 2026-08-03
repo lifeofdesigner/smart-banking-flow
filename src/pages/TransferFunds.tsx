@@ -183,7 +183,7 @@ const TransferFunds = () => {
       const [acctRes, benRes] = await Promise.all([
         supabase
           .from("accounts")
-          .select("id, account_number, account_type, currency, computed_balance")
+          .select("id, account_number, account_type, currency, available_balance")
           .eq("user_id", uid)
           .eq("status", "active"),
         supabase
@@ -197,7 +197,7 @@ const TransferFunds = () => {
       if (accts) {
         const withBalances = accts.map((a) => ({
           ...a,
-          computed_balance: a.computed_balance ?? 0,
+          computed_balance: a.available_balance ?? 0,
         }));
         setAccounts(withBalances);
       }
