@@ -7,6 +7,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { toast } from "sonner";
 import { CreditCard, Snowflake, Sun, Loader2 } from "lucide-react";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusMessage } from "@/lib/accountStatus";
 
 interface CardData {
   id: string;
@@ -21,24 +23,42 @@ interface CardData {
 
 export default function CardsPage() {
   const { toast: uiToast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
   const [cards, setCards] = useState<CardData[]>([]);
   const [loading, setLoading] = useState(true);
   const [toggling, setToggling] = useState<string | null>(null);
+  const { accounts } = useUserAccounts(userId);
 
   useEffect(() => { loadCards(); }, []);
 
   const loadCards = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
     const { data, error } = await supabase.from("cards").select("*").eq("user_id", user.id);
     if (error) { toast.error(error.message); return; }
     if (data) setCards(data);
     setLoading(false);
   };
 
+  const accountForCard = (card: CardData) => accounts.find((a) => a.id === card.account_id);
+
   const toggleFreeze = async (card: CardData) => {
+    const willUnfreeze = card.status === "frozen";
+    if (willUnfreeze) {
+      const account = accountForCard(card);
+      if (account && !isAccountUsable(account.status)) {
+        uiToast({
+          title: "Can't unfreeze this card",
+          description: getAccountStatusMessage(account.status),
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
     setToggling(card.id);
-    const newStatus = card.status === "frozen" ? "active" : "frozen";
+    const newStatus = willUnfreeze ? "active" : "frozen";
     const { error } = await supabase.from("cards").update({
       status: newStatus,
       frozen_at: newStatus === "frozen" ? new Date().toISOString() : null,
@@ -148,11 +168,19 @@ export default function CardsPage() {
                     </div>
                   </div>
 
+                  {card.status === "frozen" && accountForCard(card) && !isAccountUsable(accountForCard(card)!.status) && (
+                    <p className="mb-2 text-xs text-destructive">
+                      {getAccountStatusMessage(accountForCard(card)!.status)}
+                    </p>
+                  )}
                   <Button
                     variant="outline"
                     className={`min-h-[52px] w-full rounded-xl ${card.status === "frozen" ? "border-red-300 text-red-700 hover:bg-red-50" : "border-emerald-300 text-emerald-700 hover:bg-emerald-50"}`}
                     onClick={() => toggleFreeze(card)}
-                    disabled={toggling === card.id}
+                    disabled={
+                      toggling === card.id ||
+                      (card.status === "frozen" && !!accountForCard(card) && !isAccountUsable(accountForCard(card)!.status))
+                    }
                   >
                     {toggling === card.id ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-2" />

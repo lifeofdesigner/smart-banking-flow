@@ -36,6 +36,9 @@ import { Progress } from "@/components/ui/progress";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 import DashboardLayout from "@/components/DashboardLayout";
+import { TransactionGate } from "@/components/TransactionGate";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 const transferSchema = z.object({
   fromAccountId: z.string().uuid("Please select a source account"),
@@ -50,14 +53,6 @@ const transferSchema = z.object({
     .max(1_000_000, "Maximum transfer amount is $1,000,000"),
   description: z.string().max(200, "Description too long").optional(),
 });
-
-interface Account {
-  id: string;
-  account_number: string;
-  account_type: string;
-  currency: string;
-  computed_balance: number;
-}
 
 interface TransferLimitInfo {
   daily_limit: number;
@@ -100,7 +95,7 @@ const TransferFunds = () => {
 
   const [userId, setUserId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const { accounts, usableAccounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading, reload: reloadAccounts } = useUserAccounts(userId);
   const [recentTransfers, setRecentTransfers] = useState<RecentTransfer[]>([]);
   const [beneficiaries, setBeneficiaries] = useState<SavedBeneficiary[]>([]);
   const [transferLimits, setTransferLimits] = useState<TransferLimitInfo | null>(null);
@@ -180,32 +175,16 @@ const TransferFunds = () => {
 
   const loadData = async (uid: string) => {
     try {
-      const [acctRes, benRes] = await Promise.all([
-        supabase
-          .from("accounts")
-          .select("id, account_number, account_type, currency, available_balance")
-          .eq("user_id", uid)
-          .eq("status", "active"),
-        supabase
-          .from("beneficiaries")
-          .select("id, nickname, account_number, account_id")
-          .eq("user_id", uid)
-          .order("created_at", { ascending: false }),
-      ]);
+      const { data: benData } = await supabase
+        .from("beneficiaries")
+        .select("id, nickname, account_number, account_id")
+        .eq("user_id", uid)
+        .order("created_at", { ascending: false });
 
-      const accts = acctRes.data;
-      if (accts) {
-        const withBalances = accts.map((a) => ({
-          ...a,
-          computed_balance: a.available_balance ?? 0,
-        }));
-        setAccounts(withBalances);
-      }
-
-      if (benRes.data) {
+      if (benData) {
         // Enrich beneficiaries with holder names
         const enriched = await Promise.all(
-          benRes.data.map(async (b) => {
+          benData.map(async (b) => {
             if (!b.account_id) return { ...b, holder_name: "Unknown" };
             const { data: acc } = await supabase
               .from("accounts")
@@ -223,20 +202,6 @@ const TransferFunds = () => {
         );
         setBeneficiaries(enriched);
       }
-
-      // Load recent transfers
-      if (accts && accts.length > 0) {
-        const accountIds = accts.map((a) => a.id);
-        const { data: txns } = await supabase
-          .from("transactions")
-          .select("*")
-          .in("account_id", accountIds)
-          .eq("transaction_type", "transfer")
-          .order("created_at", { ascending: false })
-          .limit(10);
-
-        if (txns) setRecentTransfers(txns);
-      }
     } catch (err: unknown) {
       toast({
         title: "Error loading data",
@@ -247,6 +212,25 @@ const TransferFunds = () => {
       setLoading(false);
     }
   };
+
+  // Recent transfers, once the shared accounts hook has loaded every account this user owns.
+  useEffect(() => {
+    if (accountsLoading || accounts.length === 0) return;
+
+    const loadRecentTransfers = async () => {
+      const { data: txns } = await supabase
+        .from("transactions")
+        .select("*")
+        .in("account_id", accounts.map((a) => a.id))
+        .eq("transaction_type", "transfer")
+        .order("created_at", { ascending: false })
+        .limit(10);
+
+      if (txns) setRecentTransfers(txns);
+    };
+
+    void loadRecentTransfers();
+  }, [accounts, accountsLoading]);
 
   // Debounced account lookup for manual mode
   useEffect(() => {
@@ -418,6 +402,7 @@ const TransferFunds = () => {
         recipientName: recipient.holder_name,
       });
       setStep("success");
+      void reloadAccounts();
     } catch (err: unknown) {
       toast({ title: "Transfer error", description: err.message, variant: "destructive" });
       setStep("form");
@@ -437,6 +422,7 @@ const TransferFunds = () => {
     setErrors({});
     setEntryMode("manual");
     if (userId) loadData(userId);
+    void reloadAccounts();
   };
 
   const selectedFromAccount = accounts.find((a) => a.id === fromAccountId);
@@ -475,6 +461,7 @@ const TransferFunds = () => {
       </header>
 
       <div className="container mx-auto max-w-2xl px-0 py-4 md:px-4 md:py-8">
+      <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         {/* Step indicator */}
         <div className="mb-6 flex items-center justify-center gap-2 rounded-2xl border-0 bg-white p-4 shadow-sm md:mb-8 md:rounded-xl">
           {([
@@ -516,17 +503,23 @@ const TransferFunds = () => {
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id}>
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
                         {a.account_type.toUpperCase()} — {a.account_number} — {a.currency}{" "}
                         {a.computed_balance.toLocaleString("en-US", {
                           minimumFractionDigits: 2,
                         })}
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 {errors.fromAccountId && (
                   <p className="text-sm text-destructive">{errors.fromAccountId}</p>
+                )}
+                {restrictedAccounts.length > 0 && usableAccounts.length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    Accounts marked as restricted can't be used to send money right now.
+                  </p>
                 )}
               </div>
 
@@ -903,9 +896,10 @@ const TransferFunds = () => {
             </CardContent>
           </Card>
         )}
+      </TransactionGate>
       </div>
 
-      {step === "form" && (
+      {step === "form" && hasUsableAccount && (
         <div className="fixed inset-x-0 bottom-0 z-40 border-t border-[#E5E7EB] bg-white p-3 pb-[calc(env(safe-area-inset-bottom)+12px)] md:hidden">
           <Button
             className="h-[52px] w-full rounded-xl bg-[#0A1628] text-white hover:bg-[#1E3A5F]"

@@ -28,6 +28,9 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { PROFILE_AVATAR_CHANGED_EVENT, type ProfileAvatarChangedDetail } from "@/lib/profileAvatar";
 import { canAccessLiveChatSupport, chatSupabase, isPrivilegedRole } from "@/lib/live-chat";
+import { isAccountUsable } from "@/lib/accountStatus";
+import { AccountRestrictionBanner } from "@/components/AccountRestrictionBanner";
+import type { UserAccount } from "@/hooks/useUserAccounts";
 import {
   LayoutDashboard,
   CreditCard,
@@ -110,8 +113,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [accountFrozen, setAccountFrozen] = useState(false);
-  const [accountClosed, setAccountClosed] = useState(false);
+  const [restrictedAccounts, setRestrictedAccounts] = useState<UserAccount[]>([]);
   const [liveChatNotificationCount, setLiveChatNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
@@ -168,8 +170,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setCurrentUserId(null);
       setUserRoles([]);
       setIsAdmin(false);
-      setAccountFrozen(false);
-      setAccountClosed(false);
+      setRestrictedAccounts([]);
       setLiveChatNotificationCount(0);
       setLoading(false);
     };
@@ -198,19 +199,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       const [{ data: profileData }, { data: roles }, { data: accountsData }] = await Promise.all([
         supabase.from("profiles").select("full_name, email, avatar_url").eq("id", userId).single(),
         supabase.from("user_roles").select("role").eq("user_id", userId),
-        supabase.from("accounts").select("status").eq("user_id", userId),
+        supabase.from("accounts").select("id, account_number, account_type, currency, status, available_balance").eq("user_id", userId),
       ]);
 
       if (!isMounted) return;
 
-      const isFrozen = accountsData?.some(acc => acc.status === 'frozen');
-      if (isFrozen) {
-        setAccountFrozen(true);
-      }
-      const isClosed = accountsData?.some(acc => acc.status === 'closed');
-      if (isClosed) {
-        setAccountClosed(true);
-      }
+      setRestrictedAccounts(
+        (accountsData || [])
+          .filter((a) => !isAccountUsable(a.status))
+          .map((a) => ({
+            id: a.id,
+            account_number: a.account_number,
+            account_type: a.account_type,
+            currency: a.currency || "USD",
+            status: a.status || "unknown",
+            computed_balance: a.available_balance ?? 0,
+          })),
+      );
 
       syncedUserIdRef.current = userId;
       const resolvedRoles = (roles ?? []).map((roleRow) => roleRow.role);
@@ -380,16 +385,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
-      {accountClosed && (
-        <div className="bg-gray-800 text-white text-center p-2">
-            Your account has been closed. Please contact support for assistance.
-        </div>
-      )}
-      {accountFrozen && (
-        <div className="bg-red-500 text-white text-center p-2">
-          Your account is on hold. Please contact support for assistance.
-        </div>
-      )}
       <div className="min-h-screen flex w-full overflow-x-hidden bg-secondary/20">
         <Sidebar collapsible="icon" className="hidden md:flex">
           <SidebarHeader className="border-b border-border p-4">
@@ -480,6 +475,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         </Sidebar>
 
         <div className="flex-1 flex min-w-0 flex-col overflow-x-hidden">
+          <AccountRestrictionBanner restrictedAccounts={restrictedAccounts} />
           <header className="sticky top-0 z-50">
             <div className="hidden h-14 items-center justify-between border-b border-border bg-background px-4 md:flex">
               <SidebarTrigger className="-ml-1" />

@@ -24,6 +24,8 @@ import { PiggyBank, Plus, CalendarIcon, Target, TrendingUp, Trash2, ArrowDownToL
 import { format, differenceInDays } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 interface SavingsGoal {
   id: string;
@@ -37,16 +39,11 @@ interface SavingsGoal {
   created_at: string;
 }
 
-interface Account {
-  id: string;
-  account_number: string;
-  available_balance: number;
-}
-
 export default function SavingsGoals() {
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+  const { accounts, hasUsableAccount } = useUserAccounts(userId);
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [createOpen, setCreateOpen] = useState(false);
   const [contributeOpen, setContributeOpen] = useState(false);
@@ -70,14 +67,11 @@ export default function SavingsGoals() {
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
 
-    const [goalsRes, accountsRes] = await Promise.all([
-      supabase.from("savings_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("accounts").select("id, account_number, available_balance").eq("user_id", user.id).eq("status", "active"),
-    ]);
+    const goalsRes = await supabase.from("savings_goals").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
 
     if (goalsRes.data) setGoals(goalsRes.data);
-    if (accountsRes.data) setAccounts(accountsRes.data);
     setLoading(false);
   };
 
@@ -391,6 +385,8 @@ export default function SavingsGoals() {
                         <Button
                           variant="outline"
                           className="flex-1 border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white"
+                          disabled={!hasUsableAccount}
+                          title={!hasUsableAccount ? "Requires at least one active account" : undefined}
                           onClick={() => {
                             setSelectedGoal(goal);
                             setContributeOpen(true);
@@ -404,6 +400,8 @@ export default function SavingsGoals() {
                         <Button
                           variant="outline"
                           className="flex-1 border-[var(--bank-navy)] text-[var(--bank-navy)] hover:bg-[var(--bank-navy)] hover:text-white"
+                          disabled={!hasUsableAccount}
+                          title={!hasUsableAccount ? "Requires at least one active account" : undefined}
                           onClick={() => {
                             setSelectedGoal(goal);
                             setWithdrawOpen(true);
@@ -447,8 +445,9 @@ export default function SavingsGoals() {
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        •••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                        •••{a.account_number.slice(-4)} — ${a.computed_balance.toLocaleString()}
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -504,8 +503,9 @@ export default function SavingsGoals() {
                   </SelectTrigger>
                   <SelectContent>
                     {accounts.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        •••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                        •••{a.account_number.slice(-4)} — ${a.computed_balance.toLocaleString()}
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>

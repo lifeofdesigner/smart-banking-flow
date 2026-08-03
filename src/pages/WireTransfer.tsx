@@ -6,11 +6,16 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
 import { z } from "zod";
 import DashboardLayout from "@/components/DashboardLayout";
 import { isMissingWireTransferAccessColumnError } from "@/lib/supabaseErrors";
+import { TransactionGate } from "@/components/TransactionGate";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 const wireTransferSchema = z.object({
   beneficiaryName: z.string().min(2, "Name must be at least 2 characters"),
@@ -36,9 +41,11 @@ const WireTransfer = () => {
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [wireTransferId, setWireTransferId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [securityCodeInput, setSecurityCodeInput] = useState("");
   const [isBlocked, setIsBlocked] = useState(false);
+  const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
   const [transferData, setTransferData] = useState({
     beneficiaryName: "",
     beneficiaryAccount: "",
@@ -76,17 +83,8 @@ const WireTransfer = () => {
         return;
     }
 
-    // Get user's account
-    const { data: accountData } = await supabase
-      .from("accounts")
-      .select("id")
-      .eq("user_id", user.id)
-      .single();
+    setUserId(user.id);
 
-    if (accountData) {
-      setAccountId(accountData.id);
-    }
-    
     // Check for pending wire transfer
     const { data: pendingTransfer } = await supabase
       .from("wire_transfers")
@@ -99,6 +97,7 @@ const WireTransfer = () => {
 
     if (pendingTransfer) {
       setWireTransferId(pendingTransfer.id);
+      setAccountId(pendingTransfer.account_id);
       setTransferData({
         beneficiaryName: pendingTransfer.beneficiary_name,
         beneficiaryAccount: pendingTransfer.beneficiary_account,
@@ -137,7 +136,8 @@ const WireTransfer = () => {
       });
 
       const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user || !accountId) throw new Error("Not authenticated");
+      if (authError || !user) throw new Error("Not authenticated");
+      if (!accountId) throw new Error("Please select a source account");
 
       const { data: wireId, error } = await (supabase as unknown).rpc("initiate_wire_transfer", {
         p_user_id: user.id,
@@ -286,6 +286,7 @@ const WireTransfer = () => {
       </header>
 
       <div className="container mx-auto max-w-4xl px-0 py-4 md:px-4 md:py-8">
+      <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         {/* Progress Indicator */}
         {currentStep > 0 && (
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
@@ -331,6 +332,24 @@ const WireTransfer = () => {
             </div>
 
             <form onSubmit={handleInitiateTransfer} className="space-y-6">
+              <div className="space-y-2">
+                <Label>From Account</Label>
+                <Select value={accountId || ""} onValueChange={setAccountId}>
+                  <SelectTrigger className="h-12">
+                    <SelectValue placeholder="Select source account" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                        {a.account_type.toUpperCase()} — {a.account_number} — {a.currency}{" "}
+                        {a.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
               <div className="grid md:grid-cols-2 gap-6">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Beneficiary Name</label>
@@ -411,7 +430,7 @@ const WireTransfer = () => {
                 />
               </div>
 
-              <Button type="submit" size="lg" className="w-full h-12" disabled={loading}>
+              <Button type="submit" size="lg" className="w-full h-12" disabled={loading || !accountId}>
                 {loading ? "Processing..." : "Initiate Transfer"}
               </Button>
             </form>
@@ -462,6 +481,7 @@ const WireTransfer = () => {
             </div>
           </Card>
         )}
+      </TransactionGate>
       </div>
     </div>
     </DashboardLayout>

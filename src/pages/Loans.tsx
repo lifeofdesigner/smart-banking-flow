@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
 import { useIsMobile } from "@/hooks/use-mobile";
 import DashboardLayout from "@/components/DashboardLayout";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 interface LoanProduct {
   id: string;
@@ -62,7 +64,7 @@ export default function Loans() {
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<LoanProduct[]>([]);
   const [loans, setLoans] = useState<Loan[]>([]);
-  const [accounts, setAccounts] = useState<unknown[]>([]);
+  const { accounts, hasUsableAccount } = useUserAccounts(userId || null);
   const [selectedProduct, setSelectedProduct] = useState<string>("");
   const [amount, setAmount] = useState("");
   const [selectedAccount, setSelectedAccount] = useState<string>("");
@@ -75,14 +77,12 @@ export default function Loans() {
 
   const loadData = useCallback(async (uid: string) => {
     try {
-      const [productsRes, loansRes, accountsRes] = await Promise.all([
+      const [productsRes, loansRes] = await Promise.all([
         supabase.from("loan_products").select("*").eq("is_active", true),
         supabase.from("loans").select("*, loan_products(name)").eq("user_id", uid).order("created_at", { ascending: false }),
-        supabase.from("accounts").select("*").eq("user_id", uid).eq("status", "active"),
       ]);
       if (productsRes.data) setProducts(productsRes.data as Tables<"loan_products">[]);
       if (loansRes.data) setLoans(loansRes.data as Loan[]);
-      if (accountsRes.data) setAccounts(accountsRes.data);
     } catch (e) {
       console.error(e);
     } finally {
@@ -328,8 +328,9 @@ export default function Loans() {
                       <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
                       <SelectContent>
                         {accounts.map(a => (
-                          <SelectItem key={a.id} value={a.id}>
+                          <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
                             {a.account_type} — {a.account_number}
+                            {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                           </SelectItem>
                         ))}
                       </SelectContent>

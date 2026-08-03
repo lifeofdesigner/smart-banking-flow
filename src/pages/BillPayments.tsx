@@ -9,6 +9,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { Zap, Wifi, GraduationCap, Shield, Smartphone, Receipt, Loader2 } from "lucide-react";
+import { TransactionGate } from "@/components/TransactionGate";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 const CATEGORIES = [
   { value: "utilities", label: "Utilities", icon: Zap },
@@ -29,16 +32,10 @@ interface BillPayment {
   created_at: string;
 }
 
-interface Account {
-  id: string;
-  account_number: string;
-  account_type: string;
-  available_balance: number;
-}
-
 export default function BillPayments() {
   const { toast } = useToast();
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
   const [payments, setPayments] = useState<BillPayment[]>([]);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -53,14 +50,16 @@ export default function BillPayments() {
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
 
-    const [acctRes, billRes] = await Promise.all([
-      supabase.from("accounts").select("id, account_number, account_type, available_balance").eq("user_id", user.id).eq("status", "active"),
-      supabase.from("bill_payments").select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-    ]);
+    const { data: billData } = await supabase
+      .from("bill_payments")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false })
+      .limit(20);
 
-    if (acctRes.data) setAccounts(acctRes.data);
-    if (billRes.data) setPayments(billRes.data);
+    if (billData) setPayments(billData);
     setLoading(false);
   };
 
@@ -114,6 +113,7 @@ export default function BillPayments() {
       <div className="min-h-screen bg-[#F4F5F7] px-4 py-4 md:p-6 md:space-y-6">
         <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Bill Payments</h2>
 
+        <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         <div className="grid lg:grid-cols-3 gap-6">
           {/* Pay Form */}
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 lg:col-span-1 space-y-4">
@@ -123,8 +123,9 @@ export default function BillPayments() {
               <SelectTrigger><SelectValue placeholder="Select account" /></SelectTrigger>
               <SelectContent>
                 {accounts.map(a => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.account_type} •••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}
+                  <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                    {a.account_type} •••{a.account_number.slice(-4)} — ${a.computed_balance.toLocaleString()}
+                    {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -228,6 +229,7 @@ export default function BillPayments() {
             </Card>
           </div>
         </div>
+        </TransactionGate>
       </div>
     </DashboardLayout>
   );

@@ -11,14 +11,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Skeleton } from "@/components/ui/skeleton";
 import { Banknote, Copy, CheckCircle2, Clock, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-
-interface Account {
-  id: string;
-  account_number: string;
-  account_type: string;
-  available_balance: number;
-  currency: string;
-}
+import { TransactionGate } from "@/components/TransactionGate";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 interface Withdrawal {
   id: string;
@@ -31,7 +26,8 @@ interface Withdrawal {
 
 export default function ATMWithdrawal() {
   const { toast } = useToast();
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
+  const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
   const [selectedAccount, setSelectedAccount] = useState("");
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(true);
@@ -46,13 +42,10 @@ export default function ATMWithdrawal() {
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
+    setUserId(user.id);
 
-    const [acctRes, withdrawRes] = await Promise.all([
-      supabase.from("accounts").select("id, account_number, account_type, available_balance, currency").eq("user_id", user.id).eq("status", "active"),
-      supabase.from("atm_withdrawals" as unknown).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20),
-    ]);
+    const withdrawRes = await supabase.from("atm_withdrawals" as unknown).select("*").eq("user_id", user.id).order("created_at", { ascending: false }).limit(20);
 
-    if (acctRes.data) setAccounts(acctRes.data);
     if (withdrawRes.data) setWithdrawals(withdrawRes.data as unknown);
     setLoading(false);
   };
@@ -93,6 +86,7 @@ export default function ATMWithdrawal() {
           <p className="text-muted-foreground">Generate a code to withdraw cash at any ATM</p>
         </div>
 
+        <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="bg-white rounded-xl shadow-sm border-0">
             <CardHeader>
@@ -109,8 +103,9 @@ export default function ATMWithdrawal() {
                   <SelectTrigger><SelectValue placeholder="Choose account" /></SelectTrigger>
                   <SelectContent>
                     {accounts.map(a => (
-                      <SelectItem key={a.id} value={a.id}>
-                        {a.account_type} — ****{a.account_number.slice(-4)} (${a.available_balance.toFixed(2)})
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                        {a.account_type} — ****{a.account_number.slice(-4)} (${a.computed_balance.toFixed(2)})
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -128,7 +123,7 @@ export default function ATMWithdrawal() {
                   onChange={e => setAmount(e.target.value)}
                 />
                 {selectedAcct && (
-                  <p className="text-xs text-muted-foreground">Available: ${selectedAcct.available_balance.toFixed(2)}</p>
+                  <p className="text-xs text-muted-foreground">Available: ${selectedAcct.computed_balance.toFixed(2)}</p>
                 )}
               </div>
 
@@ -166,6 +161,7 @@ export default function ATMWithdrawal() {
             </Card>
           )}
         </div>
+        </TransactionGate>
 
         <Card className="mt-6 bg-white rounded-xl shadow-sm border-0">
           <CardHeader>

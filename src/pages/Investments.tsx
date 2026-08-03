@@ -10,6 +10,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/hooks/use-toast";
 import { TrendingUp, Loader2, Plus } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
 
 interface Investment {
   id: string;
@@ -23,12 +25,6 @@ interface Investment {
   created_at: string;
 }
 
-interface Account {
-  id: string;
-  account_number: string;
-  available_balance: number;
-}
-
 const TYPES = [
   { value: "fixed_deposit", label: "Fixed Deposit" },
   { value: "money_market", label: "Money Market" },
@@ -37,8 +33,9 @@ const TYPES = [
 
 export default function InvestmentsPage() {
   const { toast } = useToast();
+  const [userId, setUserId] = useState<string | null>(null);
+  const { accounts, hasUsableAccount } = useUserAccounts(userId);
   const [investments, setInvestments] = useState<Investment[]>([]);
-  const [accounts, setAccounts] = useState<Account[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [open, setOpen] = useState(false);
@@ -49,12 +46,9 @@ export default function InvestmentsPage() {
   const loadData = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const [invRes, acctRes] = await Promise.all([
-      supabase.from("investments").select("*").eq("user_id", user.id).order("created_at", { ascending: false }),
-      supabase.from("accounts").select("id, account_number, available_balance").eq("user_id", user.id).eq("status", "active"),
-    ]);
+    setUserId(user.id);
+    const invRes = await supabase.from("investments").select("*").eq("user_id", user.id).order("created_at", { ascending: false });
     if (invRes.data) setInvestments(invRes.data);
-    if (acctRes.data) setAccounts(acctRes.data);
     setLoading(false);
   };
 
@@ -121,7 +115,13 @@ export default function InvestmentsPage() {
           <h2 className="text-2xl font-semibold text-[#0A1628] border-l-4 border-[#C9A84C] pl-3">Investments</h2>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]"><Plus className="h-4 w-4 mr-2" />New Investment</Button>
+              <Button
+                className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]"
+                disabled={!hasUsableAccount}
+                title={!hasUsableAccount ? "Requires at least one active account" : undefined}
+              >
+                <Plus className="h-4 w-4 mr-2" />New Investment
+              </Button>
             </DialogTrigger>
             <DialogContent className="bg-white rounded-xl shadow-sm border-0">
               <DialogHeader><DialogTitle>Create Investment</DialogTitle></DialogHeader>
@@ -137,7 +137,10 @@ export default function InvestmentsPage() {
                   <SelectTrigger><SelectValue placeholder="Fund from account" /></SelectTrigger>
                   <SelectContent>
                     {accounts.map(a => (
-                      <SelectItem key={a.id} value={a.id}>•••{a.account_number.slice(-4)} — ${a.available_balance.toLocaleString()}</SelectItem>
+                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                        •••{a.account_number.slice(-4)} — ${a.computed_balance.toLocaleString()}
+                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

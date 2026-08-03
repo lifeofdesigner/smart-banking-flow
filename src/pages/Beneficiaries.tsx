@@ -44,6 +44,8 @@ import {
 import { useToast } from "@/hooks/use-toast";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useUserAccounts } from "@/hooks/useUserAccounts";
+import { AccountRestrictionBanner } from "@/components/AccountRestrictionBanner";
 
 interface Beneficiary {
   id: string;
@@ -72,6 +74,7 @@ const Beneficiaries = () => {
   const [loading, setLoading] = useState(true);
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([]);
   const [userAccountNumbers, setUserAccountNumbers] = useState<string[]>([]);
+  const { hasUsableAccount, restrictedAccounts } = useUserAccounts(userId);
 
   // Dialog state
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -329,13 +332,20 @@ const Beneficiaries = () => {
                 <p className="text-sm text-muted-foreground">Manage saved recipients</p>
               </div>
             </div>
-            <Button className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]" onClick={openAddDialog}>
+            <Button
+              className="bg-[var(--bank-gold)] text-[#0A1628] hover:bg-[#b9963d]"
+              onClick={openAddDialog}
+              disabled={!hasUsableAccount}
+              title={!hasUsableAccount ? "Adding beneficiaries requires at least one active account" : undefined}
+            >
               <Plus className="w-4 h-4 mr-2" />
               Add Beneficiary
             </Button>
           </div>
         </div>
       </header>
+
+      <AccountRestrictionBanner restrictedAccounts={restrictedAccounts} />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <Card className="bg-white rounded-xl shadow-sm border-0">
