@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ImagePicker } from "@/components/admin/ImagePicker";
+import { PageLinkPicker } from "@/components/admin/PageLinkPicker";
 
 /** Matches the icon keys DynamicHomepageSections/DynamicProducts know how to render. */
 const ICON_OPTIONS = [
@@ -665,18 +666,12 @@ export default function ContentManagement() {
               <Label>Primary Button Text</Label>
               <Input value={String(item.cta_primary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_label", e.target.value)} />
             </div>
-            <div>
-              <Label>Primary Button Link</Label>
-              <Input placeholder="/auth?tab=signup" value={String(item.cta_primary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_link", e.target.value)} />
-            </div>
+            <PageLinkPicker label="Primary Button Link" value={String(item.cta_primary_link || "")} onChange={(v) => updateHomepageItem(0, "cta_primary_link", v)} />
             <div>
               <Label>Secondary Button Text</Label>
               <Input value={String(item.cta_secondary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary_label", e.target.value)} />
             </div>
-            <div>
-              <Label>Secondary Button Link</Label>
-              <Input placeholder="/about" value={String(item.cta_secondary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_secondary_link", e.target.value)} />
-            </div>
+            <PageLinkPicker label="Secondary Button Link" value={String(item.cta_secondary_link || "")} onChange={(v) => updateHomepageItem(0, "cta_secondary_link", v)} />
             <p className="text-xs text-muted-foreground md:col-span-2">
               Use the Title field above for the main headline, Subtitle for the supporting text, and Description below for a longer paragraph if this style needs one.
             </p>
@@ -689,7 +684,7 @@ export default function ContentManagement() {
         return (
           <div className="grid gap-4 md:grid-cols-2">
             <div><Label>Button Text</Label><Input value={String(item.cta_primary_label || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_label", e.target.value)} /></div>
-            <div><Label>Button Link</Label><Input placeholder="/help" value={String(item.cta_primary_link || "")} onChange={(e) => updateHomepageItem(0, "cta_primary_link", e.target.value)} /></div>
+            <PageLinkPicker label="Button Link" value={String(item.cta_primary_link || "")} onChange={(v) => updateHomepageItem(0, "cta_primary_link", v)} />
           </div>
         );
       }
@@ -700,7 +695,7 @@ export default function ContentManagement() {
           <div className="space-y-5">
             <div className="grid gap-4 md:grid-cols-2">
               <div><Label>Button Text</Label><Input placeholder="Learn About Us" value={ctaLabel} onChange={(e) => setFixedContentField("cta_primary_label", e.target.value)} /></div>
-              <div><Label>Button Link</Label><Input placeholder="/about" value={ctaLink} onChange={(e) => setFixedContentField("cta_primary_link", e.target.value)} /></div>
+              <PageLinkPicker label="Button Link" value={ctaLink} onChange={(v) => setFixedContentField("cta_primary_link", v)} />
             </div>
             <div className="space-y-3">
               <Label>Feature Cards (optional)</Label>
@@ -768,7 +763,7 @@ export default function ContentManagement() {
             {homepageForm.section_type === "financial_tools" ? (
               <div className="grid gap-4 border-t pt-4 md:grid-cols-2">
                 <div><Label>Button Text</Label><Input placeholder="Explore Financial Tools" value={ctaLabel} onChange={(e) => setFixedContentField("cta_primary_label", e.target.value)} /></div>
-                <div><Label>Button Link</Label><Input placeholder="/help" value={ctaLink} onChange={(e) => setFixedContentField("cta_primary_link", e.target.value)} /></div>
+                <PageLinkPicker label="Button Link" value={ctaLink} onChange={(v) => setFixedContentField("cta_primary_link", v)} />
               </div>
             ) : null}
           </div>

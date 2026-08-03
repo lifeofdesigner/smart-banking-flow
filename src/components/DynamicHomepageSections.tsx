@@ -257,7 +257,7 @@ function ChecklistSection({
   const cta = readCta(parsed);
 
   return (
-    <section className="bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
+    <section id={section.section_type} className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
         <SectionHeader
           title={applySiteName(section.title || fallbackTitle, bankName)}
@@ -295,7 +295,7 @@ function StatisticsSection({ section }: { section: HomepageSection }) {
   const items = extractArray<StatItem>(parseContent(section.content), ["items"]) || [];
 
   return (
-    <section className="bg-[var(--bank-public-navy)] py-12 md:py-20">
+    <section id="statistics" className="scroll-mt-20 bg-[var(--bank-public-navy)] py-12 md:py-20">
       <div className="container mx-auto px-4">
         <h2 className="mb-8 text-center text-[18px] font-bold text-white md:mb-14 md:text-4xl">
           {applySiteName(section.title || "Banking You Can Trust", bankName)}
@@ -334,7 +334,10 @@ function SimpleCtaSection({
   const isBanner = variant === "banner";
 
   return (
-    <section className={isBanner ? "bg-[var(--bank-public-navy)] py-14 md:py-24" : "bg-background py-12 md:py-24"}>
+    <section
+      id={section.section_type}
+      className={`scroll-mt-20 ${isBanner ? "bg-[var(--bank-public-navy)] py-14 md:py-24" : "bg-background py-12 md:py-24"}`}
+    >
       <div className="container mx-auto px-4">
         <div className={`mx-auto max-w-3xl ${center ? "text-center" : ""}`}>
           <h2 className={`text-[18px] font-bold md:text-4xl ${isBanner ? "text-white" : "text-[var(--bank-public-navy)]"}`}>
@@ -502,7 +505,7 @@ function TestimonialsSection({ section }: { section: HomepageSection }) {
   const testimonials = extractArray<TestimonialItem>(parseContent(section.content), ["testimonials"]) || fallbackTestimonials;
 
   return (
-    <section className="bg-background py-12 md:py-24">
+    <section id="testimonials" className="scroll-mt-20 bg-background py-12 md:py-24">
       <div className="container mx-auto px-4">
         <SectionHeader
           title={applySiteName(section.title || "Customer Stories", bankName)}
@@ -535,7 +538,7 @@ function FaqSection({ section }: { section: HomepageSection }) {
   const faqs = extractArray<FaqItem>(parseContent(section.content), ["faqs"]) || fallbackFaqs;
 
   return (
-    <section className="bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
+    <section id="faq" className="scroll-mt-20 bg-[#f8f9fa] py-12 md:bg-secondary/30 md:py-24">
       <div className="container mx-auto px-4">
         <div className="mx-auto max-w-3xl">
           <SectionHeader
