@@ -420,8 +420,11 @@ export default function AdminUsersManagement() {
                               {user.status !== "active" && (
                                 <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "active")}>Activate</DropdownMenuItem>
                               )}
-                              {user.status !== "frozen" && (
-                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "frozen")}>Hold/Lock</DropdownMenuItem>
+                              {user.status === "active" && (
+                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "frozen")}>Hold</DropdownMenuItem>
+                              )}
+                              {user.status === "active" && (
+                                <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "frozen")}>Lock</DropdownMenuItem>
                               )}
                               {user.status !== "closed" && (
                                 <DropdownMenuItem onClick={() => handleUpdateAccountStatus(user.id, "closed")}>Close Account</DropdownMenuItem>

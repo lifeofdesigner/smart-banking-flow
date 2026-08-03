@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AlertTriangle, CheckCircle, Eye } from "lucide-react";
 import { toast } from "sonner";
+import { logAdminAction } from "@/lib/auditLog";
 
 interface FraudAlert {
   id: string;
@@ -59,15 +60,10 @@ export default function FraudAlerts() {
 
     if (error) { toast.error(error.message); return; }
 
-    // Audit log
-    await supabase.from("audit_logs").insert({
-      action: "fraud_alert.review",
-      user_id: user?.id,
-      metadata: { alert_id: alertId, new_status: status },
-    } as unknown);
-
     toast.success(`Alert marked as ${status}`);
     loadAlerts();
+
+    void logAdminAction("fraud_alert.review", user?.id, { alert_id: alertId, new_status: status });
   };
 
   const filtered = filter === "all" ? alerts : alerts.filter(a => a.status === filter);

@@ -98,7 +98,7 @@ export default function AdminAccountsTab({
                       className={`admin-premium-badge ${
                         account.status === "active"
                           ? "bg-emerald-100 text-emerald-700"
-                          : account.status === "suspended"
+                          : account.status === "frozen"
                             ? "bg-amber-100 text-amber-800"
                             : "bg-red-100 text-red-700"
                       }`}
@@ -117,7 +117,7 @@ export default function AdminAccountsTab({
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="active">Active</SelectItem>
-                          <SelectItem value="suspended">Suspended</SelectItem>
+                          <SelectItem value="frozen">Frozen</SelectItem>
                           <SelectItem value="closed">Closed</SelectItem>
                         </SelectContent>
                       </Select>

@@ -40,6 +40,7 @@ import AdminBeneficiariesTab from "@/components/admin/AdminBeneficiariesTab";
 import AdminNotificationsTab from "@/components/admin/AdminNotificationsTab";
 import { canAccessLiveChatSupport } from "@/lib/live-chat";
 import { getSessionUserId } from "@/lib/supabaseSession";
+import { logAdminAction } from "@/lib/auditLog";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
@@ -171,15 +172,10 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      // Audit log
-      await (supabase as unknown).from("audit_logs").insert({
-        action: "admin.kyc_status_change",
-        user_id: adminUserId,
-        metadata: { target_user_id: userId, new_status: status },
-      });
-
       toast.success("KYC status updated");
       fetchData();
+
+      void logAdminAction("admin.kyc_status_change", adminUserId, { target_user_id: userId, new_status: status });
     } catch (error) {
       console.error("Error updating KYC:", error);
       toast.error("Failed to update KYC status");
@@ -199,15 +195,13 @@ export default function AdminDashboard() {
 
       if (error) throw error;
 
-      // Audit log
-      await (supabase as unknown).from("audit_logs").insert({
-        action: status === "suspended" ? "admin.account_freeze" : "admin.account_status_change",
-        user_id: adminUserId,
-        metadata: { account_id: accountId, new_status: status },
-      });
-
       toast.success("Account status updated");
       fetchData();
+
+      void logAdminAction(status === "frozen" ? "admin.account_freeze" : "admin.account_status_change", adminUserId, {
+        account_id: accountId,
+        new_status: status,
+      });
     } catch (error) {
       console.error("Error updating account:", error);
       toast.error("Failed to update account status");
