@@ -37,6 +37,7 @@ const WireTransfer = () => {
   const [wireTransferId, setWireTransferId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
   const [securityCodeInput, setSecurityCodeInput] = useState("");
+  const [isBlocked, setIsBlocked] = useState(false);
   const [transferData, setTransferData] = useState({
     beneficiaryName: "",
     beneficiaryAccount: "",
@@ -57,6 +58,13 @@ const WireTransfer = () => {
     if (error || !user) {
       navigate("/auth");
       return;
+    }
+
+    const { data: profile } = await supabase.from("profiles").select("can_initiate_wire_transfer").eq("id", user.id).single();
+
+    if (profile && !profile.can_initiate_wire_transfer) {
+        setIsBlocked(true);
+        return;
     }
 
     // Get user's account
@@ -239,6 +247,17 @@ const WireTransfer = () => {
       setLoading(false);
     }
   };
+
+  if (isBlocked) {
+    return (
+      <DashboardLayout>
+        <div className="p-8 text-center">
+          <h1 className="text-2xl font-bold">Wire Transfers Blocked</h1>
+          <p>Your ability to initiate wire transfers has been suspended. Please contact support for assistance.</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
 
   return (
     <DashboardLayout>

@@ -109,6 +109,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [userRoles, setUserRoles] = useState<string[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [accountFrozen, setAccountFrozen] = useState(false);
   const [liveChatNotificationCount, setLiveChatNotificationCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const syncedUserIdRef = useRef<string | null>(null);
@@ -165,6 +166,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       setCurrentUserId(null);
       setUserRoles([]);
       setIsAdmin(false);
+      setAccountFrozen(false);
       setLiveChatNotificationCount(0);
       setLoading(false);
     };
@@ -189,12 +191,18 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         return;
       }
 
-      const [{ data: profileData }, { data: roles }] = await Promise.all([
+      const [{ data: profileData }, { data: roles }, { data: accountsData }] = await Promise.all([
         supabase.from("profiles").select("full_name, email, avatar_url").eq("id", user.id).single(),
         supabase.from("user_roles").select("role").eq("user_id", user.id),
+        supabase.from("accounts").select("status").eq("user_id", user.id),
       ]);
 
       if (!isMounted) return;
+
+      const isFrozen = accountsData?.some(acc => acc.status === 'frozen');
+      if (isFrozen) {
+        setAccountFrozen(true);
+      }
 
       syncedUserIdRef.current = user.id;
       const resolvedRoles = (roles ?? []).map((roleRow) => roleRow.role);
@@ -362,6 +370,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   return (
     <SidebarProvider>
+    {accountFrozen && (
+        <div className="bg-red-500 text-white text-center p-2">
+          Your account is on hold. Please contact support for assistance.
+        </div>
+      )}
       <div className="min-h-screen flex w-full overflow-x-hidden bg-secondary/20">
         <Sidebar collapsible="icon" className="hidden md:flex">
           <SidebarHeader className="border-b border-border p-4">

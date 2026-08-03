@@ -24,6 +24,7 @@ interface ManagedUser {
   roles: string[];
   created_at: string | null;
   status: string;
+  can_initiate_wire_transfer: boolean;
 }
 
 export default function AdminUsersManagement() {
@@ -45,6 +46,36 @@ export default function AdminUsersManagement() {
     password: "",
     role: "user" as Role,
   });
+
+  const handleToggleAccountStatus = async (user: ManagedUser) => {
+    const newStatus = user.status === 'frozen' ? 'active' : 'frozen';
+    try {
+      const { error } = await supabase.rpc('admin_update_user_account_status', {
+        p_user_id: user.id,
+        p_status: newStatus,
+      });
+      if (error) throw error;
+      toast.success(`User account has been ${newStatus}.`);
+      await fetchUsers(); // Refresh the user list
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
+  const handleToggleWireTransfer = async (user: ManagedUser) => {
+    const canTransfer = !user.can_initiate_wire_transfer;
+    try {
+      const { error } = await supabase.rpc('admin_toggle_wire_transfer_access', {
+        p_user_id: user.id,
+        p_can_transfer: canTransfer,
+      });
+      if (error) throw error;
+      toast.success(`Wire transfers have been ${canTransfer ? 'unblocked' : 'blocked'} for the user.`);
+      await fetchUsers(); // Refresh the user list
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
 
   const extractFunctionPayloadError = (value: unknown) => {
     if (!value || typeof value !== "object") return null;
@@ -149,6 +180,9 @@ export default function AdminUsersManagement() {
   const fetchUsers = async (overrideSearch?: string) => {
     setLoadingUsers(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
       const effectiveSearch = (overrideSearch ?? search).trim();
       const { data, error } = await supabase.functions.invoke("admin-user-management", {
         body: {
@@ -156,6 +190,9 @@ export default function AdminUsersManagement() {
           search: effectiveSearch,
           role: roleFilter,
         },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -202,6 +239,9 @@ export default function AdminUsersManagement() {
 
     setSubmitting(true);
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
       const { data, error } = await supabase.functions.invoke("admin-user-management", {
         body: {
           action: "create_user",
@@ -210,6 +250,9 @@ export default function AdminUsersManagement() {
           password: form.password,
           role: form.role,
         },
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`
+        }
       });
 
       if (error) throw error;
@@ -311,18 +354,19 @@ export default function AdminUsersManagement() {
                     <TableHead>Roles</TableHead>
                     <TableHead>Created Date</TableHead>
                     <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {loadingUsers ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                         Loading users...
                       </TableCell>
                     </TableRow>
                   ) : users.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="py-8 text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="py-8 text-center text-muted-foreground">
                         {emptyMessage}
                       </TableCell>
                     </TableRow>
@@ -347,6 +391,24 @@ export default function AdminUsersManagement() {
                         <TableCell>{user.created_at ? new Date(user.created_at).toLocaleString() : "-"}</TableCell>
                         <TableCell>
                           <Badge variant={user.status === "active" ? "default" : "secondary"}>{user.status}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleAccountStatus(user)}
+                            >
+                              {user.status === 'frozen' ? 'Un-hold Account' : 'Hold Account'}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleToggleWireTransfer(user)}
+                            >
+                              {user.can_initiate_wire_transfer ? 'Block Wire' : 'Un-block Wire'}
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))
