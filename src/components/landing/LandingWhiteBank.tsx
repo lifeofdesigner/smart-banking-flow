@@ -40,6 +40,45 @@ const readContentSlides = (content: unknown): HeroSlide[] => {
     .filter((slide) => slide.image);
 };
 
+type CachedHero = {
+  title: string;
+  subtitle: string;
+  slides: HeroSlide[];
+  ctaPrimary: string;
+  ctaPrimaryLink: string;
+  ctaSecondary: string;
+  ctaSecondaryLink: string;
+};
+
+const HERO_CACHE_KEY = "cached-hero-content";
+
+// Same first-paint problem as site_settings: the hero always starts from
+// hardcoded English copy + no image while the DB fetch is in flight, so on
+// every navigation the real headline/CTA/background image visibly pops in
+// a moment later. Caching the last-fetched hero to localStorage lets the
+// very first render already show the real content; the network fetch
+// still always runs and silently corrects it if anything changed.
+const readHeroCache = (): CachedHero | null => {
+  if (typeof window === "undefined") return null;
+
+  try {
+    const raw = window.localStorage.getItem(HERO_CACHE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
+const writeHeroCache = (hero: CachedHero) => {
+  if (typeof window === "undefined") return;
+
+  try {
+    window.localStorage.setItem(HERO_CACHE_KEY, JSON.stringify(hero));
+  } catch {
+    // First-paint optimization only -- ignore storage failures.
+  }
+};
+
 const SLIDE_INTERVAL_MS = 6000;
 
 /** Crossfades between one or more background images. A single slide (or
@@ -158,15 +197,17 @@ function LoginPanel() {
 
 export default function LandingWhiteBank() {
   const siteSettings = useSiteSettings();
-  const [title, setTitle] = useState("Your Partner in Financial Growth");
+  const [heroCache] = useState(() => readHeroCache());
+  const [title, setTitle] = useState(heroCache?.title || "Your Partner in Financial Growth");
   const [subtitle, setSubtitle] = useState(
-    "Empowering individuals and businesses with accessible microfinance solutions — from everyday banking to loans, savings, and investing.",
+    heroCache?.subtitle
+      || "Empowering individuals and businesses with accessible microfinance solutions — from everyday banking to loans, savings, and investing.",
   );
-  const [slides, setSlides] = useState<HeroSlide[]>([]);
-  const [ctaPrimary, setCtaPrimary] = useState("Open an Account");
-  const [ctaPrimaryLink, setCtaPrimaryLink] = useState("/auth?tab=signup");
-  const [ctaSecondary, setCtaSecondary] = useState("Explore Banking Products");
-  const [ctaSecondaryLink, setCtaSecondaryLink] = useState("/#products");
+  const [slides, setSlides] = useState<HeroSlide[]>(heroCache?.slides || []);
+  const [ctaPrimary, setCtaPrimary] = useState(heroCache?.ctaPrimary || "Open an Account");
+  const [ctaPrimaryLink, setCtaPrimaryLink] = useState(heroCache?.ctaPrimaryLink || "/auth?tab=signup");
+  const [ctaSecondary, setCtaSecondary] = useState(heroCache?.ctaSecondary || "Explore Banking Products");
+  const [ctaSecondaryLink, setCtaSecondaryLink] = useState(heroCache?.ctaSecondaryLink || "/#products");
 
   useEffect(() => {
     const loadHero = async () => {
@@ -201,26 +242,49 @@ export default function LandingWhiteBank() {
       const secondaryLabel = readContentField(data?.content, "cta_secondary_label") || readContentField(data?.content, "cta_secondary");
       const secondaryLink = readContentField(data?.content, "cta_secondary_link");
 
-      if (headline || data?.title) setTitle(headline || data?.title || "");
-      if (subheadline || data?.subtitle) setSubtitle(subheadline || data?.subtitle || "");
+      const resolvedTitle = headline || data?.title || title;
+      const resolvedSubtitle = subheadline || data?.subtitle || subtitle;
 
       // content.slides is the current field for one-or-more fade slides;
       // the row's own image/image_alt columns are kept as a fallback for
       // any hero seeded before multi-image support existed.
       const contentSlides = readContentSlides(data?.content);
-      if (contentSlides.length > 0) {
-        setSlides(contentSlides);
-      } else if (data?.image) {
-        setSlides([{ image: data.image, alt: data.image_alt || "" }]);
-      }
+      const resolvedSlides = contentSlides.length > 0
+        ? contentSlides
+        : data?.image
+          ? [{ image: data.image, alt: data.image_alt || "" }]
+          : slides;
 
-      if (primaryLabel) setCtaPrimary(primaryLabel);
-      if (primaryLink) setCtaPrimaryLink(primaryLink);
-      if (secondaryLabel) setCtaSecondary(secondaryLabel);
-      if (secondaryLink) setCtaSecondaryLink(secondaryLink);
+      const resolvedCtaPrimary = primaryLabel || ctaPrimary;
+      const resolvedCtaPrimaryLink = primaryLink || ctaPrimaryLink;
+      const resolvedCtaSecondary = secondaryLabel || ctaSecondary;
+      const resolvedCtaSecondaryLink = secondaryLink || ctaSecondaryLink;
+
+      setTitle(resolvedTitle);
+      setSubtitle(resolvedSubtitle);
+      setSlides(resolvedSlides);
+      setCtaPrimary(resolvedCtaPrimary);
+      setCtaPrimaryLink(resolvedCtaPrimaryLink);
+      setCtaSecondary(resolvedCtaSecondary);
+      setCtaSecondaryLink(resolvedCtaSecondaryLink);
+
+      writeHeroCache({
+        title: resolvedTitle,
+        subtitle: resolvedSubtitle,
+        slides: resolvedSlides,
+        ctaPrimary: resolvedCtaPrimary,
+        ctaPrimaryLink: resolvedCtaPrimaryLink,
+        ctaSecondary: resolvedCtaSecondary,
+        ctaSecondaryLink: resolvedCtaSecondaryLink,
+      });
     };
 
     loadHero();
+    // Mount-only fetch; title/subtitle/slides/cta* are read inside only as
+    // "the fetch returned nothing for this field, keep what's already
+    // there" fallbacks, not reactive inputs -- listing them here would
+    // re-run this on every setState call it makes, looping forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const badgeText = siteSettings.hero_badge_text || "Trusted by our customers";
