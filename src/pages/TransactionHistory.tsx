@@ -207,15 +207,12 @@ export default function TransactionHistory() {
     }
   };
 
-  const getTypePill = (type: string) => {
-    if (type.includes("deposit") || type === "loan_disbursement") {
-      return "bg-emerald-100 text-emerald-700 border border-emerald-200";
-    }
-    if (type.includes("fee")) {
-      return "bg-amber-100 text-amber-700 border border-amber-200";
-    }
-    return "bg-slate-100 text-slate-700 border border-slate-200";
-  };
+  const isCreditTransaction = (type: string) => type.includes("deposit") || type === "loan_disbursement";
+
+  const getTypePill = (type: string) =>
+    isCreditTransaction(type)
+      ? "bg-emerald-100 text-emerald-700 border border-emerald-200"
+      : "bg-red-100 text-red-700 border border-red-200";
 
   const hasFilters = searchTerm || selectedType !== "all" || selectedAccount !== "all" || 
     startDate || endDate || minAmount || maxAmount;
@@ -386,7 +383,7 @@ export default function TransactionHistory() {
               <>
                 <div className="space-y-3 p-3 md:hidden">
                   {displayedTransactions.map((tx) => {
-                    const credit = tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement";
+                    const credit = isCreditTransaction(tx.transaction_type);
                     return (
                       <div key={tx.id} className="rounded-2xl bg-white p-3 shadow-sm">
                         <div className="flex min-h-[56px] items-center justify-between gap-3">
@@ -431,8 +428,8 @@ export default function TransactionHistory() {
                           {format(new Date(tx.created_at), "MMM dd, yyyy HH:mm")}
                         </TableCell>
                         <TableCell className="whitespace-nowrap">
-                          <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium capitalize ${getTypePill(tx.transaction_type)}`}>
-                            {tx.transaction_type.replace(/_/g, " ")}
+                          <Badge className={`rounded-full px-2.5 py-0.5 text-[11px] font-medium ${getTypePill(tx.transaction_type)}`}>
+                            {isCreditTransaction(tx.transaction_type) ? "Credit" : "Debit"}
                           </Badge>
                         </TableCell>
                         <TableCell className="max-w-[200px] truncate">
@@ -442,11 +439,9 @@ export default function TransactionHistory() {
                           {tx.reference_number || "-"}
                         </TableCell>
                         <TableCell className={cn("text-right font-semibold whitespace-nowrap",
-                          tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement"
-                            ? "text-green-600"
-                            : "text-red-600"
+                          isCreditTransaction(tx.transaction_type) ? "text-green-600" : "text-red-600"
                         )}>
-                          {tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement" ? "+" : "-"}
+                          {isCreditTransaction(tx.transaction_type) ? "+" : "-"}
                           ${tx.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}
                         </TableCell>
                         <TableCell>
