@@ -32,6 +32,8 @@ interface Transaction {
   reference_number: string;
 }
 
+const isCreditTransaction = (type: string) => type.includes("deposit") || type === "loan_disbursement";
+
 interface Profile {
   full_name: string;
   email: string;
@@ -112,10 +114,10 @@ export default function Statements() {
     const account = accounts.find(a => a.id === selectedAccount);
     const headers = ["Date", "Type", "Description", "Reference", "Debit", "Credit", "Status"];
     const rows = transactions.map(t => {
-      const isCredit = t.transaction_type.includes("deposit") || t.transaction_type === "loan_disbursement";
+      const isCredit = isCreditTransaction(t.transaction_type);
       return [
         format(new Date(t.created_at), "yyyy-MM-dd HH:mm"),
-        t.transaction_type,
+        isCredit ? "Credit" : "Debit",
         t.description || "",
         t.reference_number || "",
         isCredit ? "" : t.amount.toString(),
@@ -145,11 +147,11 @@ export default function Statements() {
 
   // Calculate totals
   const totalDebit = transactions
-    .filter(t => !t.transaction_type.includes("deposit") && t.transaction_type !== "loan_disbursement")
+    .filter(t => !isCreditTransaction(t.transaction_type))
     .reduce((sum, t) => sum + t.amount, 0);
 
   const totalCredit = transactions
-    .filter(t => t.transaction_type.includes("deposit") || t.transaction_type === "loan_disbursement")
+    .filter(t => isCreditTransaction(t.transaction_type))
     .reduce((sum, t) => sum + t.amount, 0);
 
   return (
@@ -313,14 +315,14 @@ export default function Statements() {
                       ) : (
                         <>
                           {transactions.map((tx) => {
-                            const isCredit = tx.transaction_type.includes("deposit") || tx.transaction_type === "loan_disbursement";
+                            const isCredit = isCreditTransaction(tx.transaction_type);
                             return (
                               <TableRow key={tx.id}>
                                 <TableCell className="whitespace-nowrap">
                                   {format(new Date(tx.created_at), "MMM dd, yyyy")}
                                 </TableCell>
                                 <TableCell>
-                                  <p className="capitalize">{tx.transaction_type.replace(/_/g, " ")}</p>
+                                  <p className={isCredit ? "text-emerald-700" : "text-red-700"}>{isCredit ? "Credit" : "Debit"}</p>
                                   {tx.description && <p className="text-xs text-muted-foreground">{tx.description}</p>}
                                 </TableCell>
                                 <TableCell className="font-mono text-xs">{tx.reference_number || "-"}</TableCell>
