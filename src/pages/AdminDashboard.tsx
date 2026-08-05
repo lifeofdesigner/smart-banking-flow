@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -60,6 +60,50 @@ type WireTransferRow = {
 export default function AdminDashboard() {
   const siteSettings = useSiteSettings();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const adminTabs = useMemo(
+    () => [
+      "users",
+      "accounts",
+      "wires",
+      "transactions",
+      "ledger",
+      "beneficiaries",
+      "limits",
+      "loans",
+      "cards",
+      "investments",
+      "savings",
+      "bills",
+      "atm",
+      "scheduled",
+      "cashback",
+      "fraud",
+      "referrals",
+      "notifications",
+      "kyc",
+      "fees",
+      "audit",
+      "content",
+      "site-settings",
+      "currency",
+      "support",
+      "reconciliation",
+      "reports",
+      "liquidity",
+      "health",
+      "reversal",
+      "stresstest",
+    ],
+    [],
+  );
+
+  const getInitialTab = () => {
+    const requestedTab = searchParams.get("tab");
+    return requestedTab && adminTabs.includes(requestedTab) ? requestedTab : "users";
+  };
+
+  const [activeTab, setActiveTab] = useState<string>(getInitialTab);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
   const [canManageUsers, setCanManageUsers] = useState(false);
@@ -299,15 +343,16 @@ export default function AdminDashboard() {
         suspended: `Your wire transfer has been suspended.${reason ? ` Reason: ${reason}` : ""}`,
         verification_pending: "Your wire transfer has been resumed and can continue.",
         deleted: `Your wire transfer has been deleted.${reason ? ` Reason: ${reason}` : ""}`,
+        resumed: "Your wire transfer has been resumed and can continue.",
       };
 
       const notificationMessage = notificationMessages[actionLabel as keyof typeof notificationMessages];
       if (notificationMessage) {
-        const { error: notifError } = await supabase.from("notifications").insert({
-          user_id: userId,
-          type: "info",
-          title: "Wire Transfer Update",
-          message: notificationMessage,
+        const { error: notifError } = await supabase.rpc("create_notification", {
+          p_user_id: userId,
+          p_type: "info",
+          p_title: "Wire Transfer Update",
+          p_message: notificationMessage,
         });
         if (notifError) throw notifError;
       }
@@ -323,6 +368,21 @@ export default function AdminDashboard() {
 
   const handleViewCodes = (_wireTransferId: string) => {
     // handled in AdminWiresTab dialog
+  };
+
+  useEffect(() => {
+    const requestedTab = searchParams.get("tab");
+    if (requestedTab && requestedTab !== activeTab && adminTabs.includes(requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [searchParams, activeTab, adminTabs]);
+
+  const handleTabChange = (value: string) => {
+    if (!adminTabs.includes(value)) return;
+    setActiveTab(value);
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set("tab", value);
+    setSearchParams(nextParams, { replace: true });
   };
 
   if (loading) {
@@ -393,7 +453,7 @@ export default function AdminDashboard() {
           transactionsCount={transactions.length}
         />
 
-        <Tabs defaultValue="users" className="space-y-4">
+        <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
           <TabsList className="h-auto w-full justify-start flex-wrap gap-x-1 gap-y-2 rounded-none border-b-2 border-[var(--bank-navy)]/20 bg-[var(--bank-white)] px-2 py-2 shadow-sm">
             <TabsTrigger value="users" className="rounded-none border-b-[3px] border-transparent bg-transparent font-normal text-[var(--bank-muted)] data-[state=active]:border-b-[3px] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Users</TabsTrigger>
             <TabsTrigger value="accounts" className="rounded-none border-b-[3px] border-transparent bg-transparent font-normal text-[var(--bank-muted)] data-[state=active]:border-b-[3px] data-[state=active]:border-[var(--bank-gold)] data-[state=active]:bg-transparent data-[state=active]:font-semibold data-[state=active]:text-[var(--bank-navy)] shadow-none hover:text-[var(--bank-navy)]">Accounts</TabsTrigger>

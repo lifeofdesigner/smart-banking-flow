@@ -333,8 +333,13 @@ const WireTransfer = () => {
     setLoading(true);
 
     try {
-      const orderedSteps = normalizeVerificationSteps(verificationSteps);
-      const currentStageCode = orderedSteps[currentStep - 1];
+      const visibleSteps = visibleVerificationSteps(verificationSteps);
+      const currentStepIndex = visibleSteps.findIndex((step) => step.display_order === currentStep);
+      const currentStageCode =
+        currentStepIndex >= 0
+          ? visibleSteps[currentStepIndex]
+          : visibleSteps.find((step) => (step.display_order ?? 0) >= currentStep) || null;
+
       if (!currentStageCode) {
         throw new Error("Verification workflow is not configured.");
       }
@@ -360,8 +365,13 @@ const WireTransfer = () => {
         return;
       }
 
-      // Check if this is the last stage
-      if (currentStep === orderedSteps.length) {
+      const visibleStepIndex =
+        currentStepIndex >= 0
+          ? currentStepIndex
+          : visibleSteps.findIndex((step) => (step.display_order ?? 0) >= currentStep);
+      const isLastVisibleStep = visibleStepIndex === visibleSteps.length - 1;
+
+      if (isLastVisibleStep) {
         toast({
           title: "Transfer completed!",
           description: "Your wire transfer has been successfully processed.",
@@ -370,7 +380,8 @@ const WireTransfer = () => {
         await loadPendingWireTransfers(userId!);
         setTimeout(() => navigate("/dashboard"), 2000);
       } else {
-        const nextStage = currentStep + 1;
+        const nextVisibleStep = visibleSteps[visibleStepIndex + 1];
+        const nextStage = nextVisibleStep?.display_order || currentStep + 1;
         setCurrentStep(nextStage);
         setSecurityCodeInput("");
 
@@ -380,7 +391,7 @@ const WireTransfer = () => {
 
         toast({
           title: "Code verified",
-          description: `Please enter the ${orderedSteps[nextStage - 1].title}.`,
+          description: `Please enter the ${nextVisibleStep?.title || currentStageCode.title}.`,
         });
       }
     } catch (error: unknown) {
@@ -394,14 +405,22 @@ const WireTransfer = () => {
     }
   };
 
-  const orderedVerificationSteps = visibleVerificationSteps(verificationSteps);
-  const currentVerificationStep = orderedVerificationSteps[currentStep - 1] || null;
+  const activeVerificationSteps = normalizeVerificationSteps(verificationSteps);
+  const visibleVerificationStepsOrdered = visibleVerificationSteps(verificationSteps);
+  const currentVisibleStep =
+    visibleVerificationStepsOrdered.find((step) => step.display_order === currentStep) ||
+    visibleVerificationStepsOrdered.find((step) => (step.display_order ?? 0) >= currentStep) ||
+    null;
 
   const getWireTransferReference = (transferId: string) => `WT-${transferId.slice(0, 8).toUpperCase()}`;
 
   const getVerificationStepTitle = (stage: number | null) => {
     if (!stage || stage <= 0) return "Not started";
-    return orderedVerificationSteps[stage - 1]?.title || `Step ${stage}`;
+    return (
+      activeVerificationSteps.find((step) => step.display_order === stage)?.title ||
+      visibleVerificationStepsOrdered.find((step) => (step.display_order ?? 0) >= stage)?.title ||
+      `Step ${stage}`
+    );
   };
 
   const getTransferStatusLabel = (status: string) => {
@@ -509,14 +528,14 @@ const WireTransfer = () => {
 
       <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         {/* Progress Indicator */}
-        {currentStep > 0 && orderedVerificationSteps.length > 0 && (
+        {currentStep > 0 && visibleVerificationStepsOrdered.length > 0 && (
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
             <h3 className="font-bold mb-4">Security Verification Progress</h3>
             <div className="space-y-3">
-              {orderedVerificationSteps.map((stage, index) => {
+              {visibleVerificationStepsOrdered.map((stage, index) => {
                 const stageIndex = index + 1;
-                const isCompleted = stageIndex < currentStep;
-                const isActive = stageIndex === currentStep;
+                const isCompleted = (stage.display_order ?? 0) < currentStep;
+                const isActive = currentVisibleStep?.display_order === stage.display_order;
                 return (
                   <div key={stage.id} className="flex items-center space-x-3">
                     {isCompleted ? (
@@ -663,13 +682,12 @@ const WireTransfer = () => {
 
           {currentStep > 0 && (
             <div className="space-y-4">
-              {orderedVerificationSteps.length === 0 ? (
+              {visibleVerificationStepsOrdered.length === 0 ? (
                 <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
               ) : (
-                orderedVerificationSteps.map((stage, index) => {
-                  const stageIndex = index + 1;
-                  const isCompleted = stageIndex < currentStep;
-                  const isActive = stageIndex === currentStep;
+                visibleVerificationStepsOrdered.map((stage) => {
+                  const isCompleted = (stage.display_order ?? 0) < currentStep;
+                  const isActive = currentVisibleStep?.display_order === stage.display_order;
                   const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
 
                   if (!showAllVerificationSteps && !isActive) {

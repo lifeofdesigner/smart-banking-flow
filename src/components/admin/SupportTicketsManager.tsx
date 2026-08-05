@@ -53,13 +53,17 @@ export default function SupportTicketsManager() {
     if (error) toast.error(error.message);
     else {
       // Send notification to user
-      await supabase.from("notifications").insert({
-        user_id: replyTicket.user_id,
-        type: "info",
-        title: "Support Reply",
-        message: `Your ticket "${replyTicket.subject}" has been responded to.`,
+      const { error: notifError } = await supabase.rpc("create_notification", {
+        p_user_id: replyTicket.user_id,
+        p_type: "info",
+        p_title: "Support Reply",
+        p_message: `Your ticket "${replyTicket.subject}" has been responded to.`,
       });
-      toast.success("Reply sent");
+      if (notifError) {
+        toast.error(notifError.message);
+      } else {
+        toast.success("Reply sent");
+      }
       setReplyTicket(null);
       setReply("");
       loadTickets();
