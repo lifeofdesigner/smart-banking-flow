@@ -44,6 +44,19 @@ import { logAdminAction } from "@/lib/auditLog";
 import { toast } from "sonner";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
 
+type WireTransferRow = {
+  id: string;
+  user_id: string;
+  beneficiary_name: string;
+  beneficiary_country: string;
+  amount: number;
+  currency?: string | null;
+  purpose?: string | null;
+  status: string;
+  current_stage?: number | null;
+  profiles?: { full_name?: string; email?: string } | null;
+};
+
 export default function AdminDashboard() {
   const siteSettings = useSiteSettings();
   const navigate = useNavigate();
@@ -54,7 +67,7 @@ export default function AdminDashboard() {
   const [adminId, setAdminId] = useState("");
   const [users, setUsers] = useState<unknown[]>([]);
   const [accounts, setAccounts] = useState<unknown[]>([]);
-  const [wireTransfers, setWireTransfers] = useState<unknown[]>([]);
+  const [wireTransfers, setWireTransfers] = useState<WireTransferRow[]>([]);
   const [transactions, setTransactions] = useState<unknown[]>([]);
   const [allBeneficiaries, setAllBeneficiaries] = useState<unknown[]>([]);
   const [allNotifications, setAllNotifications] = useState<unknown[]>([]);
@@ -129,10 +142,10 @@ export default function AdminDashboard() {
         setAccounts(withBalances);
       }
       if (wiresRes.data) {
-        const enrichedWires = wiresRes.data.map((wire: unknown) => ({
+        const enrichedWires = wiresRes.data.map((wire: any) => ({
           ...wire,
           profiles: wire.profiles || (wire.user_id ? usersById.get(wire.user_id) : null),
-        }));
+        })) as WireTransferRow[];
         setWireTransfers(enrichedWires);
       }
       if (txRes.data) setTransactions(txRes.data);
@@ -208,19 +221,103 @@ export default function AdminDashboard() {
     }
   };
 
-  const approveWireTransfer = async (transferId: string) => {
-    try {
-      const { error } = await supabase
-        .from("wire_transfers")
-        .update({ status: "completed" })
-        .eq("id", transferId);
+  const updateWireTransferStatus = async (transferId: string, action: string, reason?: string) => {
+    const actionToStatusMap: Record<string, string> = {
+      approve: "completed",
+      reject: "rejected",
+      cancel: "cancelled",
+      hold: "held",
+      suspend: "suspended",
+      resume: "verification_pending",
+    };
 
-      if (error) throw error;
-      toast.success("Wire transfer approved");
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const adminUserId = getSessionUserId(session);
+
+      const { data: wireData, error: wireError } = await supabase
+        .from("wire_transfers")
+        .select("user_id, current_stage")
+        .eq("id", transferId)
+        .single();
+
+      if (wireError) throw wireError;
+      const userId = wireData?.user_id;
+      if (!userId) {
+        throw new Error("Wire transfer user not found");
+      }
+
+      let status = actionToStatusMap[action];
+      let dbError = null;
+
+      if (action === "delete") {
+        const { error } = await supabase.from("wire_transfers").delete().eq("id", transferId);
+        dbError = error;
+      } else {
+        const updateData: Record<string, any> = { status };
+        if (action === "resume") {
+          updateData.current_stage = wireData?.current_stage || 1;
+        }
+        const { error } = await supabase.from("wire_transfers").update(updateData).eq("id", transferId);
+        dbError = error;
+      }
+
+      if (dbError) throw dbError;
+
+      await logAdminAction(
+        action === "delete" ? "admin.wire_transfer_deleted" : "admin.wire_transfer_status_change",
+        adminUserId,
+        {
+          wire_transfer_id: transferId,
+          new_status: action === "delete" ? "deleted" : status,
+          reason: reason || null,
+        }
+      );
+
+      const actionLabel =
+        action === "approve"
+          ? "approved"
+          : action === "reject"
+          ? "rejected"
+          : action === "cancel"
+          ? "cancelled"
+          : action === "hold"
+          ? "held"
+          : action === "suspend"
+          ? "suspended"
+          : action === "resume"
+          ? "resumed"
+          : action === "delete"
+          ? "deleted"
+          : action;
+
+      const notificationMessages: Record<string, string> = {
+        completed: "Your wire transfer has been approved and completed.",
+        cancelled: `Your wire transfer has been cancelled.${reason ? ` Reason: ${reason}` : ""}`,
+        rejected: `Your wire transfer has been rejected.${reason ? ` Reason: ${reason}` : ""}`,
+        held: `Your wire transfer has been placed on hold.${reason ? ` Reason: ${reason}` : ""}`,
+        suspended: `Your wire transfer has been suspended.${reason ? ` Reason: ${reason}` : ""}`,
+        verification_pending: "Your wire transfer has been resumed and can continue.",
+        deleted: `Your wire transfer has been deleted.${reason ? ` Reason: ${reason}` : ""}`,
+      };
+
+      const notificationMessage = notificationMessages[actionLabel as keyof typeof notificationMessages];
+      if (notificationMessage) {
+        const { error: notifError } = await supabase.from("notifications").insert({
+          user_id: userId,
+          type: "info",
+          title: "Wire Transfer Update",
+          message: notificationMessage,
+        });
+        if (notifError) throw notifError;
+      }
+
+      toast.success(`Wire transfer ${actionLabel}.`);
       fetchData();
     } catch (error) {
-      console.error("Error approving transfer:", error);
-      toast.error("Failed to approve transfer");
+      console.error("Error updating wire transfer:", error);
+      toast.error("Failed to update wire transfer status");
+      throw error;
     }
   };
 
@@ -347,7 +444,7 @@ export default function AdminDashboard() {
           <TabsContent value="wires">
             <AdminWiresTab
               wireTransfers={wireTransfers}
-              approveWireTransfer={approveWireTransfer}
+              onWireTransferAction={updateWireTransferStatus}
               onViewCodes={handleViewCodes}
             />
           </TabsContent>

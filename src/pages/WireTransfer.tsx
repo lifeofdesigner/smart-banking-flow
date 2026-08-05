@@ -35,6 +35,48 @@ const wireTransferSchema = z.object({
   purpose: z.string().optional(),
 });
 
+type WireTransferRow = {
+  id: string;
+  user_id: string;
+  account_id: string;
+  beneficiary_name: string;
+  beneficiary_account: string;
+  beneficiary_bank: string;
+  beneficiary_country: string;
+  swift_code: string | null;
+  amount: number;
+  currency: string | null;
+  purpose: string | null;
+  status: string;
+  current_stage: number | null;
+  transaction_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+};
+
+const INITIAL_TRANSFER_DATA = {
+  beneficiaryName: "",
+  beneficiaryAccount: "",
+  beneficiaryBank: "",
+  beneficiaryCountry: "",
+  swiftCode: "",
+  amount: "",
+  purpose: "",
+};
+
+const PENDING_WIRE_TRANSFER_STATUSES = [
+  "pending",
+  "verification_pending",
+  "awaiting_cot",
+  "awaiting_imf",
+  "awaiting_tax",
+  "awaiting_levy",
+  "awaiting_fin",
+  "processing",
+  "held",
+  "suspended",
+];
+
 const WireTransfer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -49,24 +91,81 @@ const WireTransfer = () => {
   const [accountId, setAccountId] = useState<string | null>(null);
   const [securityCodeInput, setSecurityCodeInput] = useState("");
   const [isBlocked, setIsBlocked] = useState(false);
+  const [pendingTransfers, setPendingTransfers] = useState<WireTransferRow[]>([]);
+  const [selectedTransfer, setSelectedTransfer] = useState<WireTransferRow | null>(null);
   const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
-  const [transferData, setTransferData] = useState({
-    beneficiaryName: "",
-    beneficiaryAccount: "",
-    beneficiaryBank: "",
-    beneficiaryCountry: "",
-    swiftCode: "",
-    amount: "",
-    purpose: "",
-  });
+  const [transferData, setTransferData] = useState({ ...INITIAL_TRANSFER_DATA });
 
   useEffect(() => {
-    loadInitialData();
+    void loadInitialData();
   }, []);
 
   useEffect(() => {
     void loadVerificationSteps();
   }, []);
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const channel = supabase
+      .channel(`wire-transfers-${userId}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "wire_transfers", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const created = payload.new as WireTransferRow;
+          if (!created) return;
+
+          const isPending = PENDING_WIRE_TRANSFER_STATUSES.includes(created.status);
+          if (isPending) {
+            setPendingTransfers((existing) => [created, ...existing.filter((transfer) => transfer.id !== created.id)]);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "wire_transfers", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const updated = payload.new as WireTransferRow;
+          if (!updated) return;
+
+          setPendingTransfers((existing) => {
+            const isPending = PENDING_WIRE_TRANSFER_STATUSES.includes(updated.status);
+            const found = existing.find((transfer) => transfer.id === updated.id);
+            if (isPending) {
+              if (found) {
+                return existing.map((transfer) => (transfer.id === updated.id ? updated : transfer));
+              }
+              return [updated, ...existing];
+            }
+            return existing.filter((transfer) => transfer.id !== updated.id);
+          });
+
+          if (updated.id === wireTransferId) {
+            setSelectedTransfer(updated);
+            setCurrentStep(updated.current_stage || 1);
+          }
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "wire_transfers", filter: `user_id=eq.${userId}` },
+        (payload) => {
+          const deleted = payload.old as WireTransferRow;
+          if (!deleted) return;
+
+          setPendingTransfers((existing) => existing.filter((transfer) => transfer.id !== deleted.id));
+          if (deleted.id === wireTransferId) {
+            resetToNewWireTransfer();
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [userId, wireTransferId]);
 
   const loadVerificationSteps = async () => {
     const { data, error } = await supabase
@@ -76,6 +175,19 @@ const WireTransfer = () => {
 
     if (!error && data) {
       setVerificationSteps(data as WireTransferVerificationStep[]);
+    }
+  };
+
+  const loadPendingWireTransfers = async (userId: string) => {
+    const { data, error } = await supabase
+      .from("wire_transfers")
+      .select("*")
+      .eq("user_id", userId)
+      .in("status", PENDING_WIRE_TRANSFER_STATUSES)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      setPendingTransfers(data as WireTransferRow[]);
     }
   };
 
@@ -98,42 +210,28 @@ const WireTransfer = () => {
     }
 
     if (profile && !profile.can_initiate_wire_transfer) {
-        setIsBlocked(true);
-        return;
+      setIsBlocked(true);
+      return;
     }
 
     setUserId(user.id);
+    await loadPendingWireTransfers(user.id);
+  };
 
-    // Check for pending wire transfer
-    const { data: pendingTransfer } = await supabase
-      .from("wire_transfers")
-      .select("*")
-      .eq("user_id", user.id)
-      .in("status", ["verification_pending", "pending", "awaiting_cot", "awaiting_imf", "awaiting_tax", "awaiting_levy", "awaiting_fin"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .single();
+  const resetToNewWireTransfer = () => {
+    setSelectedTransfer(null);
+    setWireTransferId(null);
+    setCurrentStep(0);
+    setAccountId(null);
+    setTransferData({ ...INITIAL_TRANSFER_DATA });
+    setSecurityCodeInput("");
+  };
 
-    if (pendingTransfer) {
-      setWireTransferId(pendingTransfer.id);
-      setAccountId(pendingTransfer.account_id);
-      setTransferData({
-        beneficiaryName: pendingTransfer.beneficiary_name,
-        beneficiaryAccount: pendingTransfer.beneficiary_account,
-        beneficiaryBank: pendingTransfer.beneficiary_bank,
-        beneficiaryCountry: pendingTransfer.beneficiary_country,
-        swiftCode: pendingTransfer.swift_code || "",
-        amount: String(pendingTransfer.amount),
-        purpose: pendingTransfer.purpose || "",
-      });
-
-      setCurrentStep(pendingTransfer.current_stage || 0);
-      
-      toast({
-        title: "Pending Transfer Found",
-        description: "Continuing with your pending wire transfer.",
-      });
-    }
+  const selectPendingTransfer = (transfer: WireTransferRow) => {
+    setSelectedTransfer(transfer);
+    setWireTransferId(transfer.id);
+    setCurrentStep(transfer.current_stage || 1);
+    setSecurityCodeInput("");
   };
 
   const handleInitiateTransfer = async (e: React.FormEvent) => {
@@ -165,9 +263,30 @@ const WireTransfer = () => {
       if (error) throw error;
 
       if (wireId) {
-        setWireTransferId(wireId);
+        const newTransfer: WireTransferRow = {
+          id: wireId,
+          user_id: user.id,
+          account_id: accountId,
+          beneficiary_name: validated.beneficiaryName,
+          beneficiary_account: validated.beneficiaryAccount,
+          beneficiary_bank: validated.beneficiaryBank,
+          beneficiary_country: validated.beneficiaryCountry,
+          swift_code: validated.swiftCode,
+          amount: validated.amount,
+          currency: "USD",
+          purpose: validated.purpose || null,
+          status: "verification_pending",
+          current_stage: 1,
+          transaction_id: null,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        };
 
+        setWireTransferId(wireId);
+        setSelectedTransfer(newTransfer);
         setCurrentStep(1);
+        await loadPendingWireTransfers(user.id);
+
         toast({
           title: "Wire transfer initiated",
           description: "Please enter the security codes to proceed.",
@@ -194,6 +313,23 @@ const WireTransfer = () => {
 
   const handleVerifyCode = async () => {
     if (!wireTransferId) return;
+    if (selectedTransfer?.status === "held" || selectedTransfer?.status === "suspended") {
+      toast({
+        title: "Transfer paused",
+        description: "This transfer has been placed on hold or suspended by the bank. Please wait for an admin to resume it.",
+        variant: "destructive",
+      });
+      return;
+    }
+    if (selectedTransfer?.status === "cancelled" || selectedTransfer?.status === "rejected" || selectedTransfer?.status === "completed" || selectedTransfer?.status === "failed") {
+      toast({
+        title: "Transfer cannot continue",
+        description: "This wire transfer has been finalized and cannot be resumed.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -231,11 +367,16 @@ const WireTransfer = () => {
           description: "Your wire transfer has been successfully processed.",
         });
 
+        await loadPendingWireTransfers(userId!);
         setTimeout(() => navigate("/dashboard"), 2000);
       } else {
         const nextStage = currentStep + 1;
         setCurrentStep(nextStage);
         setSecurityCodeInput("");
+
+        if (selectedTransfer) {
+          setSelectedTransfer({ ...selectedTransfer, current_stage: nextStage });
+        }
 
         toast({
           title: "Code verified",
@@ -255,6 +396,39 @@ const WireTransfer = () => {
 
   const orderedVerificationSteps = visibleVerificationSteps(verificationSteps);
   const currentVerificationStep = orderedVerificationSteps[currentStep - 1] || null;
+
+  const getWireTransferReference = (transferId: string) => `WT-${transferId.slice(0, 8).toUpperCase()}`;
+
+  const getVerificationStepTitle = (stage: number | null) => {
+    if (!stage || stage <= 0) return "Not started";
+    return orderedVerificationSteps[stage - 1]?.title || `Step ${stage}`;
+  };
+
+  const getTransferStatusLabel = (status: string) => {
+    const mapping: Record<string, string> = {
+      pending: "Pending initiation",
+      verification_pending: "Verification pending",
+      awaiting_cot: "Awaiting COT",
+      awaiting_imf: "Awaiting IMF",
+      awaiting_tax: "Awaiting TAX",
+      awaiting_levy: "Awaiting LEVY",
+      awaiting_fin: "Awaiting FIN",
+      processing: "Processing",
+      held: "On Hold",
+      suspended: "Suspended",
+      completed: "Completed",
+      failed: "Failed",
+      rejected: "Rejected",
+      cancelled: "Cancelled",
+    };
+
+    return mapping[status] || status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+  };
+
+  const isCreatingNewWireTransfer = selectedTransfer === null;
+  const isTransferPaused = selectedTransfer?.status === "held" || selectedTransfer?.status === "suspended";
+  const isTransferFinal = ["completed", "cancelled", "rejected", "failed"].includes(selectedTransfer?.status || "");
+  const canContinueSelectedTransfer = !!selectedTransfer && !isTransferPaused && !isTransferFinal;
 
   if (isBlocked) {
     return (
@@ -285,6 +459,54 @@ const WireTransfer = () => {
       </header>
 
       <div className="container mx-auto max-w-4xl px-0 py-4 md:px-4 md:py-8">
+        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-xl font-semibold text-[#0A1628]">Wire Transfer Dashboard</h2>
+            <p className="text-sm text-muted-foreground">Manage all in-progress wire transfers and start a new transfer anytime.</p>
+          </div>
+          <Button onClick={resetToNewWireTransfer} className="h-12 w-full md:w-auto" size="lg">
+            New Wire Transfer
+          </Button>
+        </div>
+
+        <div className="space-y-4 mb-8">
+          <Card className="bg-white rounded-xl shadow-sm border-0 p-6">
+            <h3 className="font-bold mb-4">Incomplete Wire Transfers</h3>
+            {pendingTransfers.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No incomplete transfers found. Start a new wire transfer below.</p>
+            ) : (
+              <div className="space-y-4">
+                {pendingTransfers.map((transfer) => (
+                  <div key={transfer.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-6">
+                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                      <div className="space-y-2">
+                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Reference</p>
+                        <p className="font-semibold text-sm">{getWireTransferReference(transfer.id)}</p>
+                        <p className="text-sm text-slate-700">Recipient: {transfer.beneficiary_name}</p>
+                        <p className="text-sm text-slate-700">Amount: ${transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                        <p className="text-sm text-slate-700">Current step: {getVerificationStepTitle(transfer.current_stage)}</p>
+                        <p className="text-sm text-slate-700">Status: {getTransferStatusLabel(transfer.status)}</p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Button
+                          size="sm"
+                          onClick={() => selectPendingTransfer(transfer)}
+                          disabled={selectedTransfer?.id === transfer.id && currentStep > 0}
+                        >
+                          {selectedTransfer?.id === transfer.id && currentStep > 0 ? "Resuming" : "Continue"}
+                        </Button>
+                        <Button variant="secondary" size="sm" onClick={resetToNewWireTransfer}>
+                          New Wire Transfer
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </Card>
+        </div>
+
       <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         {/* Progress Indicator */}
         {currentStep > 0 && orderedVerificationSteps.length > 0 && (
@@ -323,7 +545,6 @@ const WireTransfer = () => {
           </Card>
         )}
 
-          {currentStep === 0 ? (
           <Card className="p-8">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -331,7 +552,7 @@ const WireTransfer = () => {
               </div>
               <div>
                 <h2 className="text-2xl font-bold">Initiate Wire Transfer</h2>
-                <p className="text-muted-foreground">Enter beneficiary details</p>
+                <p className="text-muted-foreground">Start a new transfer any time without leaving this page.</p>
               </div>
             </div>
 
@@ -439,24 +660,25 @@ const WireTransfer = () => {
               </Button>
             </form>
           </Card>
-        ) : (
-          <div className="space-y-4">
-            {orderedVerificationSteps.length === 0 ? (
-              <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
-            ) : (
-              orderedVerificationSteps.map((stage, index) => {
-                const stageIndex = index + 1;
-                const isCompleted = stageIndex < currentStep;
-                const isActive = stageIndex === currentStep;
-                const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
 
-                if (!showAllVerificationSteps && !isActive) {
-                  return null;
-                }
+          {currentStep > 0 && (
+            <div className="space-y-4">
+              {orderedVerificationSteps.length === 0 ? (
+                <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
+              ) : (
+                orderedVerificationSteps.map((stage, index) => {
+                  const stageIndex = index + 1;
+                  const isCompleted = stageIndex < currentStep;
+                  const isActive = stageIndex === currentStep;
+                  const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
 
-                return (
-                  <Card key={stage.id} className="bg-white rounded-xl shadow-sm border-0 p-8">
-                    <div className="mb-8 text-center">
+                  if (!showAllVerificationSteps && !isActive) {
+                    return null;
+                  }
+
+                  return (
+                    <Card key={stage.id} className="bg-white rounded-xl shadow-sm border-0 p-8">
+                      <div className="mb-8 text-center">
                       <div className="flex items-center justify-center gap-2 mb-4">
                         <span
                           className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${

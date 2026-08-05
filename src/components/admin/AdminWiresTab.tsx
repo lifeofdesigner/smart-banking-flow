@@ -4,22 +4,39 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 
+type WireTransferRow = {
+  id: string;
+  user_id: string;
+  beneficiary_name: string;
+  beneficiary_country: string;
+  amount: number;
+  currency?: string;
+  purpose?: string | null;
+  status: string;
+  current_stage?: number | null;
+  profiles?: { full_name?: string; email?: string } | null;
+};
+
 interface AdminWiresTabProps {
-  wireTransfers: unknown[];
-  approveWireTransfer: (transferId: string) => Promise<void>;
+  wireTransfers: WireTransferRow[];
   onViewCodes: (wireTransferId: string) => void;
+  onWireTransferAction: (transferId: string, action: string, reason?: string) => Promise<void>;
 }
 
-export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onViewCodes }: AdminWiresTabProps) {
-  const [selectedWire, setSelectedWire] = useState<unknown | null>(null);
+export default function AdminWiresTab({ wireTransfers, onViewCodes, onWireTransferAction }: AdminWiresTabProps) {
+  const [selectedWire, setSelectedWire] = useState<WireTransferRow | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [codes, setCodes] = useState<{ code_type: string; code_value: string; is_verified: boolean }[]>([]);
   const [verificationStepCount, setVerificationStepCount] = useState(0);
+  const [actionDialogOpen, setActionDialogOpen] = useState(false);
+  const [selectedAction, setSelectedAction] = useState<string | null>(null);
+  const [actionReason, setActionReason] = useState("");
 
   useEffect(() => {
     if (!dialogOpen || !selectedWire?.id) return;
@@ -56,11 +73,52 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onVi
     void fetchStepCount();
   }, []);
 
-  const openCodesDialog = (wire: unknown) => {
+  const openCodesDialog = (wire: WireTransferRow) => {
     setSelectedWire(wire);
     setDialogOpen(true);
     onViewCodes(wire.id);
   };
+
+  const openActionDialog = (wire: WireTransferRow, action: string) => {
+    setSelectedWire(wire);
+    setSelectedAction(action);
+    setActionReason("");
+    setActionDialogOpen(true);
+  };
+
+  const handleActionSubmit = async () => {
+    if (!selectedAction || !selectedWire) return;
+    if ((selectedAction === "reject" || selectedAction === "cancel") && !actionReason.trim()) {
+      toast.error("A reason is required for this action.");
+      return;
+    }
+
+    const successLabels: Record<string, string> = {
+      approve: "approved",
+      hold: "placed on hold",
+      suspend: "suspended",
+      resume: "resumed",
+      reject: "rejected",
+      cancel: "cancelled",
+      delete: "deleted",
+    };
+    const successLabel = successLabels[selectedAction] || `${selectedAction}ed`;
+
+    try {
+      await onWireTransferAction(selectedWire.id, selectedAction, actionReason.trim() || undefined);
+      toast.success(`Wire transfer ${successLabel} successfully.`);
+    } catch (error: unknown) {
+      toast.error((error as Error)?.message || "Failed to perform action");
+    } finally {
+      setActionDialogOpen(false);
+      setSelectedAction(null);
+      setSelectedWire(null);
+      setActionReason("");
+    }
+  };
+
+  const isFinalStatus = (status: string) => ["completed", "cancelled", "rejected", "failed"].includes(status);
+  const isPausedStatus = (status: string) => ["held", "suspended"].includes(status);
 
   const formatWireStatus = (status: string) => {
     const statusMap: Record<string, string> = {
@@ -123,7 +181,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onVi
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -133,12 +191,24 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onVi
                           <Eye className="h-4 w-4 mr-1" />
                           View Codes
                         </Button>
-                        {wire.status === "pending" && (
-                          <Button size="sm" onClick={() => approveWireTransfer(wire.id)}>
+                        {!isFinalStatus(wire.status) && !isPausedStatus(wire.status) && (
+                          <Button size="sm" onClick={() => openActionDialog(wire, "approve")}> 
                             <CheckCircle className="h-4 w-4 mr-1" />
                             Approve
                           </Button>
                         )}
+                        {!isFinalStatus(wire.status) && !isPausedStatus(wire.status) && (
+                          <>
+                            <Button size="sm" onClick={() => openActionDialog(wire, "hold")}>Hold</Button>
+                            <Button size="sm" onClick={() => openActionDialog(wire, "suspend")}>Suspend</Button>
+                            <Button size="sm" onClick={() => openActionDialog(wire, "reject")}>Reject</Button>
+                            <Button size="sm" onClick={() => openActionDialog(wire, "cancel")}>Cancel</Button>
+                          </>
+                        )}
+                        {isPausedStatus(wire.status) && (
+                          <Button size="sm" onClick={() => openActionDialog(wire, "resume")}>Resume</Button>
+                        )}
+                        <Button size="sm" variant="destructive" onClick={() => openActionDialog(wire, "delete")}>Delete</Button>
                       </div>
                     </TableCell>
                   </TableRow>
@@ -205,6 +275,51 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onVi
               )}
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={actionDialogOpen} onOpenChange={(open) => setActionDialogOpen(open)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedAction ? `${selectedAction.charAt(0).toUpperCase() + selectedAction.slice(1)} Wire Transfer` : "Wire Transfer Action"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {selectedAction === "approve" && "Approve this transfer so it can continue through the existing verification workflow."}
+              {selectedAction === "hold" && "Place this wire transfer on hold. Customer can only continue after an admin resumes it."}
+              {selectedAction === "suspend" && "Suspend this wire transfer. Customer can only continue after an admin resumes it."}
+              {selectedAction === "resume" && "Resume this held or suspended wire transfer so the customer can continue."}
+              {selectedAction === "reject" && "Reject this wire transfer. This action cannot be undone."}
+              {selectedAction === "cancel" && "Cancel this wire transfer. This action cannot be undone."}
+              {selectedAction === "delete" && "Delete this wire transfer and its verification progress. This action cannot be undone."}
+            </p>
+            <div>
+              <Textarea
+                value={actionReason}
+                onChange={(e) => setActionReason(e.target.value)}
+                placeholder={
+                  selectedAction === "reject" || selectedAction === "cancel"
+                    ? "Enter reason (required)"
+                    : "Enter reason (optional)"
+                }
+                className="min-h-[120px]"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setActionDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleActionSubmit}>
+              {selectedAction === "approve" && "Approve"}
+              {selectedAction === "hold" && "Place on Hold"}
+              {selectedAction === "suspend" && "Suspend"}
+              {selectedAction === "resume" && "Resume"}
+              {selectedAction === "reject" && "Reject"}
+              {selectedAction === "cancel" && "Cancel"}
+              {selectedAction === "delete" && "Delete"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </>
