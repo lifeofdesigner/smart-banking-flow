@@ -84,7 +84,6 @@ ALTER TABLE public.wire_transfers
   CHECK (status IN ('pending', 'verification_pending', 'processing', 'completed', 'failed', 'cancelled', 'awaiting_cot', 'awaiting_imf', 'awaiting_tax', 'awaiting_levy', 'awaiting_fin'));
 
 CREATE OR REPLACE FUNCTION public.initiate_wire_transfer(
-  p_user_id uuid,
   p_account_id uuid,
   p_beneficiary_name text,
   p_beneficiary_account text,
@@ -148,7 +147,6 @@ END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.get_wire_transfer_codes_for_admin(
-  p_admin_id uuid,
   p_wire_transfer_id uuid
 ) RETURNS TABLE(code_type text, code_value text, is_verified boolean)
 LANGUAGE plpgsql SECURITY DEFINER

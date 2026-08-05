@@ -348,7 +348,6 @@ export default function AdminDashboard() {
             <AdminWiresTab
               wireTransfers={wireTransfers}
               approveWireTransfer={approveWireTransfer}
-              adminId={adminId}
               onViewCodes={handleViewCodes}
             />
           </TabsContent>

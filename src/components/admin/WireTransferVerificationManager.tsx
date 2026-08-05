@@ -11,31 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CmsEditorSheet, CmsField, CmsFormSection } from "@/components/admin/CmsEditorSheet";
+import type { WireTransferVerificationStep } from "@/lib/wireTransferVerification";
 import { toast } from "sonner";
-
-type WireTransferVerificationStep = {
-  id: string;
-  step_code: string;
-  title: string;
-  description: string | null;
-  message_title: string | null;
-  message_body: string | null;
-  message_background_color: string | null;
-  message_border_color: string | null;
-  message_icon: string | null;
-  requires_code: boolean | null;
-  code_label: string | null;
-  placeholder: string | null;
-  button_text: string | null;
-  icon: string | null;
-  display_order: number;
-  is_active: boolean;
-  allow_skip: boolean;
-  requires_admin: boolean;
-  visible_to_customer: boolean;
-  show_icon: boolean;
-  auto_complete: boolean;
-};
 
 type StepFormState = Omit<WireTransferVerificationStep, "id">;
 

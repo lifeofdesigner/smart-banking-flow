@@ -11,11 +11,10 @@ import { toast } from "sonner";
 interface AdminWiresTabProps {
   wireTransfers: unknown[];
   approveWireTransfer: (transferId: string) => Promise<void>;
-  adminId: string;
   onViewCodes: (wireTransferId: string) => void;
 }
 
-export default function AdminWiresTab({ wireTransfers, approveWireTransfer, adminId, onViewCodes }: AdminWiresTabProps) {
+export default function AdminWiresTab({ wireTransfers, approveWireTransfer, onViewCodes }: AdminWiresTabProps) {
   const [selectedWire, setSelectedWire] = useState<unknown | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadingCodes, setLoadingCodes] = useState(false);
@@ -29,7 +28,6 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
       setLoadingCodes(true);
       try {
         const { data, error } = await (supabase as unknown).rpc("get_wire_transfer_codes_for_admin", {
-          p_admin_id: adminId,
           p_wire_transfer_id: selectedWire.id,
         });
 
@@ -44,7 +42,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
     };
 
     fetchCodes();
-  }, [dialogOpen, selectedWire, adminId]);
+  }, [dialogOpen, selectedWire]);
 
   useEffect(() => {
     const fetchStepCount = async () => {

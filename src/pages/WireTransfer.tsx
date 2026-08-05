@@ -146,7 +146,6 @@ const WireTransfer = () => {
       if (!accountId) throw new Error("Please select a source account");
 
       const { data: wireId, error } = await (supabase as unknown).rpc("initiate_wire_transfer", {
-        p_user_id: user.id,
         p_account_id: accountId,
         p_beneficiary_name: validated.beneficiaryName,
         p_beneficiary_account: validated.beneficiaryAccount,
@@ -222,11 +221,6 @@ const WireTransfer = () => {
 
       // Check if this is the last stage
       if (currentStep === orderedSteps.length) {
-        await supabase
-          .from("wire_transfers")
-          .update({ status: "completed", current_stage: currentStep })
-          .eq("id", wireTransferId);
-
         toast({
           title: "Transfer completed!",
           description: "Your wire transfer has been successfully processed.",
@@ -235,11 +229,6 @@ const WireTransfer = () => {
         setTimeout(() => navigate("/dashboard"), 2000);
       } else {
         const nextStage = currentStep + 1;
-        await supabase
-          .from("wire_transfers")
-          .update({ status: "verification_pending", current_stage: nextStage })
-          .eq("id", wireTransferId);
-
         setCurrentStep(nextStage);
         setSecurityCodeInput("");
 
