@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -20,6 +21,7 @@ import {
   DEFAULT_BUTTON_TEXT,
   DEFAULT_CODE_LABEL,
   normalizeVerificationSteps,
+  visibleVerificationSteps,
   type WireTransferVerificationStep,
 } from "@/lib/wireTransferVerification";
 
@@ -36,6 +38,9 @@ const wireTransferSchema = z.object({
 const WireTransfer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const siteSettings = useSiteSettings();
+  const verificationDisplayMode = siteSettings.wire_transfer_verification_display_mode === "show_all" ? "show_all" : "sequential";
+  const showAllVerificationSteps = verificationDisplayMode === "show_all";
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [verificationSteps, setVerificationSteps] = useState<WireTransferVerificationStep[]>([]);
@@ -248,7 +253,7 @@ const WireTransfer = () => {
     }
   };
 
-  const orderedVerificationSteps = normalizeVerificationSteps(verificationSteps);
+  const orderedVerificationSteps = visibleVerificationSteps(verificationSteps);
   const currentVerificationStep = orderedVerificationSteps[currentStep - 1] || null;
 
   if (isBlocked) {
@@ -286,29 +291,34 @@ const WireTransfer = () => {
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
             <h3 className="font-bold mb-4">Security Verification Progress</h3>
             <div className="space-y-3">
-              {orderedVerificationSteps.map((stage, index) => (
-                <div key={stage.id} className="flex items-center space-x-3">
-                  {index + 1 < currentStep ? (
-                    <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
-                      <Check className="w-4 h-4" />
-                    </span>
-                  ) : index + 1 === currentStep ? (
-                    <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                      {index + 1}
-                    </span>
-                  ) : (
-                    <span className="w-7 h-7 rounded-full border border-[#D1D5DB] text-[#9CA3AF] inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                      {index + 1}
-                    </span>
-                  )}
-                  <div>
-                    <p className={`font-medium text-sm ${index + 1 === currentStep ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
-                      {stage.title}
-                    </p>
-                    <p className="text-sm text-muted-foreground">{stage.description}</p>
+              {orderedVerificationSteps.map((stage, index) => {
+                const stageIndex = index + 1;
+                const isCompleted = stageIndex < currentStep;
+                const isActive = stageIndex === currentStep;
+                return (
+                  <div key={stage.id} className="flex items-center space-x-3">
+                    {isCompleted ? (
+                      <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
+                        <Check className="w-4 h-4" />
+                      </span>
+                    ) : isActive ? (
+                      <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {stageIndex}
+                      </span>
+                    ) : (
+                      <span className="w-7 h-7 rounded-full border border-[#D1D5DB] text-[#9CA3AF] inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                        {stageIndex}
+                      </span>
+                    )}
+                    <div>
+                      <p className={`font-medium text-sm ${isActive ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
+                        {stage.title}
+                      </p>
+                      <p className="text-sm text-muted-foreground">{stage.description}</p>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </Card>
         )}
@@ -430,65 +440,101 @@ const WireTransfer = () => {
             </form>
           </Card>
         ) : (
-          <Card className="bg-white rounded-xl shadow-sm border-0 p-8">
-            {currentVerificationStep ? (
-              <>
-                <div className="text-center mb-8">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                    <Globe className="w-8 h-8 text-primary" />
-                  </div>
-                  <h2 className="text-2xl font-bold mb-2">{currentVerificationStep.title}</h2>
-                  <p className="text-muted-foreground">{currentVerificationStep.description}</p>
-                </div>
-
-                <div className="max-w-md mx-auto space-y-6">
-                  <div
-                    className="rounded-lg border-l-4 p-4"
-                    style={{
-                      backgroundColor: currentVerificationStep.message_background_color || "#FFFBEB",
-                      borderColor: currentVerificationStep.message_border_color || "#F59E0B",
-                    }}
-                  >
-                    <p className="mb-2 text-sm font-medium">
-                      {currentVerificationStep.message_title || "Important"}
-                    </p>
-                    <p className="text-sm">
-                      {currentVerificationStep.message_body || "This verification step is configured in the Admin CMS."}
-                    </p>
-                  </div>
-
-                  {currentVerificationStep.requires_code !== false ? (
-                    <div className="space-y-2">
-                      <label className="text-sm font-medium">
-                        {currentVerificationStep.code_label || DEFAULT_CODE_LABEL}
-                      </label>
-                      <Input
-                        value={securityCodeInput}
-                        onChange={(e) => setSecurityCodeInput(e.target.value)}
-                        placeholder={currentVerificationStep.placeholder || `${currentVerificationStep.step_code}-XXXXXXXX`}
-                        className="h-14 text-center text-lg font-mono"
-                      />
-                    </div>
-                  ) : (
-                    <p className="text-sm text-muted-foreground">
-                      No verification code is required for this step.
-                    </p>
-                  )}
-
-                  <Button
-                    onClick={handleVerifyCode}
-                    size="lg"
-                    className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
-                    disabled={loading || (currentVerificationStep.requires_code !== false && !securityCodeInput.trim())}
-                  >
-                    {loading ? "Verifying..." : currentVerificationStep.button_text || DEFAULT_BUTTON_TEXT}
-                  </Button>
-                </div>
-              </>
-            ) : (
+          <div className="space-y-4">
+            {orderedVerificationSteps.length === 0 ? (
               <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
+            ) : (
+              orderedVerificationSteps.map((stage, index) => {
+                const stageIndex = index + 1;
+                const isCompleted = stageIndex < currentStep;
+                const isActive = stageIndex === currentStep;
+                const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
+
+                if (!showAllVerificationSteps && !isActive) {
+                  return null;
+                }
+
+                return (
+                  <Card key={stage.id} className="bg-white rounded-xl shadow-sm border-0 p-8">
+                    <div className="mb-8 text-center">
+                      <div className="flex items-center justify-center gap-2 mb-4">
+                        <span
+                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                            isCompleted
+                              ? "bg-emerald-100 text-emerald-700"
+                              : isActive
+                              ? "bg-[var(--bank-navy)] text-white"
+                              : "bg-slate-100 text-slate-700"
+                          }`}
+                        >
+                          {statusLabel}
+                        </span>
+                      </div>
+                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                        <Globe className="w-8 h-8 text-primary" />
+                      </div>
+                      <h2 className="text-2xl font-bold mb-2">{stage.title}</h2>
+                      <p className="text-muted-foreground">{stage.description}</p>
+                    </div>
+
+                    {isActive ? (
+                      <div className="max-w-md mx-auto space-y-6">
+                        <div
+                          className="rounded-lg border-l-4 p-4"
+                          style={{
+                            backgroundColor: stage.message_background_color || "#FFFBEB",
+                            borderColor: stage.message_border_color || "#F59E0B",
+                          }}
+                        >
+                          <p className="mb-2 text-sm font-medium">
+                            {stage.message_title || "Important"}
+                          </p>
+                          <p className="text-sm">
+                            {stage.message_body || "This verification step is configured in the Admin CMS."}
+                          </p>
+                        </div>
+
+                        {stage.requires_code !== false ? (
+                          <div className="space-y-2">
+                            <label className="text-sm font-medium">
+                              {stage.code_label || DEFAULT_CODE_LABEL}
+                            </label>
+                            <Input
+                              value={securityCodeInput}
+                              onChange={(e) => setSecurityCodeInput(e.target.value)}
+                              placeholder={stage.placeholder || `${stage.step_code}-XXXXXXXX`}
+                              className="h-14 text-center text-lg font-mono"
+                            />
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground">
+                            No verification code is required for this step.
+                          </p>
+                        )}
+
+                        <Button
+                          onClick={handleVerifyCode}
+                          size="lg"
+                          className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
+                          disabled={loading || (stage.requires_code !== false && !securityCodeInput.trim())}
+                        >
+                          {loading ? "Verifying..." : stage.button_text || DEFAULT_BUTTON_TEXT}
+                        </Button>
+                      </div>
+                    ) : isCompleted ? (
+                      <div className="max-w-md mx-auto rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
+                        <p className="font-semibold">This step has already been verified.</p>
+                      </div>
+                    ) : (
+                      <div className="max-w-md mx-auto rounded-xl border border-slate-200 bg-slate-50 p-6 text-slate-700">
+                        <p className="font-semibold">This step will unlock once prior verification steps are complete.</p>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })
             )}
-          </Card>
+          </div>
         )}
       </TransactionGate>
       </div>

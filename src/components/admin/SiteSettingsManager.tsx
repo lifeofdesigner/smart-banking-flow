@@ -198,6 +198,7 @@ const DEFAULTS: SiteSettingsMap = {
   pwa_prompt_cta_url: "",
   pwa_prompt_bg_color: "#0A1628",
   pwa_prompt_accent_color: "#C9A84C",
+  wire_transfer_verification_display_mode: "sequential",
 };
 
 const LANDING_THEMES = [
@@ -468,6 +469,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
           <TabsTrigger value="banking">Banking Settings</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
+          <TabsTrigger value="banking">Banking</TabsTrigger>
           <TabsTrigger value="markets">Markets</TabsTrigger>
           <TabsTrigger value="pwa">Mobile App</TabsTrigger>
         </TabsList>
@@ -642,6 +644,38 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                 >
                   {saving ? "Saving..." : "Save Public Site Colors"}
                 </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="banking" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Wire Transfer Verification</CardTitle>
+              <CardDescription>Choose how wire transfer verification steps are displayed for customers.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="wire-transfer-verification-display-mode">Verification Display Mode</Label>
+                  <Select
+                    id="wire-transfer-verification-display-mode"
+                    value={settings.wire_transfer_verification_display_mode || "sequential"}
+                    onValueChange={(value) => saveSingleKey("wire_transfer_verification_display_mode", value, "Wire transfer verification display mode saved")}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select mode" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="sequential">Sequential</SelectItem>
+                      <SelectItem value="show_all">Show All</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <p className="text-sm text-muted-foreground">
+                    Sequential shows only the current active step. Show All displays every enabled step immediately while preserving verification order.
+                  </p>
+                </div>
               </div>
             </CardContent>
           </Card>
