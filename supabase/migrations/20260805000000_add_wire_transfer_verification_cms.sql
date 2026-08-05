@@ -39,6 +39,9 @@ CREATE POLICY "Admins manage wire transfer steps"
   USING (public.has_role(auth.uid(), 'admin'))
   WITH CHECK (public.has_role(auth.uid(), 'admin'));
 
+GRANT SELECT ON public.wire_transfer_verification_steps TO anon, authenticated, service_role;
+GRANT INSERT, UPDATE, DELETE ON public.wire_transfer_verification_steps TO authenticated, service_role;
+
 DROP TRIGGER IF EXISTS update_wire_transfer_verification_steps_updated_at ON public.wire_transfer_verification_steps;
 CREATE TRIGGER update_wire_transfer_verification_steps_updated_at
   BEFORE UPDATE ON public.wire_transfer_verification_steps
@@ -145,6 +148,8 @@ BEGIN
   RETURN v_wire_id;
 END;
 $$;
+
+NOTIFY pgrst, 'reload schema';
 
 CREATE OR REPLACE FUNCTION public.get_wire_transfer_codes_for_admin(
   p_wire_transfer_id uuid
