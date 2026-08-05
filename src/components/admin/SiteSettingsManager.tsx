@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ImagePicker } from "@/components/admin/ImagePicker";
+import WireTransferVerificationManager from "@/components/admin/WireTransferVerificationManager";
 import { Upload, Trash2, Plus } from "lucide-react";
 import { toast } from "sonner";
 
@@ -464,6 +465,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
           <TabsTrigger value="themes">Themes</TabsTrigger>
           <TabsTrigger value="branding">Branding</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
+          <TabsTrigger value="banking">Banking Settings</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="social">Social</TabsTrigger>
           <TabsTrigger value="markets">Markets</TabsTrigger>
@@ -1243,6 +1245,10 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="banking" className="space-y-4">
+          <WireTransferVerificationManager />
         </TabsContent>
 
         <TabsContent value="seo" className="space-y-4">

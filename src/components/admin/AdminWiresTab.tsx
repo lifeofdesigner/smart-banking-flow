@@ -20,6 +20,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
   const [dialogOpen, setDialogOpen] = useState(false);
   const [loadingCodes, setLoadingCodes] = useState(false);
   const [codes, setCodes] = useState<{ code_type: string; code_value: string; is_verified: boolean }[]>([]);
+  const [verificationStepCount, setVerificationStepCount] = useState(0);
 
   useEffect(() => {
     if (!dialogOpen || !selectedWire?.id) return;
@@ -45,6 +46,18 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
     fetchCodes();
   }, [dialogOpen, selectedWire, adminId]);
 
+  useEffect(() => {
+    const fetchStepCount = async () => {
+      const { count } = await supabase
+        .from("wire_transfer_verification_steps")
+        .select("*", { count: "exact", head: true })
+        .eq("is_active", true);
+      setVerificationStepCount(count || 0);
+    };
+
+    void fetchStepCount();
+  }, []);
+
   const openCodesDialog = (wire: unknown) => {
     setSelectedWire(wire);
     setDialogOpen(true);
@@ -53,6 +66,7 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
 
   const formatWireStatus = (status: string) => {
     const statusMap: Record<string, string> = {
+      verification_pending: "Verification Pending",
       awaiting_cot: "Awaiting COT",
       awaiting_imf: "Awaiting IMF",
       awaiting_tax: "Awaiting TAX",
@@ -94,7 +108,9 @@ export default function AdminWiresTab({ wireTransfers, approveWireTransfer, admi
                     <TableCell>{wire.beneficiary_name}</TableCell>
                     <TableCell>${Number(wire.amount).toFixed(2)}</TableCell>
                     <TableCell>{wire.beneficiary_country}</TableCell>
-                    <TableCell>{wire.current_stage}/5</TableCell>
+                    <TableCell>
+                      {wire.current_stage}/{verificationStepCount || "—"}
+                    </TableCell>
                     <TableCell>
                       <Badge
                         className={`admin-premium-badge ${

@@ -1965,6 +1965,84 @@ export type Database = {
           },
         ]
       }
+      wire_transfer_verification_steps: {
+        Row: {
+          allow_skip: boolean
+          auto_complete: boolean
+          button_text: string | null
+          code_label: string | null
+          created_at: string | null
+          description: string | null
+          display_order: number
+          id: string
+          icon: string | null
+          is_active: boolean
+          message_background_color: string | null
+          message_body: string | null
+          message_border_color: string | null
+          message_icon: string | null
+          message_title: string | null
+          placeholder: string | null
+          requires_admin: boolean
+          requires_code: boolean | null
+          show_icon: boolean
+          step_code: string
+          title: string
+          updated_at: string | null
+          visible_to_customer: boolean
+        }
+        Insert: {
+          allow_skip?: boolean
+          auto_complete?: boolean
+          button_text?: string | null
+          code_label?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          icon?: string | null
+          is_active?: boolean
+          message_background_color?: string | null
+          message_body?: string | null
+          message_border_color?: string | null
+          message_icon?: string | null
+          message_title?: string | null
+          placeholder?: string | null
+          requires_admin?: boolean
+          requires_code?: boolean | null
+          show_icon?: boolean
+          step_code: string
+          title: string
+          updated_at?: string | null
+          visible_to_customer?: boolean
+        }
+        Update: {
+          allow_skip?: boolean
+          auto_complete?: boolean
+          button_text?: string | null
+          code_label?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_order?: number
+          id?: string
+          icon?: string | null
+          is_active?: boolean
+          message_background_color?: string | null
+          message_body?: string | null
+          message_border_color?: string | null
+          message_icon?: string | null
+          message_title?: string | null
+          placeholder?: string | null
+          requires_admin?: boolean
+          requires_code?: boolean | null
+          show_icon?: boolean
+          step_code?: string
+          title?: string
+          updated_at?: string | null
+          visible_to_customer?: boolean
+        }
+        Relationships: []
+      }
       support_tickets: {
         Row: {
           admin_reply: string | null

