@@ -533,394 +533,475 @@ const WireTransfer = () => {
       </header>
 
       <div className="container mx-auto max-w-4xl px-0 py-4 md:px-4 md:py-8">
-        <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-[#0A1628]">Wire Transfer Dashboard</h2>
-            <p className="text-sm text-muted-foreground">Manage all in-progress wire transfers and start a new transfer anytime.</p>
+            <h2 className="text-xl font-semibold text-[#0A1628]">
+              {currentStep > 0 ? "Wire Transfer Verification" : "Wire Transfer Dashboard"}
+            </h2>
+            <p className="text-sm text-muted-foreground">
+              {currentStep > 0
+                ? "Complete security verification to process this wire transfer."
+                : "Manage in-progress transfers or initiate a new international wire transfer."}
+            </p>
           </div>
-          <Button onClick={resetToNewWireTransfer} className="h-12 w-full md:w-auto" size="lg">
-            New Wire Transfer
-          </Button>
+          {currentStep > 0 ? (
+            <Button onClick={resetToNewWireTransfer} variant="outline" size="sm" className="h-10">
+              <ArrowLeft className="w-4 h-4 mr-2" /> Start New Wire Transfer
+            </Button>
+          ) : (
+            <Button onClick={resetToNewWireTransfer} className="h-11" size="lg">
+              New Wire Transfer
+            </Button>
+          )}
         </div>
 
-        <div className="space-y-4 mb-8">
-          <Card className="bg-white rounded-xl shadow-sm border-0 p-6">
-            <h3 className="font-bold mb-4">Incomplete Wire Transfers</h3>
-            {pendingTransfers.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No incomplete transfers found. Start a new wire transfer below.</p>
-            ) : (
-              <div className="space-y-4">
-                {pendingTransfers.map((transfer) => (
-                  <div key={transfer.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-6">
-                    <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-                      <div className="space-y-2">
-                        <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Reference</p>
-                        <p className="font-semibold text-sm">{getWireTransferReference(transfer.id)}</p>
-                        <p className="text-sm text-slate-700">Recipient: {transfer.beneficiary_name}</p>
-                        <p className="text-sm text-slate-700">Amount: ${transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p className="text-sm text-slate-700">Current step: {getVerificationStepTitle(transfer.current_stage)}</p>
-                        <p className="text-sm text-slate-700">Status: {getTransferStatusLabel(transfer.status)}</p>
-                      </div>
-                      <div className="flex items-center gap-3">
-                        <Button
-                          size="sm"
-                          onClick={() => selectPendingTransfer(transfer)}
-                          disabled={selectedTransfer?.id === transfer.id && currentStep > 0}
-                        >
-                          {selectedTransfer?.id === transfer.id && currentStep > 0 ? "Resuming" : "Continue"}
-                        </Button>
-                        <Button variant="secondary" size="sm" onClick={resetToNewWireTransfer}>
-                          New Wire Transfer
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </div>
-
-      <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
-        {/* Progress Indicator */}
-        {currentStep > 0 && visibleVerificationStepsOrdered.length > 0 && (
-          <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
-            <h3 className="font-bold mb-4">Security Verification Progress</h3>
-            <div className="space-y-3">
-              {(showAllVerificationSteps
-                ? visibleVerificationStepsOrdered
-                : currentVisibleStep
-                ? [currentVisibleStep]
-                : []
-              ).map((stage) => {
-                const stageIndex = visibleVerificationStepsOrdered.findIndex((s) => s.id === stage.id) + 1;
-                const isCompleted = (stage.display_order ?? 0) < currentStep;
-                const isActive = currentVisibleStep?.display_order === stage.display_order;
-                return (
-                  <div key={stage.id} className="flex items-center space-x-3">
-                    {isCompleted ? (
-                      <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
-                        <Check className="w-4 h-4" />
-                      </span>
-                    ) : isActive ? (
-                      <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                        {stageIndex}
-                      </span>
-                    ) : (
-                      <span className="w-7 h-7 rounded-full border border-[#D1D5DB] text-[#9CA3AF] inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
-                        {stageIndex}
-                      </span>
-                    )}
+        {/* ======================================================== */}
+        {/* CASE 1: PENDING / ACTIVE WIRE TRANSFER VERIFICATION FLOW */}
+        {/* ======================================================== */}
+        {currentStep > 0 ? (
+          <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
+            <div className="space-y-6">
+              {/* 1. Active Transfer Details Card */}
+              {selectedTransfer && (
+                <Card className="rounded-xl border-0 bg-white p-6 shadow-sm">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between border-b border-slate-100 pb-4 mb-4">
                     <div>
-                      <p className={`font-medium text-sm ${isActive ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
-                        {stage.title}
-                      </p>
-                      <p className="text-sm text-muted-foreground">{stage.description}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </Card>
-        )}
-
-        {currentStep > 0 && selectedTransfer && (
-          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Wire Transfer</p>
-                <p className="text-sm font-bold text-slate-900">
-                  {getWireTransferReference(selectedTransfer.id)} — Recipient: {selectedTransfer.beneficiary_name} ({selectedTransfer.beneficiary_bank})
-                </p>
-                <p className="text-xs text-slate-600">
-                  Amount: ${selectedTransfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={resetToNewWireTransfer}>
-                Start New Wire Transfer Instead
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {currentStep === 0 && (
-          <Card className="p-8">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <Globe className="w-6 h-6 text-primary" />
-              </div>
-              <div>
-                <h2 className="text-2xl font-bold">Initiate Wire Transfer</h2>
-                <p className="text-muted-foreground">Start a new transfer any time without leaving this page.</p>
-              </div>
-            </div>
-
-            <form onSubmit={handleInitiateTransfer} className="space-y-6">
-              <div className="space-y-2">
-                <Label>From Account</Label>
-                <Select value={accountId || ""} onValueChange={setAccountId}>
-                  <SelectTrigger className="h-12">
-                    <SelectValue placeholder="Select source account" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((a) => (
-                      <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
-                        {a.account_type.toUpperCase()} — {a.account_number} — {a.currency}{" "}
-                        {a.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
-                        {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Beneficiary Name</label>
-                  <Input
-                    value={transferData.beneficiaryName}
-                    onChange={(e) => setTransferData({ ...transferData, beneficiaryName: e.target.value })}
-                    placeholder="John Doe"
-                    required
-                    className="h-12"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Account Number</label>
-                  <Input
-                    value={transferData.beneficiaryAccount}
-                    onChange={(e) => setTransferData({ ...transferData, beneficiaryAccount: e.target.value })}
-                    placeholder="1234567890"
-                    required
-                    className="h-12"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Bank Name</label>
-                  <Select
-                    value={
-                      CANADIAN_BANKS.includes(transferData.beneficiaryBank) || USA_BANKS.includes(transferData.beneficiaryBank)
-                        ? transferData.beneficiaryBank
-                        : isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))
-                        ? "OTHER"
-                        : ""
-                    }
-                    onValueChange={(val) => {
-                      if (val === "OTHER") {
-                        setIsCustomBank(true);
-                        setTransferData((prev) => ({ ...prev, beneficiaryBank: "" }));
-                      } else {
-                        setIsCustomBank(false);
-                        const isCanada = CANADIAN_BANKS.includes(val);
-                        const isUSA = USA_BANKS.includes(val);
-                        setTransferData((prev) => ({
-                          ...prev,
-                          beneficiaryBank: val,
-                          beneficiaryCountry:
-                            isCanada
-                              ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "United States" ? "Canada" : prev.beneficiaryCountry)
-                              : isUSA
-                              ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "Canada" ? "United States" : prev.beneficiaryCountry)
-                              : prev.beneficiaryCountry,
-                        }));
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="h-12">
-                      <SelectValue placeholder="Select beneficiary bank" />
-                    </SelectTrigger>
-                    <SelectContent className="max-h-[300px]">
-                      <SelectGroup>
-                        <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          Canada
-                        </SelectLabel>
-                        {CANADIAN_BANKS.map((bank) => (
-                          <SelectItem key={bank} value={bank}>
-                            {bank}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectSeparator />
-                      <SelectGroup>
-                        <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-                          United States
-                        </SelectLabel>
-                        {USA_BANKS.map((bank) => (
-                          <SelectItem key={bank} value={bank}>
-                            {bank}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectSeparator />
-                      <SelectGroup>
-                        <SelectItem value="OTHER">Other Bank (Enter custom bank)</SelectItem>
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-
-                  {(isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))) && (
-                    <Input
-                      value={transferData.beneficiaryBank}
-                      onChange={(e) => setTransferData({ ...transferData, beneficiaryBank: e.target.value })}
-                      placeholder="Enter custom bank name"
-                      required
-                      className="h-12 mt-2"
-                    />
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Country</label>
-                  <Input
-                    value={transferData.beneficiaryCountry}
-                    onChange={(e) => setTransferData({ ...transferData, beneficiaryCountry: e.target.value })}
-                    placeholder="United States"
-                    required
-                    className="h-12"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">SWIFT Code</label>
-                  <Input
-                    value={transferData.swiftCode}
-                    onChange={(e) => setTransferData({ ...transferData, swiftCode: e.target.value })}
-                    placeholder="ABCDUS33XXX"
-                    required
-                    className="h-12"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Amount (USD)</label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={transferData.amount}
-                    onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
-                    placeholder="1000.00"
-                    required
-                    className="h-12"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Purpose (Optional)</label>
-                <Textarea
-                  value={transferData.purpose}
-                  onChange={(e) => setTransferData({ ...transferData, purpose: e.target.value })}
-                  placeholder="Payment for services"
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              <Button type="submit" size="lg" className="w-full h-12" disabled={loading || !accountId}>
-                {loading ? "Processing..." : "Initiate Transfer"}
-              </Button>
-            </form>
-          </Card>
-        )}
-
-          {currentStep > 0 && (
-            <div className="space-y-4">
-              {visibleVerificationStepsOrdered.length === 0 ? (
-                <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
-              ) : (
-                visibleVerificationStepsOrdered.map((stage) => {
-                  const isCompleted = (stage.display_order ?? 0) < currentStep;
-                  const isActive = currentVisibleStep?.display_order === stage.display_order;
-                  const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
-
-                  if (!showAllVerificationSteps && !isActive) {
-                    return null;
-                  }
-
-                  return (
-                    <Card key={stage.id} className="bg-white rounded-xl shadow-sm border-0 p-8">
-                      <div className="mb-8 text-center">
-                      <div className="flex items-center justify-center gap-2 mb-4">
-                        <span
-                          className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
-                            isCompleted
-                              ? "bg-emerald-100 text-emerald-700"
-                              : isActive
-                              ? "bg-[var(--bank-navy)] text-white"
-                              : "bg-slate-100 text-slate-700"
-                          }`}
-                        >
-                          {statusLabel}
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs uppercase font-bold tracking-wider text-slate-500">Active Transfer</span>
+                        <span className="inline-flex items-center rounded-full bg-amber-50 border border-amber-200 px-2.5 py-0.5 text-xs font-semibold text-amber-800">
+                          {getTransferStatusLabel(selectedTransfer.status)}
                         </span>
                       </div>
-                      <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
-                        <Globe className="w-8 h-8 text-primary" />
-                      </div>
-                      <h2 className="text-2xl font-bold mb-2">{stage.title}</h2>
-                      <p className="text-muted-foreground">{stage.description}</p>
+                      <h3 className="text-lg font-bold text-[#0A1628] mt-1">
+                        {getWireTransferReference(selectedTransfer.id)}
+                      </h3>
                     </div>
+                    <div className="text-left md:text-right">
+                      <p className="text-xs uppercase tracking-wider text-slate-500">Transfer Amount</p>
+                      <p className="text-2xl font-bold text-[#0A1628]">
+                        ${selectedTransfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        <span className="text-xs font-normal text-muted-foreground ml-1">USD</span>
+                      </p>
+                    </div>
+                  </div>
 
-                    {isActive ? (
-                      <div className="max-w-md mx-auto space-y-6">
-                        <div
-                          className="rounded-lg border-l-4 p-4"
-                          style={{
-                            backgroundColor: stage.message_background_color || "#FFFBEB",
-                            borderColor: stage.message_border_color || "#F59E0B",
-                          }}
-                        >
-                          <p className="mb-2 text-sm font-medium">
-                            {stage.message_title || "Important"}
-                          </p>
-                          <p className="text-sm">
-                            {stage.message_body || "This verification step is configured in the Admin CMS."}
-                          </p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-500">Recipient</p>
+                      <p className="font-semibold text-slate-900">{selectedTransfer.beneficiary_name}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-500">Beneficiary Bank</p>
+                      <p className="font-semibold text-slate-900">{selectedTransfer.beneficiary_bank}</p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-500">Account / Country</p>
+                      <p className="font-semibold text-slate-900">
+                        {selectedTransfer.beneficiary_account} &bull; {selectedTransfer.beneficiary_country}
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <p className="text-xs font-medium text-slate-500">SWIFT / BIC</p>
+                      <p className="font-semibold text-slate-900">{selectedTransfer.swift_code || "N/A"}</p>
+                    </div>
+                  </div>
+                </Card>
+              )}
+
+              {/* 2. Security Verification Progress Card (One by One) */}
+              {visibleVerificationStepsOrdered.length > 0 && (
+                <Card className="rounded-xl border-0 bg-white p-6 shadow-sm">
+                  <h3 className="font-bold mb-4 text-[#0A1628]">Security Verification Progress</h3>
+                  <div className="space-y-3">
+                    {(showAllVerificationSteps
+                      ? visibleVerificationStepsOrdered
+                      : currentVisibleStep
+                      ? [currentVisibleStep]
+                      : []
+                    ).map((stage) => {
+                      const stageIndex = visibleVerificationStepsOrdered.findIndex((s) => s.id === stage.id) + 1;
+                      const isCompleted = (stage.display_order ?? 0) < currentStep;
+                      const isActive = currentVisibleStep?.display_order === stage.display_order;
+                      return (
+                        <div key={stage.id} className="flex items-center space-x-3">
+                          {isCompleted ? (
+                            <span className="w-7 h-7 rounded-full bg-[var(--bank-gold)] text-[#0A1628] inline-flex items-center justify-center flex-shrink-0">
+                              <Check className="w-4 h-4" />
+                            </span>
+                          ) : isActive ? (
+                            <span className="w-7 h-7 rounded-full bg-[var(--bank-navy)] text-white inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                              {stageIndex}
+                            </span>
+                          ) : (
+                            <span className="w-7 h-7 rounded-full border border-[#D1D5DB] text-[#9CA3AF] inline-flex items-center justify-center text-xs font-semibold flex-shrink-0">
+                              {stageIndex}
+                            </span>
+                          )}
+                          <div>
+                            <p className={`font-medium text-sm ${isActive ? "text-[var(--bank-navy)]" : "text-foreground"}`}>
+                              {stage.title}
+                            </p>
+                            <p className="text-sm text-muted-foreground">{stage.description}</p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </Card>
+              )}
+
+              {/* 3. Verification Code Entry Card */}
+              <div className="space-y-4">
+                {visibleVerificationStepsOrdered.length === 0 ? (
+                  <div className="text-sm text-muted-foreground">Verification workflow not available.</div>
+                ) : (
+                  visibleVerificationStepsOrdered.map((stage) => {
+                    const isCompleted = (stage.display_order ?? 0) < currentStep;
+                    const isActive = currentVisibleStep?.display_order === stage.display_order;
+                    const statusLabel = isCompleted ? "Completed" : isActive ? "Active" : "Pending";
+
+                    if (!showAllVerificationSteps && !isActive) {
+                      return null;
+                    }
+
+                    return (
+                      <Card key={stage.id} className="rounded-xl border-0 bg-white p-8 shadow-sm">
+                        <div className="mb-8 text-center">
+                          <div className="flex items-center justify-center gap-2 mb-4">
+                            <span
+                              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${
+                                isCompleted
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : isActive
+                                  ? "bg-[var(--bank-navy)] text-white"
+                                  : "bg-slate-100 text-slate-700"
+                              }`}
+                            >
+                              {statusLabel}
+                            </span>
+                          </div>
+                          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-4">
+                            <Globe className="w-8 h-8 text-primary" />
+                          </div>
+                          <h2 className="text-2xl font-bold mb-2">{stage.title}</h2>
+                          <p className="text-muted-foreground">{stage.description}</p>
                         </div>
 
-                        {stage.requires_code !== false ? (
-                          <div className="space-y-2">
-                            <label className="text-sm font-medium">
-                              {stage.code_label || DEFAULT_CODE_LABEL}
-                            </label>
-                            <Input
-                              value={securityCodeInput}
-                              onChange={(e) => setSecurityCodeInput(e.target.value)}
-                              placeholder={stage.placeholder || `${stage.step_code}-XXXXXXXX`}
-                              className="h-14 text-center text-lg font-mono"
-                            />
+                        {isActive ? (
+                          <div className="max-w-md mx-auto space-y-6">
+                            <div
+                              className="rounded-lg border-l-4 p-4"
+                              style={{
+                                backgroundColor: stage.message_background_color || "#FFFBEB",
+                                borderColor: stage.message_border_color || "#F59E0B",
+                              }}
+                            >
+                              <p className="mb-2 text-sm font-medium">
+                                {stage.message_title || "Important"}
+                              </p>
+                              <p className="text-sm">
+                                {stage.message_body || "This verification step is configured in the Admin CMS."}
+                              </p>
+                            </div>
+
+                            {stage.requires_code !== false ? (
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">
+                                  {stage.code_label || DEFAULT_CODE_LABEL}
+                                </label>
+                                <Input
+                                  value={securityCodeInput}
+                                  onChange={(e) => setSecurityCodeInput(e.target.value)}
+                                  placeholder={stage.placeholder || `${stage.step_code}-XXXXXXXX`}
+                                  className="h-14 text-center text-lg font-mono"
+                                />
+                              </div>
+                            ) : (
+                              <p className="text-sm text-muted-foreground">
+                                No verification code is required for this step.
+                              </p>
+                            )}
+
+                            <Button
+                              onClick={handleVerifyCode}
+                              size="lg"
+                              className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
+                              disabled={loading || (stage.requires_code !== false && !securityCodeInput.trim())}
+                            >
+                              {loading ? "Verifying..." : stage.button_text || DEFAULT_BUTTON_TEXT}
+                            </Button>
+                          </div>
+                        ) : isCompleted ? (
+                          <div className="max-w-md mx-auto rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
+                            <p className="font-semibold">This step has already been verified.</p>
                           </div>
                         ) : (
-                          <p className="text-sm text-muted-foreground">
-                            No verification code is required for this step.
-                          </p>
+                          <div className="max-w-md mx-auto rounded-xl border border-slate-200 bg-slate-50 p-6 text-slate-700">
+                            <p className="font-semibold">This step will unlock once prior verification steps are complete.</p>
+                          </div>
                         )}
+                      </Card>
+                    );
+                  })
+                )}
+              </div>
 
-                        <Button
-                          onClick={handleVerifyCode}
-                          size="lg"
-                          className="w-full h-12 bg-[var(--bank-navy)] hover:bg-[var(--bank-slate)]"
-                          disabled={loading || (stage.requires_code !== false && !securityCodeInput.trim())}
-                        >
-                          {loading ? "Verifying..." : stage.button_text || DEFAULT_BUTTON_TEXT}
-                        </Button>
+              {/* 4. Other Incomplete Transfers (if any) */}
+              {pendingTransfers.filter((t) => t.id !== wireTransferId).length > 0 && (
+                <Card className="rounded-xl border-0 bg-white p-6 shadow-sm mt-8">
+                  <h3 className="font-bold mb-4 text-[#0A1628]">Other Incomplete Transfers</h3>
+                  <div className="space-y-3">
+                    {pendingTransfers
+                      .filter((t) => t.id !== wireTransferId)
+                      .map((transfer) => (
+                        <div key={transfer.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4">
+                          <div>
+                            <p className="font-semibold text-sm">{getWireTransferReference(transfer.id)} — {transfer.beneficiary_name}</p>
+                            <p className="text-xs text-slate-600">
+                              Amount: ${transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Step: {getVerificationStepTitle(transfer.current_stage)}
+                            </p>
+                          </div>
+                          <Button size="sm" variant="outline" onClick={() => selectPendingTransfer(transfer)}>
+                            Switch to this transfer
+                          </Button>
+                        </div>
+                      ))}
+                  </div>
+                </Card>
+              )}
+            </div>
+          </TransactionGate>
+        ) : (
+          /* ======================================================== */
+          /* CASE 2: NEW WIRE TRANSFER DASHBOARD / INITIATE FLOW      */
+          /* ======================================================== */
+          <div className="space-y-8">
+            {/* Incomplete Transfers List (if any exist) */}
+            {pendingTransfers.length > 0 && (
+              <Card className="rounded-xl border-0 bg-white p-6 shadow-sm">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="font-bold text-[#0A1628]">Incomplete Wire Transfers</h3>
+                  <span className="text-xs font-semibold text-amber-700 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200">
+                    {pendingTransfers.length} Pending
+                  </span>
+                </div>
+                <div className="space-y-4">
+                  {pendingTransfers.map((transfer) => (
+                    <div key={transfer.id} className="rounded-xl border border-slate-200 bg-slate-50 p-4 md:p-6">
+                      <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                        <div className="space-y-1.5">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs uppercase tracking-wider text-slate-500 font-semibold">Reference</span>
+                            <span className="font-bold text-sm text-[#0A1628]">{getWireTransferReference(transfer.id)}</span>
+                            <span className="inline-flex items-center rounded-full bg-amber-100 text-amber-800 px-2 py-0.5 text-xs font-medium">
+                              {getTransferStatusLabel(transfer.status)}
+                            </span>
+                          </div>
+                          <p className="text-sm text-slate-700 font-medium">
+                            Recipient: {transfer.beneficiary_name} &bull; {transfer.beneficiary_bank}
+                          </p>
+                          <p className="text-sm text-slate-700 font-semibold text-primary">
+                            Amount: ${transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </p>
+                          <p className="text-xs text-slate-500">
+                            Current required step: {getVerificationStepTitle(transfer.current_stage)}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <Button size="default" className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]" onClick={() => selectPendingTransfer(transfer)}>
+                            Continue Transfer
+                          </Button>
+                        </div>
                       </div>
-                    ) : isCompleted ? (
-                      <div className="max-w-md mx-auto rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-emerald-900">
-                        <p className="font-semibold">This step has already been verified.</p>
-                      </div>
-                    ) : (
-                      <div className="max-w-md mx-auto rounded-xl border border-slate-200 bg-slate-50 p-6 text-slate-700">
-                        <p className="font-semibold">This step will unlock once prior verification steps are complete.</p>
-                      </div>
-                    )}
-                  </Card>
-                );
-              })
+                    </div>
+                  ))}
+                </div>
+              </Card>
             )}
+
+            {/* Initiate Wire Transfer Form */}
+            <TransactionGate loading={accountsLoading} hasUsableAccount={hasUsableAccount} restrictedAccounts={restrictedAccounts}>
+              <Card className="rounded-xl border-0 bg-white p-8 shadow-sm">
+                <div className="flex items-center space-x-3 mb-6">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <Globe className="w-6 h-6 text-primary" />
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-bold">Initiate Wire Transfer</h2>
+                    <p className="text-muted-foreground">Start a new international wire transfer securely.</p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleInitiateTransfer} className="space-y-6">
+                  <div className="space-y-2">
+                    <Label>From Account</Label>
+                    <Select value={accountId || ""} onValueChange={setAccountId}>
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Select source account" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((a) => (
+                          <SelectItem key={a.id} value={a.id} disabled={!isAccountUsable(a.status)}>
+                            {a.account_type.toUpperCase()} — {a.account_number} — {a.currency}{" "}
+                            {a.computed_balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                            {!isAccountUsable(a.status) ? ` — ${getAccountStatusLabel(a.status)}` : ""}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Beneficiary Name</label>
+                      <Input
+                        value={transferData.beneficiaryName}
+                        onChange={(e) => setTransferData({ ...transferData, beneficiaryName: e.target.value })}
+                        placeholder="John Doe"
+                        required
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Account Number</label>
+                      <Input
+                        value={transferData.beneficiaryAccount}
+                        onChange={(e) => setTransferData({ ...transferData, beneficiaryAccount: e.target.value })}
+                        placeholder="1234567890"
+                        required
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Bank Name</label>
+                      <Select
+                        value={
+                          CANADIAN_BANKS.includes(transferData.beneficiaryBank) || USA_BANKS.includes(transferData.beneficiaryBank)
+                            ? transferData.beneficiaryBank
+                            : isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))
+                            ? "OTHER"
+                            : ""
+                        }
+                        onValueChange={(val) => {
+                          if (val === "OTHER") {
+                            setIsCustomBank(true);
+                            setTransferData((prev) => ({ ...prev, beneficiaryBank: "" }));
+                          } else {
+                            setIsCustomBank(false);
+                            const isCanada = CANADIAN_BANKS.includes(val);
+                            const isUSA = USA_BANKS.includes(val);
+                            setTransferData((prev) => ({
+                              ...prev,
+                              beneficiaryBank: val,
+                              beneficiaryCountry:
+                                isCanada
+                                  ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "United States" ? "Canada" : prev.beneficiaryCountry)
+                                  : isUSA
+                                  ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "Canada" ? "United States" : prev.beneficiaryCountry)
+                                  : prev.beneficiaryCountry,
+                            }));
+                          }
+                        }}
+                      >
+                        <SelectTrigger className="h-12">
+                          <SelectValue placeholder="Select beneficiary bank" />
+                        </SelectTrigger>
+                        <SelectContent className="max-h-[300px]">
+                          <SelectGroup>
+                            <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                              Canada
+                            </SelectLabel>
+                            {CANADIAN_BANKS.map((bank) => (
+                              <SelectItem key={bank} value={bank}>
+                                {bank}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                              United States
+                            </SelectLabel>
+                            {USA_BANKS.map((bank) => (
+                              <SelectItem key={bank} value={bank}>
+                                {bank}
+                              </SelectItem>
+                            ))}
+                          </SelectGroup>
+                          <SelectSeparator />
+                          <SelectGroup>
+                            <SelectItem value="OTHER">Other Bank (Enter custom bank)</SelectItem>
+                          </SelectGroup>
+                        </SelectContent>
+                      </Select>
+
+                      {(isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))) && (
+                        <Input
+                          value={transferData.beneficiaryBank}
+                          onChange={(e) => setTransferData({ ...transferData, beneficiaryBank: e.target.value })}
+                          placeholder="Enter custom bank name"
+                          required
+                          className="h-12 mt-2"
+                        />
+                      )}
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Country</label>
+                      <Input
+                        value={transferData.beneficiaryCountry}
+                        onChange={(e) => setTransferData({ ...transferData, beneficiaryCountry: e.target.value })}
+                        placeholder="United States"
+                        required
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">SWIFT Code</label>
+                      <Input
+                        value={transferData.swiftCode}
+                        onChange={(e) => setTransferData({ ...transferData, swiftCode: e.target.value })}
+                        placeholder="ABCDUS33XXX"
+                        required
+                        className="h-12"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Amount (USD)</label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={transferData.amount}
+                        onChange={(e) => setTransferData({ ...transferData, amount: e.target.value })}
+                        placeholder="1000.00"
+                        required
+                        className="h-12"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Purpose (Optional)</label>
+                    <Textarea
+                      value={transferData.purpose}
+                      onChange={(e) => setTransferData({ ...transferData, purpose: e.target.value })}
+                      placeholder="Payment for services"
+                      className="min-h-[100px]"
+                    />
+                  </div>
+
+                  <Button type="submit" size="lg" className="w-full h-12" disabled={loading || !accountId}>
+                    {loading ? "Processing..." : "Initiate Transfer"}
+                  </Button>
+                </form>
+              </Card>
+            </TransactionGate>
           </div>
         )}
-      </TransactionGate>
       </div>
     </div>
     </DashboardLayout>
