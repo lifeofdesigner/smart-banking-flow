@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
 import { z } from "zod";
@@ -24,6 +24,59 @@ import {
   visibleVerificationSteps,
   type WireTransferVerificationStep,
 } from "@/lib/wireTransferVerification";
+
+const CANADIAN_BANKS = [
+  "Scotiabank (Bank of Nova Scotia)",
+  "Bank of Montreal (BMO)",
+  "Royal Bank of Canada (RBC)",
+  "TD Canada Trust (Toronto-Dominion Bank)",
+  "Canadian Imperial Bank of Commerce (CIBC)",
+  "National Bank of Canada",
+  "Desjardins Group",
+  "Tangerine Bank",
+  "Simplii Financial",
+  "EQ Bank (Equitable Bank)",
+  "Laurentian Bank of Canada",
+  "Canadian Western Bank (CWB)",
+  "ATB Financial",
+  "Manulife Bank of Canada",
+  "HSBC Bank Canada",
+  "Vancity (Vancouver City Savings Credit Union)",
+  "Meridian Credit Union",
+  "Coast Capital Savings",
+  "Wealthsimple",
+];
+
+const USA_BANKS = [
+  "JPMorgan Chase Bank",
+  "Bank of America",
+  "Wells Fargo Bank",
+  "Citibank",
+  "U.S. Bank",
+  "Capital One",
+  "PNC Bank",
+  "Truist Bank",
+  "Goldman Sachs Bank",
+  "Morgan Stanley Bank",
+  "TD Bank (USA)",
+  "Citizens Bank",
+  "Fifth Third Bank",
+  "M&T Bank",
+  "KeyBank",
+  "Huntington National Bank",
+  "Regions Bank",
+  "Ally Bank",
+  "Charles Schwab Bank",
+  "Discover Bank",
+  "American Express National Bank",
+  "BMO Bank (USA)",
+  "First National Bank of Omaha",
+  "Synchrony Bank",
+  "Comerica Bank",
+  "Zions Bank",
+  "First Horizon Bank",
+  "Santander Bank (USA)",
+];
 
 const wireTransferSchema = z.object({
   beneficiaryName: z.string().min(2, "Name must be at least 2 characters"),
@@ -93,6 +146,7 @@ const WireTransfer = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [pendingTransfers, setPendingTransfers] = useState<WireTransferRow[]>([]);
   const [selectedTransfer, setSelectedTransfer] = useState<WireTransferRow | null>(null);
+  const [isCustomBank, setIsCustomBank] = useState(false);
   const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
   const [transferData, setTransferData] = useState({ ...INITIAL_TRANSFER_DATA });
 
@@ -225,6 +279,7 @@ const WireTransfer = () => {
     setAccountId(null);
     setTransferData({ ...INITIAL_TRANSFER_DATA });
     setSecurityCodeInput("");
+    setIsCustomBank(false);
   };
 
   const selectPendingTransfer = (transfer: WireTransferRow) => {
@@ -532,8 +587,13 @@ const WireTransfer = () => {
           <Card className="bg-white rounded-xl shadow-sm border-0 p-6 mb-8">
             <h3 className="font-bold mb-4">Security Verification Progress</h3>
             <div className="space-y-3">
-              {visibleVerificationStepsOrdered.map((stage, index) => {
-                const stageIndex = index + 1;
+              {(showAllVerificationSteps
+                ? visibleVerificationStepsOrdered
+                : currentVisibleStep
+                ? [currentVisibleStep]
+                : []
+              ).map((stage) => {
+                const stageIndex = visibleVerificationStepsOrdered.findIndex((s) => s.id === stage.id) + 1;
                 const isCompleted = (stage.display_order ?? 0) < currentStep;
                 const isActive = currentVisibleStep?.display_order === stage.display_order;
                 return (
@@ -564,6 +624,26 @@ const WireTransfer = () => {
           </Card>
         )}
 
+        {currentStep > 0 && selectedTransfer && (
+          <div className="mb-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">Active Wire Transfer</p>
+                <p className="text-sm font-bold text-slate-900">
+                  {getWireTransferReference(selectedTransfer.id)} — Recipient: {selectedTransfer.beneficiary_name} ({selectedTransfer.beneficiary_bank})
+                </p>
+                <p className="text-xs text-slate-600">
+                  Amount: ${selectedTransfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={resetToNewWireTransfer}>
+                Start New Wire Transfer Instead
+              </Button>
+            </div>
+          </div>
+        )}
+
+        {currentStep === 0 && (
           <Card className="p-8">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
@@ -619,13 +699,76 @@ const WireTransfer = () => {
 
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Bank Name</label>
-                  <Input
-                    value={transferData.beneficiaryBank}
-                    onChange={(e) => setTransferData({ ...transferData, beneficiaryBank: e.target.value })}
-                    placeholder="International Bank"
-                    required
-                    className="h-12"
-                  />
+                  <Select
+                    value={
+                      CANADIAN_BANKS.includes(transferData.beneficiaryBank) || USA_BANKS.includes(transferData.beneficiaryBank)
+                        ? transferData.beneficiaryBank
+                        : isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))
+                        ? "OTHER"
+                        : ""
+                    }
+                    onValueChange={(val) => {
+                      if (val === "OTHER") {
+                        setIsCustomBank(true);
+                        setTransferData((prev) => ({ ...prev, beneficiaryBank: "" }));
+                      } else {
+                        setIsCustomBank(false);
+                        const isCanada = CANADIAN_BANKS.includes(val);
+                        const isUSA = USA_BANKS.includes(val);
+                        setTransferData((prev) => ({
+                          ...prev,
+                          beneficiaryBank: val,
+                          beneficiaryCountry:
+                            isCanada
+                              ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "United States" ? "Canada" : prev.beneficiaryCountry)
+                              : isUSA
+                              ? (!prev.beneficiaryCountry || prev.beneficiaryCountry === "Canada" ? "United States" : prev.beneficiaryCountry)
+                              : prev.beneficiaryCountry,
+                        }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Select beneficiary bank" />
+                    </SelectTrigger>
+                    <SelectContent className="max-h-[300px]">
+                      <SelectGroup>
+                        <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          Canada
+                        </SelectLabel>
+                        {CANADIAN_BANKS.map((bank) => (
+                          <SelectItem key={bank} value={bank}>
+                            {bank}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectLabel className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
+                          United States
+                        </SelectLabel>
+                        {USA_BANKS.map((bank) => (
+                          <SelectItem key={bank} value={bank}>
+                            {bank}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectSeparator />
+                      <SelectGroup>
+                        <SelectItem value="OTHER">Other Bank (Enter custom bank)</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+
+                  {(isCustomBank || (transferData.beneficiaryBank && !CANADIAN_BANKS.includes(transferData.beneficiaryBank) && !USA_BANKS.includes(transferData.beneficiaryBank))) && (
+                    <Input
+                      value={transferData.beneficiaryBank}
+                      onChange={(e) => setTransferData({ ...transferData, beneficiaryBank: e.target.value })}
+                      placeholder="Enter custom bank name"
+                      required
+                      className="h-12 mt-2"
+                    />
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -679,6 +822,7 @@ const WireTransfer = () => {
               </Button>
             </form>
           </Card>
+        )}
 
           {currentStep > 0 && (
             <div className="space-y-4">
