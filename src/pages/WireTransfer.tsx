@@ -9,8 +9,9 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectLabel, SelectSeparator, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CheckCircle2, Globe, Check } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Globe, Check, Ban, Trash2 } from "lucide-react";
 import { z } from "zod";
 import DashboardLayout from "@/components/DashboardLayout";
 import { isMissingWireTransferAccessColumnError } from "@/lib/supabaseErrors";
@@ -147,6 +148,11 @@ const WireTransfer = () => {
   const [pendingTransfers, setPendingTransfers] = useState<WireTransferRow[]>([]);
   const [selectedTransfer, setSelectedTransfer] = useState<WireTransferRow | null>(null);
   const [isCustomBank, setIsCustomBank] = useState(false);
+  const [actionModal, setActionModal] = useState<{
+    type: "cancel" | "delete" | "stop";
+    transfer: WireTransferRow;
+  } | null>(null);
+  const [actionLoading, setActionLoading] = useState(false);
   const { accounts, restrictedAccounts, hasUsableAccount, loading: accountsLoading } = useUserAccounts(userId);
   const [transferData, setTransferData] = useState({ ...INITIAL_TRANSFER_DATA });
 
@@ -499,6 +505,88 @@ const WireTransfer = () => {
     return mapping[status] || status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
   };
 
+  const handleCancelWireTransfer = async (transfer: WireTransferRow) => {
+    setActionLoading(true);
+    try {
+      // Try RPC first
+      const { error: rpcError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ error: Error | null }> }).rpc(
+        "cancel_user_wire_transfer",
+        { p_wire_transfer_id: transfer.id }
+      );
+
+      if (rpcError) {
+        // Fallback to direct update
+        const { error: updateError } = await supabase
+          .from("wire_transfers")
+          .update({ status: "cancelled", updated_at: new Date().toISOString() })
+          .eq("id", transfer.id);
+
+        if (updateError) throw updateError;
+      }
+
+      toast({
+        title: "Wire transfer cancelled",
+        description: `Transfer ${getWireTransferReference(transfer.id)} to ${transfer.beneficiary_name} has been cancelled.`,
+      });
+
+      setPendingTransfers((prev) => prev.filter((t) => t.id !== transfer.id));
+
+      if (selectedTransfer?.id === transfer.id) {
+        resetToNewWireTransfer();
+      }
+    } catch (error: unknown) {
+      toast({
+        title: "Error cancelling transfer",
+        description: error instanceof Error ? error.message : "Failed to cancel wire transfer.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+      setActionModal(null);
+    }
+  };
+
+  const handleDeleteWireTransfer = async (transfer: WireTransferRow) => {
+    setActionLoading(true);
+    try {
+      // Try RPC first
+      const { error: rpcError } = await (supabase as unknown as { rpc: (fn: string, params: Record<string, unknown>) => Promise<{ error: Error | null }> }).rpc(
+        "delete_user_wire_transfer",
+        { p_wire_transfer_id: transfer.id }
+      );
+
+      if (rpcError) {
+        // Fallback to direct delete
+        const { error: deleteError } = await supabase
+          .from("wire_transfers")
+          .delete()
+          .eq("id", transfer.id);
+
+        if (deleteError) throw deleteError;
+      }
+
+      toast({
+        title: "Wire transfer deleted",
+        description: `Transfer ${getWireTransferReference(transfer.id)} has been permanently deleted.`,
+      });
+
+      setPendingTransfers((prev) => prev.filter((t) => t.id !== transfer.id));
+
+      if (selectedTransfer?.id === transfer.id) {
+        resetToNewWireTransfer();
+      }
+    } catch (error: unknown) {
+      toast({
+        title: "Error deleting transfer",
+        description: error instanceof Error ? error.message : "Failed to delete wire transfer.",
+        variant: "destructive",
+      });
+    } finally {
+      setActionLoading(false);
+      setActionModal(null);
+    }
+  };
+
   const isCreatingNewWireTransfer = selectedTransfer === null;
   const isTransferPaused = selectedTransfer?.status === "held" || selectedTransfer?.status === "suspended";
   const isTransferFinal = ["completed", "cancelled", "rejected", "failed"].includes(selectedTransfer?.status || "");
@@ -576,12 +664,34 @@ const WireTransfer = () => {
                         {getWireTransferReference(selectedTransfer.id)}
                       </h3>
                     </div>
-                    <div className="text-left md:text-right">
-                      <p className="text-xs uppercase tracking-wider text-slate-500">Transfer Amount</p>
-                      <p className="text-2xl font-bold text-[#0A1628]">
-                        ${selectedTransfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        <span className="text-xs font-normal text-muted-foreground ml-1">USD</span>
-                      </p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      <div className="text-left md:text-right">
+                        <p className="text-xs uppercase tracking-wider text-slate-500">Transfer Amount</p>
+                        <p className="text-2xl font-bold text-[#0A1628]">
+                          ${selectedTransfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          <span className="text-xs font-normal text-muted-foreground ml-1">USD</span>
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 pt-1 sm:pt-0">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900"
+                          onClick={() => setActionModal({ type: "cancel", transfer: selectedTransfer })}
+                          disabled={actionLoading}
+                        >
+                          <Ban className="w-3.5 h-3.5 mr-1.5 text-amber-600" /> Cancel Transfer
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                          onClick={() => setActionModal({ type: "delete", transfer: selectedTransfer })}
+                          disabled={actionLoading}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1.5 text-red-500" /> Delete Transfer
+                        </Button>
+                      </div>
                     </div>
                   </div>
 
@@ -761,9 +871,33 @@ const WireTransfer = () => {
                               Amount: ${transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} &bull; Step: {getVerificationStepTitle(transfer.current_stage)}
                             </p>
                           </div>
-                          <Button size="sm" variant="outline" onClick={() => selectPendingTransfer(transfer)}>
-                            Switch to this transfer
-                          </Button>
+                          <div className="flex items-center gap-2">
+                            <Button size="sm" variant="outline" onClick={() => selectPendingTransfer(transfer)}>
+                              Switch to this transfer
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900"
+                              onClick={() => setActionModal({ type: "cancel", transfer })}
+                              title="Cancel Transfer"
+                              disabled={actionLoading}
+                            >
+                              <Ban className="w-3.5 h-3.5 sm:mr-1.5 text-amber-600" />
+                              <span className="hidden sm:inline">Cancel</span>
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                              onClick={() => setActionModal({ type: "delete", transfer })}
+                              title="Delete Transfer"
+                              disabled={actionLoading}
+                            >
+                              <Trash2 className="w-3.5 h-3.5 sm:mr-1.5 text-red-500" />
+                              <span className="hidden sm:inline">Delete</span>
+                            </Button>
+                          </div>
                         </div>
                       ))}
                   </div>
@@ -807,9 +941,27 @@ const WireTransfer = () => {
                             Current required step: {getVerificationStepTitle(transfer.current_stage)}
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
+                        <div className="flex flex-wrap items-center gap-2.5">
                           <Button size="default" className="bg-[var(--bank-navy)] text-white hover:bg-[var(--bank-slate)]" onClick={() => selectPendingTransfer(transfer)}>
                             Continue Transfer
+                          </Button>
+                          <Button
+                            size="default"
+                            variant="outline"
+                            className="border-amber-300 text-amber-800 hover:bg-amber-50 hover:text-amber-900"
+                            onClick={() => setActionModal({ type: "cancel", transfer })}
+                            disabled={actionLoading}
+                          >
+                            <Ban className="w-4 h-4 mr-1.5 text-amber-600" /> Cancel
+                          </Button>
+                          <Button
+                            size="default"
+                            variant="outline"
+                            className="border-red-200 text-red-600 hover:bg-red-50 hover:text-red-700"
+                            onClick={() => setActionModal({ type: "delete", transfer })}
+                            disabled={actionLoading}
+                          >
+                            <Trash2 className="w-4 h-4 mr-1.5 text-red-500" /> Delete
                           </Button>
                         </div>
                       </div>
@@ -1002,6 +1154,93 @@ const WireTransfer = () => {
             </TransactionGate>
           </div>
         )}
+
+        {/* Confirmation Action Dialog (Cancel / Delete) */}
+        <Dialog open={!!actionModal} onOpenChange={(open) => !open && !actionLoading && setActionModal(null)}>
+          <DialogContent className="sm:max-w-[480px]">
+            {actionModal && (
+              <>
+                <DialogHeader>
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                      actionModal.type === "delete" ? "bg-red-100 text-red-600" : "bg-amber-100 text-amber-600"
+                    }`}>
+                      {actionModal.type === "delete" ? (
+                        <Trash2 className="w-5 h-5" />
+                      ) : (
+                        <Ban className="w-5 h-5" />
+                      )}
+                    </div>
+                    <DialogTitle>
+                      {actionModal.type === "delete" ? "Delete Wire Transfer" : "Cancel Pending Wire Transfer"}
+                    </DialogTitle>
+                  </div>
+                  <DialogDescription className="text-left text-sm text-slate-600 pt-1">
+                    {actionModal.type === "delete" ? (
+                      <>
+                        Are you sure you want to permanently delete this pending wire transfer? All associated records will be removed. This action cannot be undone.
+                      </>
+                    ) : (
+                      <>
+                        Are you sure you want to cancel this pending wire transfer? It will be marked as <strong>cancelled</strong> and no funds will be deducted.
+                      </>
+                    )}
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 my-2 text-sm space-y-2">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Reference:</span>
+                    <span className="font-semibold text-slate-900">{getWireTransferReference(actionModal.transfer.id)}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Beneficiary:</span>
+                    <span className="font-semibold text-slate-900">{actionModal.transfer.beneficiary_name}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Bank:</span>
+                    <span className="font-medium text-slate-800">{actionModal.transfer.beneficiary_bank}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Amount:</span>
+                    <span className="font-bold text-slate-900">
+                      ${actionModal.transfer.amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} USD
+                    </span>
+                  </div>
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0 mt-4">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setActionModal(null)}
+                    disabled={actionLoading}
+                  >
+                    Go Back
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      if (actionModal.type === "delete") {
+                        void handleDeleteWireTransfer(actionModal.transfer);
+                      } else {
+                        void handleCancelWireTransfer(actionModal.transfer);
+                      }
+                    }}
+                    disabled={actionLoading}
+                    className={actionModal.type === "delete" ? "bg-red-600 hover:bg-red-700 text-white" : "bg-amber-600 hover:bg-amber-700 text-white"}
+                  >
+                    {actionLoading
+                      ? "Processing..."
+                      : actionModal.type === "delete"
+                      ? "Yes, Delete Transfer"
+                      : "Yes, Cancel Transfer"}
+                  </Button>
+                </DialogFooter>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
     </DashboardLayout>

@@ -35,3 +35,4 @@ banking-audit-*
 r.profiles
 supabase/.temp/
 migration-backups/
+*.code-workspace
