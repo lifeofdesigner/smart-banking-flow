@@ -91,7 +91,6 @@ const financeNavItems = [
   { title: "Spending Insights", url: "/spending-insights", icon: TrendingUp },
   { title: "Budgets", url: "/budgets", icon: Wallet },
   { title: "Statements", url: "/statements", icon: FileText },
-  { title: "Referral Program", url: "/referral", icon: Gift },
 ];
 
 const accountNavItems = [

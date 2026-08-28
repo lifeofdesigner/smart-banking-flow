@@ -51,7 +51,6 @@ const moreItems = [
   { label: "Insights", icon: TrendingUp, path: "/spending-insights" },
   { label: "Budgets", icon: Wallet, path: "/budgets" },
   { label: "Statements", icon: FileText, path: "/statements" },
-  { label: "Referral", icon: Gift, path: "/referral" },
   { label: "Profile", icon: User, path: "/profile" },
   { label: "Security", icon: Shield, path: "/security" },
   { label: "KYC", icon: CheckSquare, path: "/kyc" },
