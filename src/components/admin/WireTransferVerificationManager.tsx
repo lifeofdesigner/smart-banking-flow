@@ -335,17 +335,6 @@ export default function WireTransferVerificationManager() {
                       </div>
                     </div>
 
-                    <div
-                      className="mb-6 rounded-lg border-l-4 p-4"
-                      style={{
-                        backgroundColor: previewStep.message_background_color || "#FFFBEB",
-                        borderColor: previewStep.message_border_color || "#F59E0B",
-                      }}
-                    >
-                      <p className="mb-1 text-sm font-semibold">{previewStep.message_title || "Important"}</p>
-                      <p className="text-sm">{previewStep.message_body || "Editable verification message."}</p>
-                    </div>
-
                     {previewStep.requires_code ? (
                       <div className="space-y-2">
                         <Label>{previewStep.code_label || "Enter verification code"}</Label>

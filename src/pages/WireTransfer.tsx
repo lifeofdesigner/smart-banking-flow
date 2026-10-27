@@ -799,21 +799,6 @@ const WireTransfer = () => {
 
                         {isActive ? (
                           <div className="max-w-md mx-auto space-y-6">
-                            <div
-                              className="rounded-lg border-l-4 p-4"
-                              style={{
-                                backgroundColor: stage.message_background_color || "#FFFBEB",
-                                borderColor: stage.message_border_color || "#F59E0B",
-                              }}
-                            >
-                              <p className="mb-2 text-sm font-medium">
-                                {stage.message_title || "Important"}
-                              </p>
-                              <p className="text-sm">
-                                {stage.message_body || "This verification step is configured in the Admin CMS."}
-                              </p>
-                            </div>
-
                             {stage.requires_code !== false ? (
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">
