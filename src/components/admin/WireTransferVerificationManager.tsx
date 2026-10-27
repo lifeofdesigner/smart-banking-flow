@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CmsEditorSheet, CmsField, CmsFormSection } from "@/components/admin/CmsEditorSheet";
 import type { WireTransferVerificationStep } from "@/lib/wireTransferVerification";
+import { useSiteSettings, invalidateSiteSettingsCache } from "@/hooks/useSiteSettings";
 import { toast } from "sonner";
 
 type StepFormState = Omit<WireTransferVerificationStep, "id">;
@@ -51,6 +52,32 @@ export default function WireTransferVerificationManager() {
   const [draggedId, setDraggedId] = useState<string | null>(null);
   const [previewStepCode, setPreviewStepCode] = useState<string>("");
   const [form, setForm] = useState<StepFormState>(defaultForm());
+
+  const siteSettings = useSiteSettings();
+  const showNoticeBanner = siteSettings.wire_transfer_show_important_notice === "true";
+  const [togglingNotice, setTogglingNotice] = useState(false);
+
+  const handleToggleNoticeBanner = async (checked: boolean) => {
+    setTogglingNotice(true);
+    try {
+      const nextValue = checked ? "true" : "false";
+      const { error } = await supabase.from("site_settings").upsert(
+        { key: "wire_transfer_show_important_notice", value: nextValue },
+        { onConflict: "key" }
+      );
+      if (error) throw error;
+      invalidateSiteSettingsCache();
+      toast.success(
+        checked
+          ? "Important notice banner is now visible to customers"
+          : "Important notice banner is now hidden from customers"
+      );
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update notice banner setting");
+    } finally {
+      setTogglingNotice(false);
+    }
+  };
 
   const activeSteps = useMemo(() => normalize(steps).filter((step) => step.is_active), [steps]);
   const previewStep = useMemo(
@@ -222,6 +249,31 @@ export default function WireTransferVerificationManager() {
         </Button>
       </div>
 
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border bg-white p-4 shadow-sm">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <span className="font-semibold text-[var(--bank-navy)]">Important Notice Banner</span>
+            <Badge variant={showNoticeBanner ? "default" : "secondary"}>
+              {showNoticeBanner ? "Visible to customers" : "Hidden from customers"}
+            </Badge>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            Control whether the Important notice box appears above the verification code input for customers.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Switch
+            id="wt-notice-toggle"
+            checked={showNoticeBanner}
+            disabled={togglingNotice}
+            onCheckedChange={handleToggleNoticeBanner}
+          />
+          <Label htmlFor="wt-notice-toggle" className="cursor-pointer text-sm font-medium">
+            {showNoticeBanner ? "Enabled" : "Disabled"}
+          </Label>
+        </div>
+      </div>
+
       <Tabs defaultValue="steps" className="space-y-4">
         <TabsList>
           <TabsTrigger value="steps">Steps</TabsTrigger>
@@ -335,6 +387,23 @@ export default function WireTransferVerificationManager() {
                       </div>
                     </div>
 
+                    {showNoticeBanner && (previewStep.message_body || previewStep.message_title) ? (
+                      <div
+                        className="mb-6 rounded-lg border-l-4 p-4"
+                        style={{
+                          backgroundColor: previewStep.message_background_color || "#FFFBEB",
+                          borderColor: previewStep.message_border_color || "#F59E0B",
+                        }}
+                      >
+                        <p className="mb-1 text-sm font-semibold">{previewStep.message_title || "Important"}</p>
+                        <p className="text-sm">{previewStep.message_body || "Editable verification message."}</p>
+                      </div>
+                    ) : !showNoticeBanner ? (
+                      <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 p-3 text-xs text-slate-500">
+                        Notice banner is currently hidden from customers.
+                      </div>
+                    ) : null}
+
                     {previewStep.requires_code ? (
                       <div className="space-y-2">
                         <Label>{previewStep.code_label || "Enter verification code"}</Label>
@@ -411,6 +480,11 @@ export default function WireTransferVerificationManager() {
         </CmsFormSection>
 
         <CmsFormSection title="Important Box">
+          {!showNoticeBanner && (
+            <div className="mb-4 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
+              Notice banner is currently <strong>Hidden</strong> globally. Turn on the "Important Notice Banner" toggle to display this to customers.
+            </div>
+          )}
           <div className="grid gap-4 md:grid-cols-2">
             <CmsField label="Title">
               <Input value={form.message_title || ""} onChange={(e) => setForm((prev) => ({ ...prev, message_title: e.target.value }))} />

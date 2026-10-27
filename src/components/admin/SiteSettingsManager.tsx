@@ -199,6 +199,7 @@ const DEFAULTS: SiteSettingsMap = {
   pwa_prompt_bg_color: "#0A1628",
   pwa_prompt_accent_color: "#C9A84C",
   wire_transfer_verification_display_mode: "sequential",
+  wire_transfer_show_important_notice: "false",
 };
 
 const LANDING_THEMES = [
@@ -656,7 +657,7 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
               <CardDescription>Choose how wire transfer verification steps are displayed for customers.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-6 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="wire-transfer-verification-display-mode">Verification Display Mode</Label>
                   <Select
@@ -675,6 +676,26 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                   <p className="text-sm text-muted-foreground">
                     Sequential shows only the current active step. Show All displays every enabled step immediately while preserving verification order.
                   </p>
+                </div>
+
+                <div className="flex items-center justify-between rounded-lg border p-4">
+                  <div className="space-y-0.5">
+                    <Label htmlFor="wire-transfer-show-notice">Important Notice Banner</Label>
+                    <p className="text-sm text-muted-foreground">
+                      Show or hide the Important notice box on customer wire transfer verification steps.
+                    </p>
+                  </div>
+                  <Switch
+                    id="wire-transfer-show-notice"
+                    checked={settings.wire_transfer_show_important_notice === "true"}
+                    onCheckedChange={(checked) =>
+                      saveSingleKey(
+                        "wire_transfer_show_important_notice",
+                        checked ? "true" : "false",
+                        checked ? "Important notice banner enabled" : "Important notice banner hidden"
+                      )
+                    }
+                  />
                 </div>
               </div>
             </CardContent>

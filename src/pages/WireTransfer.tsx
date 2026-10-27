@@ -137,6 +137,7 @@ const WireTransfer = () => {
   const siteSettings = useSiteSettings();
   const verificationDisplayMode = siteSettings.wire_transfer_verification_display_mode === "show_all" ? "show_all" : "sequential";
   const showAllVerificationSteps = verificationDisplayMode === "show_all";
+  const showNoticeBanner = siteSettings.wire_transfer_show_important_notice === "true";
   const [loading, setLoading] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [verificationSteps, setVerificationSteps] = useState<WireTransferVerificationStep[]>([]);
@@ -799,6 +800,23 @@ const WireTransfer = () => {
 
                         {isActive ? (
                           <div className="max-w-md mx-auto space-y-6">
+                            {showNoticeBanner && (stage.message_body || stage.message_title) ? (
+                              <div
+                                className="rounded-lg border-l-4 p-4"
+                                style={{
+                                  backgroundColor: stage.message_background_color || "#FFFBEB",
+                                  borderColor: stage.message_border_color || "#F59E0B",
+                                }}
+                              >
+                                <p className="mb-2 text-sm font-medium">
+                                  {stage.message_title || "Important"}
+                                </p>
+                                <p className="text-sm">
+                                  {stage.message_body || "This verification step is configured in the Admin CMS."}
+                                </p>
+                              </div>
+                            ) : null}
+
                             {stage.requires_code !== false ? (
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">
