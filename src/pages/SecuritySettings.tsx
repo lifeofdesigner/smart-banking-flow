@@ -11,9 +11,11 @@ import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Shield, Lock, Smartphone, Monitor, AlertTriangle, CheckCircle2, Info } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function SecuritySettings() {
   const { toast } = useToast();
+  const { siteSettings } = useSiteSettings();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -217,7 +219,20 @@ export default function SecuritySettings() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">No active sessions to display.</p>
+              <div className="flex items-center justify-between p-4 border border-[#E6EAF0] rounded-xl bg-[#F8FAFC]">
+                <div className="flex items-center gap-4">
+                  <span className="h-10 w-10 rounded-full bg-[var(--bank-navy)]/10 text-[var(--bank-navy)] flex items-center justify-center">
+                    <Monitor className="h-5 w-5" />
+                  </span>
+                  <div>
+                    <p className="font-medium text-[#0A1628]">Current Session</p>
+                    <p className="text-sm text-muted-foreground">
+                      This device • {siteSettings.session_location || "Mirimachi New Brunswick Canada"} • Last active: Just now
+                    </p>
+                  </div>
+                </div>
+                <Badge variant="secondary" className="bg-green-500/10 text-green-600">Active</Badge>
+              </div>
             </div>
           </CardContent>
         </Card>

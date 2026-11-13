@@ -200,6 +200,7 @@ const DEFAULTS: SiteSettingsMap = {
   pwa_prompt_accent_color: "#C9A84C",
   wire_transfer_verification_display_mode: "sequential",
   wire_transfer_show_important_notice: "false",
+  session_location: "Mirimachi New Brunswick Canada",
 };
 
 const LANDING_THEMES = [
@@ -696,6 +697,27 @@ export default function SiteSettingsManager({ adminId }: SiteSettingsManagerProp
                       )
                     }
                   />
+                </div>
+
+                <div className="space-y-2 pt-4 border-t">
+                  <Label htmlFor="session-location">Security Settings — Session Location</Label>
+                  <p className="text-sm text-muted-foreground">
+                    The location shown on the customer's Security Settings page under "Current Session".
+                  </p>
+                  <div className="flex gap-2">
+                    <Input
+                      id="session-location"
+                      value={settings.session_location || ""}
+                      onChange={(e) => setSetting("session_location", e.target.value)}
+                      placeholder="Mirimachi New Brunswick Canada"
+                    />
+                    <Button
+                      size="sm"
+                      onClick={() => saveSingleKey("session_location", settings.session_location, "Session location updated")}
+                    >
+                      Save
+                    </Button>
+                  </div>
                 </div>
               </div>
             </CardContent>
