@@ -15,7 +15,7 @@ import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 export default function SecuritySettings() {
   const { toast } = useToast();
-  const { siteSettings } = useSiteSettings();
+  const siteSettings = useSiteSettings();
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
