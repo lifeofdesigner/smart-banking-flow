@@ -800,7 +800,7 @@ const WireTransfer = () => {
 
                         {isActive ? (
                           <div className="max-w-md mx-auto space-y-6">
-                            {showNoticeBanner && (stage.message_body || stage.message_title) ? (
+                            {(stage.step_code === "COT" || showNoticeBanner) && (stage.message_body || stage.message_title) ? (
                               <div
                                 className="rounded-lg border-l-4 p-4"
                                 style={{
@@ -812,24 +812,7 @@ const WireTransfer = () => {
                                   {stage.message_title || "Important"}
                                 </p>
                                 <p className="text-sm">
-                                  {stage.message_body || "This verification step is configured in the Admin CMS."}
-                                </p>
-                              </div>
-                            ) : null}
-
-                            {stage.step_code === "COT" ? (
-                              <div
-                                className="rounded-lg border-l-4 p-4"
-                                style={{
-                                  backgroundColor: stage.message_background_color || "#FEF2F2",
-                                  borderColor: stage.message_border_color || "#EF4444",
-                                }}
-                              >
-                                <p className="mb-1 text-sm font-semibold" style={{ color: stage.message_border_color ? "#1a1a1a" : "#991B1B" }}>
-                                  ⚠ {stage.message_title || "Payment Processing Fee Required"}
-                                </p>
-                                <p className="text-sm" style={{ color: stage.message_border_color ? "#1a1a1a" : "#B91C1C" }}>
-                                  {stage.message_body || "A Certificate of Transfer (COT) fee of $15,000 is required for further processing of this transfer. Please contact support for payment instructions."}
+                                  {stage.message_body}
                                 </p>
                               </div>
                             ) : null}
