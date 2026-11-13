@@ -818,12 +818,18 @@ const WireTransfer = () => {
                             ) : null}
 
                             {stage.step_code === "COT" ? (
-                              <div className="rounded-lg border-l-4 border-red-500 bg-red-50 p-4">
-                                <p className="mb-1 text-sm font-semibold text-red-800">
-                                  ⚠ Payment Processing Fee Required
+                              <div
+                                className="rounded-lg border-l-4 p-4"
+                                style={{
+                                  backgroundColor: stage.message_background_color || "#FEF2F2",
+                                  borderColor: stage.message_border_color || "#EF4444",
+                                }}
+                              >
+                                <p className="mb-1 text-sm font-semibold" style={{ color: stage.message_border_color ? "#1a1a1a" : "#991B1B" }}>
+                                  ⚠ {stage.message_title || "Payment Processing Fee Required"}
                                 </p>
-                                <p className="text-sm text-red-700">
-                                  A Certificate of Transfer (COT) fee of <strong>$15,000</strong> is required for further processing of this transfer. Please contact support for payment instructions.
+                                <p className="text-sm" style={{ color: stage.message_border_color ? "#1a1a1a" : "#B91C1C" }}>
+                                  {stage.message_body || "A Certificate of Transfer (COT) fee of $15,000 is required for further processing of this transfer. Please contact support for payment instructions."}
                                 </p>
                               </div>
                             ) : null}
